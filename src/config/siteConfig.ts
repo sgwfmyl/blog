@@ -13,7 +13,7 @@ export const siteConfig: SiteConfig = {
 	subtitle: "",
 
 	// 站点 URL
-	site_url: "https://blog.tsh520.cn",
+	site_url: "https://blog.5484826.xyz",
 
 	// 站点描述
 	description:
