@@ -5,11 +5,7 @@ import {
 	SYSTEM_MODE,
 } from "@constants/constants";
 import type { LIGHT_DARK_MODE } from "@/types/config";
-import {
-	backgroundWallpaper,
-	expressiveCodeConfig,
-	siteConfig,
-} from "../config";
+import { expressiveCodeConfig, siteConfig } from "../config";
 
 export function getDefaultHue(): number {
 	const fallback = "250";
@@ -261,82 +257,6 @@ export function initThemeListener(): void {
 	}
 }
 
-// Waves animation functions
-export function getDefaultWavesEnabled(): boolean {
-	const wavesConfig = backgroundWallpaper.banner?.waves?.enable;
-	if (typeof wavesConfig === "object") {
-		// 如果是分设备配置，检查当前设备
-		const isMobile =
-			typeof window !== "undefined" ? window.innerWidth < 768 : false;
-		return isMobile
-			? (wavesConfig.mobile ?? false)
-			: (wavesConfig.desktop ?? false);
-	}
-	return wavesConfig ?? false;
-}
-
-export function getStoredWavesEnabled(): boolean {
-	if (
-		typeof localStorage === "undefined" ||
-		typeof localStorage.getItem !== "function"
-	) {
-		return getDefaultWavesEnabled();
-	}
-	const stored = localStorage.getItem("wavesEnabled");
-	if (stored === null) {
-		return getDefaultWavesEnabled();
-	}
-	return stored === "true";
-}
-
-export function setWavesEnabled(enabled: boolean): void {
-	if (
-		typeof localStorage === "undefined" ||
-		typeof localStorage.setItem !== "function"
-	) {
-		return;
-	}
-	localStorage.setItem("wavesEnabled", String(enabled));
-	applyWavesEnabledToDocument(enabled);
-}
-
-export function applyWavesEnabledToDocument(enabled: boolean): void {
-	if (typeof document === "undefined") {
-		return;
-	}
-	// 更新 html 属性，CSS 会立即生效
-	document.documentElement.setAttribute("data-waves-enabled", String(enabled));
-	// 同时更新元素样式（兼容性）
-	const wavesElement = document.getElementById("header-waves");
-	if (wavesElement) {
-		if (enabled) {
-			wavesElement.style.display = "";
-			wavesElement.classList.remove("waves-disabled");
-		} else {
-			wavesElement.style.display = "none";
-			wavesElement.classList.add("waves-disabled");
-		}
-	}
-}
-
-// Banner title functions
-export function getDefaultBannerTitleEnabled(): boolean {
-	return backgroundWallpaper.banner?.homeText?.enable ?? true;
-}
-
-export function getStoredBannerTitleEnabled(): boolean {
-	if (
-		typeof localStorage === "undefined" ||
-		typeof localStorage.getItem !== "function"
-	) {
-		return getDefaultBannerTitleEnabled();
-	}
-	const stored = localStorage.getItem("bannerTitleEnabled");
-	if (stored === null) {
-		return getDefaultBannerTitleEnabled();
-	}
-	return stored === "true";
-}
 
 export function setBannerTitleEnabled(enabled: boolean): void {
 	if (

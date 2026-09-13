@@ -156,7 +156,6 @@ src/
 ├── config/
 │   ├── index.ts              # 配置索引文件
 │   ├── siteConfig.ts         # 站点基础配置
-│   ├── backgroundWallpaper.ts # 背景壁纸配置
 │   ├── profileConfig.ts      # 用户资料配置
 │   ├── commentConfig.ts      # 评论系统配置
 │   ├── announcementConfig.ts # 公告配置

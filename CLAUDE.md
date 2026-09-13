@@ -20,6 +20,7 @@
 | `pnpm cli` | 仓库工具 CLI（scripts/cli.js） |
 | `node scripts/友链截图/index.mjs [友链id] [--force]` | 站点截图（Playwright，伪装真实浏览器/字体+网络空闲等待/3 次尝试；产物 public/assets/friends-shots/{id小写}.webp；Action 每周日全量 + push friends 变化自动跑） |
 | `node scripts/友链状态检测/index.mjs` | 友链延迟检测（产物 public/friends-status.json；Action 每天自动跑） |
+| `node scripts/audit-code-structure.mjs [--out=...] [--guide=...]` | 代码结构审计：扫描 src 代码目录（components/pages/config/utils/types/styles/layouts/constants/i18n/plugins）+ 动态解析《博客使用指南.md》附录表格，生成「REFACTOR-代码结构清单.md」（规模/超大文件/页面⇄组件域依赖/跨域耦合/指南⇄代码落地对照/重构方向建议），供 AI 重构参考；只读不改源码，可随时重跑 |
 
 > 包管理器仅限 pnpm（preinstall 强制 `only-allow`）。本项目无测试框架，验证手段 = `pnpm build` + `pnpm check`。
 
@@ -53,7 +54,7 @@ src/
 │   ├── common/          # 跨域共享基础组件 (17)
 │   ├── controls/        # 交互控件：搜索、归档（类型 Tab 筛选）、主题、Dock (8)
 │   ├── features/        # 独立功能模块 (25, 含 music-visualizer/)
-│   ├── layout/          # 布局组件：Navbar, Footer, SideBar, HomeHero... (19)
+│   ├── layout/          # 布局组件：Navbar, Footer, SideBar, HomeHero... (18)
 │   ├── misc/            # License, RelatedPosts, SharePoster (3)
 │   ├── moments/         # 动态卡片与评论弹窗
 │   ├── bills/         # 账单/资金（7：Balance 年度结余横幅卡 + MonthlyFlow 月度流水（按日分组/月份筛选/分页）+ BillCalendar 账单日历（农历+每日收支）+ DailyTrend/ExpenseRank/IncomeCategory/MonthlySummary/YearlyFlow，按图两栏等比缩小）
@@ -96,7 +97,7 @@ src/
 .pages.yml                # PagesCMS 后台配置（11 集合声明，见第 19 节）
 .claude/settings.json     # 命令白名单（分类器不可用时不卡 Bash）
 pagefind.yml              # Pagefind 索引排除配置（katex、搜索面板等）
-scripts/                  # 开发脚本：10 个中文命名脚本目录（生成图标/新建文章/生成摘要/转WebP/添加导航/下载影视/下载音乐/回填友链字段/友链截图/友链状态检测）+ cli.js、vision.mjs（图片识别）、compress-images.mjs、rename-images.mjs、import-wallpapers.mjs、check-svelte-warnings.mjs（脚本清单见第 0 节）
+scripts/                  # 开发脚本：10 个中文命名脚本目录（生成图标/新建文章/生成摘要/转WebP/添加导航/下载影视/下载音乐/回填友链字段/友链截图/友链状态检测）+ cli.js、vision.mjs（图片识别）、compress-images.mjs、rename-images.mjs、import-wallpapers.mjs、check-svelte-warnings.mjs、audit-code-structure.mjs（代码结构审计，扫描 src 代码目录+解析《博客使用指南.md》，生成 REFACTOR-代码结构清单.md 供 AI 重构参考；脚本清单见第 0 节）
 docs/                     # 部署文档（deploy-pagescms-vercel.md 等）
 write_places.cjs          # 一次性脚本：生成 life/places 足迹页
 ```
@@ -312,7 +313,6 @@ Layout.astro          ← HTML 骨架：<html>, <head>, <body>, 全局组件, �
 | `sidebarConfig.ts` | `sidebarLayoutConfig` | 侧栏布局：左/右/双侧栏、组件列表 |
 | `commentConfig.ts` | `commentConfig` | 评论系统选择（Waline/Twikoo/Giscus/Disqus/Artalk） |
 | `musicConfig.ts` | `musicPlayerConfig` | 音乐播放器：Meting API 或本地播放列表 |
-| `backgroundWallpaper.ts` | `backgroundWallpaper` | 背景图配置（当前 mode: "none"，不渲染 banner） |
 | `homePortfolioShutterConfig.ts` | `homePortfolioShutterConfig` | 首页作品集百叶窗配置 |
 | `homeConfig.ts` | `homeConfig` | 首页配置（2026 新增，文档曾遗漏） |
 

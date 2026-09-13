@@ -40,7 +40,7 @@
     @apply bg-[oklch(0.75_0_0)] dark:bg-[oklch(0.75_0_0)];
   }
 
-  /* CategoryBar 分类标签栏 - 描边按钮 */
+  /* 分类标签栏 - 描边按钮 */
   .btn-line {
     @apply transition-all duration-200 flex items-center justify-center bg-transparent border-2
       border-(--line-divider) rounded-none text-black/75 hover:text-(--primary)

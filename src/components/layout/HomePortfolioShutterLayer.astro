@@ -1,7 +1,8 @@
 ---
-import { homePortfolioShutterConfig } from "@/config";
+import { homeConfig } from "@/config";
 import { normalizeShutterPanels } from "@/utils/home-portfolio-shutter.js";
 
+const homePortfolioShutterConfig = homeConfig.portfolioShutter;
 const panels = normalizeShutterPanels(homePortfolioShutterConfig.panels);
 const transparentPixel =
 	"data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==";

@@ -520,7 +520,6 @@ html:has(.home-hero) #top-row {
 .home-hero__name-badge,
 .home-hero__avatar-group,
 .home-hero__dialogue-box,
-.home-hero__right-panel,
 .home-hero__focus-frame,
 .home-hero__viewfinder,
 .home-hero__camera-params {
@@ -570,11 +569,6 @@ html:has(.home-hero) #top-row {
 	filter: blur(10px);
 }
 
-.home-hero--motion-pending .home-hero__right-panel {
-	opacity: 0;
-	transform: translateX(60px);
-}
-
 .home-page--motion-pending > :not(#home-hero) .home-section-title,
 .home-page--motion-pending > :not(#home-hero) [data-motion-title],
 .home-page--motion-pending > :not(#home-hero) .card-base,
@@ -595,128 +589,6 @@ html:has(.home-hero) #top-row {
 
 /* 对话框样式已迁移至 home-hero-dialogue.css（galgame 暗黑对话框） */
 
-/* ---------- 右侧面板 ---------- */
-.home-hero__right-panel {
-	padding: calc(40px + var(--home-hero-content-shift)) 15px 40px;
-	display: flex;
-	flex-direction: column;
-	justify-content: space-between;
-	align-items: center;
-	color: oklch(1 0 0);
-	position: relative;
-	z-index: 15;
-	background: linear-gradient(-90deg, rgba(0, 0, 0, 0.4) 0%, transparent 100%);
-}
-
-[data-theme="light"] .home-hero__right-panel {
-	background: linear-gradient(-90deg, rgba(255, 255, 255, 0.4) 0%, transparent 100%);
-}
-
-.home-hero__pill {
-	padding: 0;
-	border: 0;
-	border-radius: 0;
-	font-size: 0.65rem;
-	letter-spacing: 2px;
-	font-weight: bold;
-	background: transparent;
-	color: oklch(1 0 0);
-}
-
-[data-theme="light"] .home-hero__pill {
-	background: transparent;
-	color: #1a1a2e;
-}
-
-.home-hero__vertical-wrap {
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-	gap: 15px;
-}
-
-.home-hero__v-title {
-	writing-mode: vertical-rl;
-	font-size: 2.2rem;
-	font-weight: 900;
-	letter-spacing: 10px;
-	color: oklch(1 0 0);
-	text-shadow: 0 4px 10px rgba(0, 0, 0, 0.6);
-}
-
-[data-theme="light"] .home-hero__v-title {
-	color: #1a1a2e;
-	text-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-}
-
-.home-hero__v-sub {
-	writing-mode: vertical-rl;
-	font-size: 0.7rem;
-	letter-spacing: 6px;
-	color: rgba(255, 255, 255, 0.5);
-}
-
-[data-theme="light"] .home-hero__v-sub {
-	color: rgba(0, 0, 0, 0.4);
-}
-
-/* 上下班状态：上班绿色，下班正常白色 */
-.home-hero__v-status {
-	color: oklch(1 0 0);
-	font-weight: 700;
-	transition: color 0.3s ease;
-}
-
-.home-hero__v-status.is-working {
-	color: #3fb950;
-}
-
-[data-theme="light"] .home-hero__v-status {
-	color: #1a1a2e;
-}
-
-[data-theme="light"] .home-hero__v-status.is-working {
-	color: #2ea043;
-}
-
-.home-hero__diamond {
-	color: #b5893d;
-	font-size: 0.7rem;
-	animation: pulse-glow 2s infinite ease-in-out;
-}
-
-@keyframes pulse-glow {
-	0%, 100% { opacity: 0.3; transform: scale(0.9); }
-	50% { opacity: 1; transform: scale(1.1); }
-}
-
-.home-hero__panel-footer {
-	text-align: center;
-}
-
-.home-hero__footer-line {
-	width: 10px;
-	height: 1px;
-	background: rgba(255, 255, 255, 0.2);
-	margin: 0 auto 8px;
-}
-
-[data-theme="light"] .home-hero__footer-line {
-	background: rgba(0, 0, 0, 0.15);
-}
-
-.home-hero__micro-text {
-	font-size: 0.45rem;
-	letter-spacing: 3px;
-	color: rgba(255, 255, 255, 0.3);
-	writing-mode: vertical-rl;
-	transform: rotate(180deg);
-	margin: 0;
-}
-
-[data-theme="light"] .home-hero__micro-text {
-	color: rgba(0, 0, 0, 0.25);
-}
 
 /* ============================================
    桌面端：去除大头照 + 标题/职业/徽章视窗居中
@@ -775,8 +647,7 @@ html:has(.home-hero) #top-row {
 	}
 
 	/* 隐藏右侧面板 */
-	.home-hero__center-panel,
-	.home-hero__right-panel {
+	.home-hero__center-panel {
 		display: none;
 	}
 

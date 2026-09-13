@@ -7,10 +7,6 @@
 	overflow-x: hidden;
 }
 
-html:has(.guestbook-page) #category-bar-wrapper {
-	display: none;
-}
-
 html:has(.guestbook-page) #main-grid {
 	display: block !important;
 	padding-left: 0 !important;

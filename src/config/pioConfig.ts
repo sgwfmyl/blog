@@ -90,7 +90,7 @@ export const live2dModelConfig: Live2DModelConfig = {
 	// Live2D模型配置
 	model: {
 		// Live2D模型文件路径
-		path: "/pio/models/live2d/snow_miku/model.json",
+		path: "/pio/models/live2d/MO.v1.3.3/MO.vtube.json",
 		// path: "/pio/models/live2d/illyasviel/illyasviel.model.json",
 	},
 

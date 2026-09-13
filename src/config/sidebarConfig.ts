@@ -45,7 +45,7 @@ export const sidebarLayoutConfig: SidebarLayoutConfig = {
 			// 组件类型：公告组件
 			type: "announcement",
 			// 是否启用该组件
-			enable: false,
+			enable: true,
 			// 组件位置
 			position: "top",
 			// 是否在文章详情页显示
@@ -55,7 +55,7 @@ export const sidebarLayoutConfig: SidebarLayoutConfig = {
 			// 组件类型：音乐播放器
 			type: "music",
 			// 是否启用该组件
-			enable: false,
+			enable: true,
 			// 组件位置
 			position: "sticky",
 			// 是否在文章详情页显示
@@ -72,7 +72,7 @@ export const sidebarLayoutConfig: SidebarLayoutConfig = {
 		{
 			// 组件类型：文章目录（已移至右侧边栏，此处禁用）
 			type: "sidebarToc",
-			enable: false,
+			enable: true,
 			position: "sticky",
 			showOnPostPage: true,
 			showOnNonPostPage: false,
@@ -81,7 +81,7 @@ export const sidebarLayoutConfig: SidebarLayoutConfig = {
 			// 组件类型：分类组件
 			type: "categories",
 			// 是否启用该组件
-			enable: false,
+			enable: true,
 			// 组件位置
 			position: "sticky",
 			// 是否在文章详情页显示
@@ -96,7 +96,7 @@ export const sidebarLayoutConfig: SidebarLayoutConfig = {
 			// 组件类型：标签组件
 			type: "tags",
 			// 是否启用该组件
-			enable: false,
+			enable: true,
 			// 组件位置
 			position: "sticky",
 			// 是否在文章详情页显示
@@ -111,7 +111,7 @@ export const sidebarLayoutConfig: SidebarLayoutConfig = {
 			// 组件类型：广告栏组件 1
 			type: "advertisement",
 			// 是否启用该组件
-			enable: false,
+			enable: true,
 			// 组件位置
 			position: "sticky",
 			// 是否在文章详情页显示
@@ -123,7 +123,7 @@ export const sidebarLayoutConfig: SidebarLayoutConfig = {
 			// 组件类型：生活统计小组件
 			type: "lifeStats",
 			// 是否启用该组件
-			enable: false,
+			enable: true,
 			// 组件位置
 			position: "sticky",
 			// 是否在文章详情页显示
@@ -178,7 +178,7 @@ export const sidebarLayoutConfig: SidebarLayoutConfig = {
 			// 组件类型：网站更新热力图
 			type: "siteHeatmap",
 			// 是否启用该组件
-			enable: false,
+			enable: true,
 			// 组件位置
 			position: "top",
 			// 是否在文章详情页显示
@@ -216,7 +216,7 @@ export const sidebarLayoutConfig: SidebarLayoutConfig = {
 			// 组件类型：广告栏组件 2
 			type: "advertisement",
 			// 是否启用该组件
-			enable: false,
+			enable: true,
 			// 组件位置
 			position: "sticky",
 			// 是否在文章详情页显示
@@ -233,7 +233,7 @@ export const sidebarLayoutConfig: SidebarLayoutConfig = {
 			// 组件类型：用户资料组件
 			type: "profile",
 			// 是否启用该组件（移动端已关闭）
-			enable: false,
+			enable: true,
 			// 是否在文章详情页显示
 			showOnPostPage: true,
 		},
@@ -257,7 +257,7 @@ export const sidebarLayoutConfig: SidebarLayoutConfig = {
 			// 组件类型：公告组件
 			type: "announcement",
 			// 是否启用该组件
-			enable: false,
+			enable: true,
 			// 是否在文章详情页显示
 			showOnPostPage: true,
 		},
@@ -265,7 +265,7 @@ export const sidebarLayoutConfig: SidebarLayoutConfig = {
 			// 组件类型：音乐播放器
 			type: "music",
 			// 是否启用该组件
-			enable: false,
+			enable: true,
 			// 是否在文章详情页显示
 			showOnPostPage: true,
 		},
@@ -279,3 +279,4 @@ export const sidebarLayoutConfig: SidebarLayoutConfig = {
 		},
 	],
 };
+ 

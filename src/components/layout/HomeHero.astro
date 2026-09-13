@@ -122,13 +122,6 @@ const dialogueConfig = {
 	topics: dialogueRaw?.topics ?? [],
 };
 
-const heroRightPanel = homeConfig.hero.rightPanel ?? {
-	pill: "BLOG",
-	title: "博客",
-	diamond: "✦",
-	microText: "システム起動完了",
-};
-
 // 将 displayName 拆成逐字 span，用于逐字入场动画与 cqw 缩放
 const nameLetters = Array.from(homeConfig.displayName || "");
 
@@ -275,20 +268,6 @@ const rainConfig = {
 			</div>
 		)}
 
-		<!-- 右侧面板（比例与样式保持不变） -->
-		<aside class="home-hero__right-panel">
-			<div class="home-hero__pill">{heroRightPanel.pill}</div>
-			<div class="home-hero__vertical-wrap">
-				<span class="home-hero__v-title">{heroRightPanel.title}</span>
-				<span class="home-hero__v-sub">{homeConfig.name || ""}</span>
-				<span class="home-hero__diamond">{heroRightPanel.diamond}</span>
-				<span class="home-hero__v-sub home-hero__v-status is-working" id="hero-work-status-vertical">WORKING</span>
-			</div>
-			<div class="home-hero__panel-footer">
-				<div class="home-hero__footer-line"></div>
-				<p class="home-hero__micro-text">{heroRightPanel.microText}</p>
-			</div>
-		</aside>
 	</div>
 </section>
 

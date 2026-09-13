@@ -34,24 +34,6 @@ export type SiteConfig = {
 	// 站点开始日期，用于计算运行天数
 	siteStartDate?: string; // 格式: "YYYY-MM-DD"
 
-	// 门户区配置
-	portal?: {
-		// 公告跑马灯
-		announcement?: {
-			enable: boolean;
-			text: string;
-		};
-		// 每日一言
-		dailyQuote?: {
-			enable: boolean;
-			quotes: { text: string; source: string }[];
-		};
-		// 最近文章预览数量
-		recentPostsCount?: number;
-		// 最近说说预览数量
-		recentMomentsCount?: number;
-	};
-
 	// 可选：站点时区，使用 IANA 时区标识，例如 "Asia/Shanghai"、"UTC"
 	timezone?: string;
 	workHours?: { start: number; end: number; workDays: number[] };
@@ -105,9 +87,6 @@ export type SiteConfig = {
 		musicPage: boolean; // 音乐页面开关
 		changelog: boolean; // 更新日志页面开关
 	};
-
-	// 分类导航栏开关
-	categoryBar?: boolean;
 
 	// 文章列表布局配置
 	postListLayout: {
@@ -348,9 +327,6 @@ export type ProfileConfig = {
 };
 
 export type HomeConfig = {
-	avatar?: string;
-	avatarOnWork?: string;
-	avatarOffWork?: string;
 	name: string;
 	displayName?: string;
 	nameBadge?: string;
@@ -362,7 +338,6 @@ export type HomeConfig = {
 		backgroundImagePool?: string[];
 		backgroundImageMobilePool?: string[];
 		characterImage?: string;
-		speechAccentImage: string;
 		speech?: {
 			text: string;
 			english: string;
@@ -384,15 +359,9 @@ export type HomeConfig = {
 		visitImage: string;
 		archiveImage: string;
 		contactImage: string;
-		skillsImage: string;
 	};
 	displayLayer: HomeDisplayLayerConfig;
 	portfolioShutter: HomePortfolioShutterConfig;
-	skills?: {
-		name: string;
-		icon?: string;
-		group?: string;
-	}[];
 	links: {
 		name: string;
 		url: string;
@@ -715,88 +684,6 @@ export type Live2DModelConfig = {
 	};
 };
 
-export type BackgroundWallpaperConfig = {
-	src:
-		| string
-		| string[]
-		| {
-				desktop?: string | string[];
-				mobile?: string | string[];
-		  }; // 支持单个图片、图片数组或分别设置桌面端和移动端图片
-
-	// Banner模式特有配置
-	banner?: {
-		position?:
-			| "top"
-			| "center"
-			| "bottom"
-			| "top left"
-			| "top center"
-			| "top right"
-			| "center left"
-			| "center center"
-			| "center right"
-			| "bottom left"
-			| "bottom center"
-			| "bottom right"
-			| "left top"
-			| "left center"
-			| "left bottom"
-			| "right top"
-			| "right center"
-			| "right bottom"
-			| string; // 壁纸位置，支持CSS object-position的所有值，包括百分比和像素值
-		homeText?: {
-			enable: boolean; // 是否在首页显示自定义文字（全局开关）
-			switchable?: boolean; // 是否允许用户通过控制面板切换横幅标题显示
-			title?: string; // 主标题
-			subtitle?: string | string[]; // 副标题，支持单个字符串或字符串数组
-			titleSize?: string; // 主标题字体大小，如 "3.5rem"
-			subtitleSize?: string; // 副标题字体大小，如 "1.5rem"
-			typewriter?: {
-				enable: boolean; // 是否启用打字机效果
-				speed: number; // 打字速度（毫秒）
-				deleteSpeed: number; // 删除速度（毫秒）
-				pauseTime: number; // 完整显示后的暂停时间（毫秒）
-			};
-		};
-		credit?: {
-			enable:
-				| boolean
-				| {
-						desktop: boolean; // 桌面端是否显示横幅图片来源文本
-						mobile: boolean; // 移动端是否显示横幅图片来源文本
-				  }; // 是否显示横幅图片来源文本，支持布尔值或分别设置桌面端和移动端
-			text:
-				| string
-				| {
-						desktop: string; // 桌面端显示的来源文本
-						mobile: string; // 移动端显示的来源文本
-				  }; // 横幅图片来源文本，支持字符串或分别设置桌面端和移动端
-			url?:
-				| string
-				| {
-						desktop: string; // 桌面端原始艺术品或艺术家页面的 URL 链接
-						mobile: string; // 移动端原始艺术品或艺术家页面的 URL 链接
-				  }; // 原始艺术品或艺术家页面的 URL 链接，支持字符串或分别设置桌面端和移动端
-		};
-		navbar?: {
-			transparentMode?: "semi" | "full" | "semifull"; // 导航栏透明模式
-			enableBlur?: boolean; // 是否开启毛玻璃模糊效果
-			blur?: number; // 毛玻璃模糊度
-		};
-		waves?: {
-			enable:
-				| boolean
-				| {
-						desktop: boolean; // 桌面端是否启用水波纹动画效果
-						mobile: boolean; // 移动端是否启用水波纹动画效果
-				  }; // 是否启用水波纹动画效果，支持布尔值或分别设置桌面端和移动端
-			switchable?: boolean; // 是否允许用户通过控制面板切换水波纹动画
-		};
-	};
-};
-
 // 广告栏配置
 export type AdConfig = {
 	title?: string; // 广告栏标题
@@ -833,10 +720,6 @@ export type FriendLink = {
 	tags?: string[]; // 标签数组
 	weight: number; // 权重，数字越大排序越靠前
 	enabled: boolean; // 是否启用
-};
-
-export type FriendsPageConfig = {
-	columns: 2 | 3; // 显示列数：2列或3列
 };
 
 // 音乐播放器配置

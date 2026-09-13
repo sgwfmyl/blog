@@ -8,7 +8,6 @@
 src/config/
 ├── index.ts              # 配置索引文件 - 统一导出
 ├── siteConfig.ts         # 站点基础配置
-├── backgroundWallpaper.ts # 背景壁纸配置
 ├── profileConfig.ts      # 用户资料配置
 ├── musicConfig.ts        # 音乐播放器配置
 ├── sakuraConfig.ts       # 樱花特效配置

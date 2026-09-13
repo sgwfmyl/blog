@@ -11,7 +11,6 @@ import SakuraEffect from "@components/features/SakuraEffect.astro";
 import ConfigCarrier from "@components/layout/ConfigCarrier.astro";
 
 import {
-	backgroundWallpaper,
 	commentConfig,
 	expressiveCodeConfig,
 	profileConfig,
@@ -25,7 +24,7 @@ import {
 } from "@/constants/constants";
 import { defaultFavicons } from "@/constants/icon";
 import type { Favicon } from "@/types/config";
-import { getDefaultBackground, isHomePage } from "@/utils/layout-utils";
+import { isHomePage } from "@/utils/layout-utils";
 import { url } from "@/utils/url-utils";
 
 import "@/styles/main.css";
@@ -52,22 +51,6 @@ const isHomePageCheck = isHomePage(Astro.url.pathname);
 // why doing this in Layout instead of GlobalStyles: https://github.com/withastro/astro/issues/6728#issuecomment-1502203757
 const configHue = siteConfig.themeColor.hue;
 
-// 获取导航栏透明模式配置
-const navbarTransparentMode =
-	backgroundWallpaper.banner?.navbar?.transparentMode || "semi";
-// 判断是否应该显示顶部高光效果（只在full和semifull模式下显示）
-const shouldShowTopHighlight =
-	navbarTransparentMode === "full" || navbarTransparentMode === "semifull";
-
-if (!banner || typeof banner !== "string" || banner.trim() === "") {
-	banner = getDefaultBackground();
-}
-
-// TODO don't use post cover as banner for now
-banner = getDefaultBackground();
-
-// 原始配置 mode: "none"，不启用 banner
-const enableBanner = false;
 
 let pageTitle: string;
 if (title) {
@@ -421,7 +404,6 @@ const siteLang = lang.replace("_", "-");
     class:list={[
       {
         "lg:is-home": isHomePageCheck,
-        "enable-banner": enableBanner,
         "enable-card-border": siteConfig.card?.border,
       },
       ...(siteConfig.font.enable && siteConfig.font.selected
@@ -438,8 +420,6 @@ const siteLang = lang.replace("_", "-");
     <div id="banner-overlay-container" hidden aria-hidden="true"></div>
     <div id="banner-dim-container" hidden aria-hidden="true"></div>
 
-    <!-- 页面顶部渐变高光效果 - 只在full和semifull模式下显示 -->
-    {shouldShowTopHighlight && <div class="top-gradient-highlight" />}
     <ConfigCarrier />
     <MusicManager />
     <slot />

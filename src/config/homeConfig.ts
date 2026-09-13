@@ -1,7 +1,6 @@
 import type { HomeConfig } from "../types/config";
 import { profileConfig } from "./profileConfig";
 import { siteConfig } from "./siteConfig";
-import { skillsConfig } from "./skillsConfig";
 
 // 构建时自动扫描背景图文件夹
 const _deskGlob = import.meta.glob(
@@ -25,9 +24,6 @@ const primaryBio = bioLines[0] || siteConfig.description || "";
 const displayName = profileConfig.displayName || profileConfig.name;
 
 export const homeConfig = {
-	avatar: "assets/images/avatar.webp",
-	avatarOnWork: "assets/images/avatar.webp",
-	avatarOffWork: "assets/images/avatar2.webp",
 	name: profileConfig.name,
 	displayName,
 	nameBadge: siteConfig.title,
@@ -43,18 +39,17 @@ export const homeConfig = {
 				: `${replicaRoot}/main/home-mobile.webp`,
 		backgroundImagePool: _deskImgs.length > 0 ? _deskImgs : [],
 		backgroundImageMobilePool: _mobImgs.length > 0 ? _mobImgs : [],
-		speechAccentImage: `${replicaRoot}/main/home2-1.webp`,
 		dialogue: {
 			enabled: true,
 			speakers: {
-				host: "团子",
+				host: "lh",
 				visitor: "访客",
 			},
 			menuTitle: "想聊点什么？",
 			typingSpeed: 45,
 			autoDelay: 1600,
 			intro: [
-				{ speaker: "host", text: "欸，来客人啦。欢迎来到团子和蛋糕的博客。" },
+				{ speaker: "host", text: `欸，来客人啦。欢迎来到 ${profileConfig.name} 的博客。` },
 				{
 					speaker: "host",
 					text: `这里是 ${profileConfig.name} 的个人空间，技术、生活和喜欢的东西都会慢慢收进来。`,
@@ -69,7 +64,7 @@ export const homeConfig = {
 						{ speaker: "visitor", text: "这里的站长是谁呀？" },
 						{
 							speaker: "host",
-							text: `${profileConfig.name}，也可以叫 ${displayName}。`,
+							text: `${profileConfig.name}】。`,
 						},
 						{
 							speaker: "host",
@@ -78,7 +73,7 @@ export const homeConfig = {
 						},
 						{
 							speaker: "host",
-							text: bioLines[1] || "如果你喜欢，那么欢迎来到我的世界。",
+							text: bioLines[1] || "这里是我留存的记忆。",
 						},
 					],
 				},
@@ -88,7 +83,7 @@ export const homeConfig = {
 						{ speaker: "visitor", text: "这个博客主要写什么？" },
 						{
 							speaker: "host",
-							text: "这里会分享技术见解、实用工具、ACG 相关内容，也会留下日常生活的碎片。",
+							text: "这里会分享技术见解、实用工具、日常生活的记忆。",
 						},
 						{
 							speaker: "host",
@@ -102,28 +97,21 @@ export const homeConfig = {
 				},
 			],
 		},
-		rightPanel: {
-			pill: "BLOG",
-			title: "博客",
-			diamond: "✦",
-			microText: "システム起動完了",
-		},
 		rain: {
 			enabled: true,
 			intensity: 0.6,
 			color: "255, 255, 255",
 		},
 	},
-
+	//数据模块背景图
 	dataLayer: {
-		visitImage: `${replicaRoot}/main/home-data-1.webp`,
+		visitImage: `${replicaRoot}/main/home-data-1.webp`, 
 		archiveImage: `${replicaRoot}/main/home-data-2.webp`,
 		contactImage: `${replicaRoot}/main/home-data-3.webp`,
-		skillsImage: `${replicaRoot}/main/home-data-4.webp`,
 	},
 
 	displayLayer: {
-		enabled: true,
+		enabled: false,
 		kicker: "作品展示",
 		title: "CRYSTALLIZE GALLERY",
 		description:
@@ -134,7 +122,7 @@ export const homeConfig = {
 	},
 
 	portfolioShutter: {
-		enabled: true,
+		enabled: false,
 		kicker: "The End",
 		title: "愿你每一天 都闪闪发光",
 		description: "岁岁常欢愉，万事皆胜意",
@@ -191,6 +179,5 @@ export const homeConfig = {
 		],
 	},
 
-	skills: skillsConfig.items,
 	links: profileConfig.links,
 } satisfies HomeConfig;

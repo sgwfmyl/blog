@@ -1,5 +1,6 @@
 ---
 title: Claude Code Skills 介绍：我正在使用的 18 个实用技能
+image: "api"
 published: 2026-07-15
 tags:
   - claudecode
