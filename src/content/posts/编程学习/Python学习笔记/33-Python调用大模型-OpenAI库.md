@@ -97,19 +97,16 @@ print(response.choices[0].message.content)
 
 ## 练习题
 
-### 一、回忆填空（写完再展开对答案）
+### 一、知识回顾（读完直接做下面的实践题）
 
-1. Python 第三方软件包的官方仓库叫 ____，包管理工具叫 ____
-2. 安装指定版本的**正确**写法：`pip install openai____2.13.0`（写出符号）
-3. 卸载：`pip ____ openai`；列出已安装：`pip ____`；查看详情：`pip ____ openai`
-4. DeepSeek 的 API 兼容 ____ 的接口格式，所以可以直接用 `openai` 这个库调用
-5. 创建客户端：`client = ____(api_key=os.____.get("DEEPSEEK_API_KEY"), base_url="____")`
-6. 发起对话请求：`client.____.____.create(model="deepseek-chat", messages=[...], stream=False)`
-7. 非流式取回复文本：`response.____[0].____.content`
-8. 用环境变量存 API Key 是为了避免把密钥 ____
-
-> [!TIP]- 填空答案（做完再点开）
-> 1. PyPI、pip　2. `==`（双等号，单个 `=` 会报错）　3. uninstall、list、show　4. OpenAI　5. OpenAI / environ / https://api.deepseek.com　6. chat.completions　7. choices、message　8. 写死在代码里（泄露）
+1. Python 第三方软件包的官方仓库叫 **PyPI**，包管理工具叫 **pip**
+2. 安装指定版本的**正确**写法：`pip install openai==2.13.0`（双等号，单个 `=` 会报错）
+3. 卸载：`pip uninstall openai`；列出已安装：`pip list`；查看详情：`pip show openai`
+4. DeepSeek 的 API 兼容 **OpenAI** 的接口格式，所以可以直接用 `openai` 这个库调用
+5. 创建客户端：`client = OpenAI(api_key=os.environ.get("DEEPSEEK_API_KEY"), base_url="https://api.deepseek.com")`
+6. 发起对话请求：`client.chat.completions.create(model="deepseek-chat", messages=[...], stream=False)`
+7. 非流式取回复文本：`response.choices[0].message.content`
+8. 用环境变量存 API Key 是为了避免把密钥**写死在代码里**（泄露）
 
 ### 二、裸写题
 

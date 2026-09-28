@@ -85,17 +85,14 @@ plt.show()
 
 ## 练习题
 
-### 一、回忆填空（写完再展开对答案）
+### 一、知识回顾（读完直接做下面的实践题）
 
-1. Matplotlib 是 Python 中使用最多的 ____ 库，安装命令 `pip install ____`
-2. 画折线用 `plt.____(x, y)`；显示图表用 `plt.____()`
-3. 画折线前必须保证 X 轴与 Y 轴的 ____ 一致
-4. 展示中文要设置 `plt.rcParams['font.sans-serif'] = ['____']`
-5. 设置画布大小：`plt.figure(figsize=(____, ____))`
-6. 设置标题用 `plt.____('...')`；X 轴标签用 `plt.____('...')`；网格线用 `plt.____()`；图例用 `plt.____()`
-
-> [!TIP]- 填空答案（做完再点开）
-> 1. 可视化（绘图）/ matplotlib　2. plot / show　3. 数据数量　4. SimHei（黑体）　5. 宽, 高　6. title / xlabel / grid / legend
+1. Matplotlib 是 Python 中使用最多的**可视化（绘图）**库，安装命令 `pip install matplotlib`
+2. 画折线用 `plt.plot(x, y)`；显示图表用 `plt.show()`
+3. 画折线前必须保证 X 轴与 Y 轴的**数据数量**一致
+4. 展示中文要设置 `plt.rcParams['font.sans-serif'] = ['SimHei']`（黑体）
+5. 设置画布大小：`plt.figure(figsize=(宽, 高))`
+6. 设置标题用 `plt.title('...')`；X 轴标签用 `plt.xlabel('...')`；网格线用 `plt.grid()`；图例用 `plt.legend()`
 
 ### 二、裸写题
 

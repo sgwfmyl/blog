@@ -76,19 +76,16 @@ for tr in tr_list:
 
 ## 练习题
 
-### 一、回忆填空（写完再展开对答案）
+### 一、知识回顾（读完直接做下面的实践题）
 
-1. Requests 库是 Python 中最流行、最优雅的 ____ 库
-2. 安装命令：`pip ____ requests`
-3. 发 GET 请求：`response = requests.____(url)`
-4. 拿到 HTML 源码字符串：`response.____`
-5. 把 HTML 字符串解析成文档对象：`html.____(response.text)`（来自 ____ 库）
-6. 在文档对象上用 ____ 语法定位元素、取文本
-7. Xpath 里 `//*[@id='top20']` 的意思是：从 ____ 位置找 id 为 top20 的任意元素
-8. `tr.xpath("./td/text()")` 里的 `./` 表示从 ____ 节点下查找
-
-> [!TIP]- 填空答案（做完再点开）
-> 1. HTTP 客户端　2. install　3. get　4. text　5. fromstring / lxml　6. Xpath　7. 任意　8. 当前
+1. Requests 库是 Python 中最流行、最优雅的 **HTTP 客户端**库
+2. 安装命令：`pip install requests`
+3. 发 GET 请求：`response = requests.get(url)`
+4. 拿到 HTML 源码字符串：`response.text`
+5. 把 HTML 字符串解析成文档对象：`html.fromstring(response.text)`（来自 **lxml** 库）
+6. 在文档对象上用 **Xpath** 语法定位元素、取文本
+7. Xpath 里 `//*[@id='top20']` 的意思是：从**任意**位置找 id 为 top20 的任意元素
+8. `tr.xpath("./td/text()")` 里的 `./` 表示从**当前**节点下查找
 
 ### 二、裸写题
 

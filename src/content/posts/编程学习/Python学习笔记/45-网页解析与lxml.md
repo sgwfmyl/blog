@@ -79,18 +79,15 @@ with open("resources/仙逆人物志.html", "r", encoding="utf-8") as f:
 
 ## 练习题
 
-### 一、回忆填空（写完再展开对答案）
+### 一、知识回顾（读完直接做下面的实践题）
 
-1. 网页解析指的是从原始 ____ 文档中提取数据的过程，是爬虫的 ____ 步骤
-2. lxml 是一个高性能的 ____ / XML 文档解析库，支持基于 ____ 语法获取数据
-3. 安装命令：`pip ____ lxml`
-4. 把 HTML 字符串解析成文档对象：`html.____(html_text)`
-5. Xpath 表达式末尾加 `/text()` 的作用是 ____
-6. `document.xpath("//table/tbody/tr")` 返回的是所有 ____ 元素的列表
-7. 在遍历行时，取"这一行的格子"要用 `____/td/text()` 而不是 `//td/text()`
-
-> [!TIP]- 填空答案（做完再点开）
-> 1. HTML / 关键　2. HTML、Xpath　3. install　4. fromstring　5. 获取元素的文本内容　6. tr（行）　7. `./`
+1. 网页解析指的是从原始 **HTML** 文档中提取数据的过程，是爬虫的**关键**步骤
+2. lxml 是一个高性能的 **HTML** / XML 文档解析库，支持基于 **Xpath** 语法获取数据
+3. 安装命令：`pip install lxml`
+4. 把 HTML 字符串解析成文档对象：`html.fromstring(html_text)`
+5. Xpath 表达式末尾加 `/text()` 的作用是**获取元素的文本内容**
+6. `document.xpath("//table/tbody/tr")` 返回的是所有 **tr（行）** 元素的列表
+7. 在遍历行时，取"这一行的格子"要用 `./td/text()` 而不是 `//td/text()`
 
 ### 二、裸写题
 

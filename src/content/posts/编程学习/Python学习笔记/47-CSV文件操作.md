@@ -67,17 +67,14 @@ with open("csv_data/02.csv", "r", encoding="utf-8") as f:
 
 ## 练习题
 
-### 一、回忆填空（写完再展开对答案）
+### 一、知识回顾（读完直接做下面的实践题）
 
-1. CSV 全称 ____，是一种用于存储 ____ 数据的文本文件格式，可以直接用 ____ 打开
-2. 原始方式的坑：值里自带 ____ 会把一行的列数弄乱
-3. 推荐用 ____ 模块按字典读写
-4. 写文件时必须加 `newline="____"`，否则 Windows 下行与行之间会多出空行
-5. `writer.____()` 写表头；`writer.____(字典)` 写一行；`writer.____(列表)` 一次写多行
-6. 按字典读 CSV 用 ____，第一行自动当 ____
-
-> [!TIP]- 填空答案（做完再点开）
-> 1. Comma-Separated Values（逗号分隔值）/ 表格 / Excel　2. 逗号　3. csv　4. 空（`""`）　5. writeheader / writerow / writerows　6. DictReader / 表头
+1. CSV 全称 **Comma-Separated Values（逗号分隔值）**，是一种用于存储**表格**数据的文本文件格式，可以直接用 **Excel** 打开
+2. 原始方式的坑：值里自带**逗号**会把一行的列数弄乱
+3. 推荐用 `csv` 模块按字典读写
+4. 写文件时必须加 `newline=""`，否则 Windows 下行与行之间会多出空行
+5. `writer.writeheader()` 写表头；`writer.writerow(字典)` 写一行；`writer.writerows(列表)` 一次写多行
+6. 按字典读 CSV 用 `DictReader`，第一行自动当**表头**
 
 ### 二、裸写题
 

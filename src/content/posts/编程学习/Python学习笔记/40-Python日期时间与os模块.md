@@ -95,19 +95,16 @@ if os.path.exists("sessions/2026-01-11_18-00-05.json"):
 
 ## 练习题
 
-### 一、回忆填空（写完再展开对答案）
+### 一、知识回顾（读完直接做下面的实践题）
 
-1. 生成当前时间的会话标识：`datetime.____().strftime("%Y-%m-%d_%H-%M-%S")`
-2. 占位符含义：`%Y` = ____、`%m` = ____、`%d` = ____、`%H` = ____、`%M` = ____、`%S` = ____
-3. 读环境变量：`os.____.get("DEEPSEEK_API_KEY")`
-4. 判断路径是否存在：`os.path.____("sessions")`
-5. 创建一级目录：`os.____("sessions")`（目录已存在会抛 ____ 错误）
-6. 列出目录下所有文件名：`os.____("sessions")`
-7. 删除文件：`os.____(path)`
-8. 切片 `filename[:-5]` 的作用是去掉结尾的 ____
-
-> [!TIP]- 填空答案（做完再点开）
-> 1. now　2. 年 / 月 / 日 / 小时 / 分钟 / 秒　3. environ　4. exists　5. mkdir / FileExistsError　6. listdir　7. remove　8. `.json`（5 个字符）
+1. 生成当前时间的会话标识：`datetime.now().strftime("%Y-%m-%d_%H-%M-%S")`
+2. 占位符含义：`%Y` = **年**、`%m` = **月**、`%d` = **日**、`%H` = **小时**、`%M` = **分钟**、`%S` = **秒**
+3. 读环境变量：`os.environ.get("DEEPSEEK_API_KEY")`
+4. 判断路径是否存在：`os.path.exists("sessions")`
+5. 创建一级目录：`os.mkdir("sessions")`（目录已存在会抛 `FileExistsError` 错误）
+6. 列出目录下所有文件名：`os.listdir("sessions")`
+7. 删除文件：`os.remove(path)`
+8. 切片 `filename[:-5]` 的作用是去掉结尾的 `.json`（5 个字符）
 
 ### 二、裸写题
 

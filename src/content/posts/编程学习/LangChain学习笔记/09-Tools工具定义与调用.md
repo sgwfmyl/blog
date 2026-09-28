@@ -712,21 +712,18 @@ print(convert_to_openai_tool(get_weather))
 
 ## 练习题
 
-### 一、回忆填空（写完再展开对答案）
+### 一、知识回顾（读完直接做下面的实践题）
 
-1. 工具是赋予大模型与 ____ 交互能力的关键组件，让模型从"认识世界"走向"____"；它也是智能体的核心要素之一（公式：Agent = LLM + Planning + ____ + Memory + Action）
-2. 在 LangChain 里，工具就是"明确定义了 ____ 和 ____ 的可调用函数"，所以工具调用也叫 ____；两种调用方式是 ____（测试、单元验证用）与 ____（由模型决定何时调、传什么参数）
-3. 完整流程：用户提问 → 模型判断要不要调、调哪个、参数是什么 → ____ 执行工具 → 把结果回传给模型 → 模型生成 ____；**模型自己不执行工具**，这个"____ → ____ → ____"的循环就是智能体的最小骨架
-4. 定义方式一不用装饰器：把普通函数直接传给 ____，底层会用 ____ 生成"工具说明书"；有装饰器的函数本身就是 ____ 对象（直接格式化），普通函数则基于函数定义和 docstring 生成 ____ 模式再转换——这就是"普通函数也能当工具"的机制
-5. 工具描述是 `type` + `function` 两层；`parameters` 里的三个关键字段：`type` 定义当前节点的数据类型（常见 string、number、____、boolean、object、____、null）、____ 定义对象里可以有哪些属性、____ 在 `type` 为 `"object"` 时列出必须存在的属性
-6. docstring 必须遵循 ____ 风格（用 Args:、____、Raises: 这类关键字）；参数的类型来自函数的 ____；把它删掉后 `properties` 里只剩一个 ____；若 Args: 里写了签名里没有的参数，会抛 ____
-7. 参数默认值会变成 schema 里的 ____ 字段，并且不会出现在 ____ 列表里；只有一个参数且有默认值时，`required` 整段 ____；想让模型少填参数，就在签名里给 ____
-8. 用装饰器定义工具时，描述来自 ____（没有它会直接报 ____）；工具对象的三个属性是 name、____、____；想改名字用 ____，但开发习惯是工具名与 ____ 保持一致，便于排查
-9. 描述有三种给法：只给 docstring、用 ____ 覆盖 docstring（优先级更高，还能拼动态信息）、加 ____ 让 docstring 里的参数说明"各就各位"（格式不合法会抛 ____；而不用装饰器时不合法的 docstring 只会被当成普通文本，不报错）
-10. 参数结构用 Pydantic 定义：____ 声明字段结构（子类初始化不接收 ____ 参数，字段值必须写字段名）、____ 设置默认值与描述（每个字段的描述是"给模型看的文档"）、____ 限定只能取几个固定值（schema 里变成 ____ 数组，传错值在本地就抛 ____）；也可以用 JSON ____ 字典定义，但字典的键必须和函数参数名 ____；另外不要用 ____ / runtime 当参数名
-
-> [!TIP]- 填空答案（做完再点开）
-> 1. 外部世界 / 改变世界 / Tools　2. 输入 / 输出 / 函数调用（Function Calling）/ 直接调用 / 模型绑定调用　3. 应用（你的代码）/ 最终回复 / 请求 / 执行 / 回传　4. bind_tools / convert_to_openai_tool / BaseTool / Pydantic　5. integer / array / properties / required　6. Google / Returns / 类型注解 / 空对象（`{}`）/ ValueError（Arg xxx in docstring not found in function signature）　7. default / required / 消失 / 默认值　8. docstring / ValueError / description / args / `@tool("查天气")` / 函数名　9. description 参数 / parse_docstring=True / ValueError（Found invalid Google-Style docstring）　10. BaseModel / 位置 / Field / Literal / enum / ValidationError / Schema / 严格一致 / config
+1. 工具是赋予大模型与**外部世界**交互能力的关键组件，让模型从"认识世界"走向"**改变世界**"；它也是智能体的核心要素之一（公式：Agent = LLM + Planning + **Tools** + Memory + Action）
+2. 在 LangChain 里，工具就是"明确定义了**输入**和**输出**的可调用函数"，所以工具调用也叫**函数调用（Function Calling）**；两种调用方式是**直接调用**（测试、单元验证用）与**模型绑定调用**（由模型决定何时调、传什么参数）
+3. 完整流程：用户提问 → 模型判断要不要调、调哪个、参数是什么 → **应用（你的代码）**执行工具 → 把结果回传给模型 → 模型生成**最终回复**；**模型自己不执行工具**，这个"**请求** → **执行** → **回传**"的循环就是智能体的最小骨架
+4. 定义方式一不用装饰器：把普通函数直接传给 `bind_tools`，底层会用 `convert_to_openai_tool` 生成"工具说明书"；有装饰器的函数本身就是 `BaseTool` 对象（直接格式化），普通函数则基于函数定义和 docstring 生成 **Pydantic** 模式再转换——这就是"普通函数也能当工具"的机制
+5. 工具描述是 `type` + `function` 两层；`parameters` 里的三个关键字段：`type` 定义当前节点的数据类型（常见 string、number、**integer**、boolean、object、**array**、null）、`properties` 定义对象里可以有哪些属性、`required` 在 `type` 为 `"object"` 时列出必须存在的属性
+6. docstring 必须遵循 **Google** 风格（用 Args:、**Returns**、Raises: 这类关键字）；参数的类型来自函数的**类型注解**；把它删掉后 `properties` 里只剩一个**空对象（`{}`）**；若 Args: 里写了签名里没有的参数，会抛 **ValueError**（Arg xxx in docstring not found in function signature）
+7. 参数默认值会变成 schema 里的 **default** 字段，并且不会出现在 **required** 列表里；只有一个参数且有默认值时，`required` 整段**消失**；想让模型少填参数，就在签名里给**默认值**
+8. 用装饰器定义工具时，描述来自 **docstring**（没有它会直接报 **ValueError**）；工具对象的三个属性是 name、**description**、**args**；想改名字用 `@tool("查天气")`，但开发习惯是工具名与**函数名**保持一致，便于排查
+9. 描述有三种给法：只给 docstring、用 **description** 参数覆盖 docstring（优先级更高，还能拼动态信息）、加 `parse_docstring=True` 让 docstring 里的参数说明"各就各位"（格式不合法会抛 **ValueError**（Found invalid Google-Style docstring）；而不用装饰器时不合法的 docstring 只会被当成普通文本，不报错）
+10. 参数结构用 Pydantic 定义：`BaseModel` 声明字段结构（子类初始化不接收**位置**参数，字段值必须写字段名）、`Field` 设置默认值与描述（每个字段的描述是"给模型看的文档"）、`Literal` 限定只能取几个固定值（schema 里变成 **enum** 数组，传错值在本地就抛 **ValidationError**）；也可以用 JSON **Schema** 字典定义，但字典的键必须和函数参数名**严格一致**；另外不要用 **config** / runtime 当参数名
 
 ### 二、裸写题
 

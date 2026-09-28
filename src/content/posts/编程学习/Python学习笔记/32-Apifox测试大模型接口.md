@@ -108,19 +108,16 @@ curl https://api.deepseek.com/chat/completions \
 
 ## 练习题
 
-### 一、回忆填空（写完再展开对答案）
+### 一、知识回顾（读完直接做下面的实践题）
 
-1. 调用 DeepSeek 的三要素：____ 地址、____（json 格式）、请求头
-2. 请求方式用 ____，url 是 `https://api.deepseek.com/____`
-3. 请求头 `Content-Type` 的值是 ____
-4. 请求头 `Authorization` 的值格式是 `Bearer ____`
-5. 请求体三个常用参数：`model`、____、____
-6. messages 里三种 role：____（设定身份和行为准则）、____（用户提问）、____（AI 回复）
-7. `stream` 为 `true` 表示 ____ 输出
-8. Apifox 的作用是 ____，写代码之前先用它调通接口，可以把"接口问题"和"____问题"分开
-
-> [!TIP]- 填空答案（做完再点开）
-> 1. url、请求体　2. POST、chat/completions　3. `application/json`　4. API Key（前面有 Bearer 和一个空格）　5. `messages`、`stream`　6. system、user、assistant　7. 流式　8. API 接口测试 / 代码
+1. 调用 DeepSeek 的三要素：**url** 地址、**请求体**（json 格式）、请求头
+2. 请求方式用 **POST**，url 是 `https://api.deepseek.com/chat/completions`
+3. 请求头 `Content-Type` 的值是 `application/json`
+4. 请求头 `Authorization` 的值格式是 `Bearer <API Key>`（Bearer 后面有一个空格）
+5. 请求体三个常用参数：`model`、`messages`、`stream`
+6. messages 里三种 role：`system`（设定身份和行为准则）、`user`（用户提问）、`assistant`（AI 回复）
+7. `stream` 为 `true` 表示**流式**输出
+8. Apifox 的作用是 **API 接口测试**，写代码之前先用它调通接口，可以把"接口问题"和"**代码**问题"分开
 
 ### 二、动手写（写在笔记本上或直接发我）
 

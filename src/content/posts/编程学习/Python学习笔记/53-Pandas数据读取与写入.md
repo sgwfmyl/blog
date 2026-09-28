@@ -61,17 +61,14 @@ df.to_csv('data/sales_01.csv', index=False)
 
 ## 练习题
 
-### 一、回忆填空（写完再展开对答案）
+### 一、知识回顾（读完直接做下面的实践题）
 
-1. 读取数据的方法是 `read_xxx`，写入是 `____`
-2. 读 CSV：`pd.____('data/sales.csv')`；只读需要的列用参数 ____
-3. 指定某列当行索引用参数 ____；只读前 n 行用参数 ____
-4. 新增一列"销售金额"：`df['销售金额'] = df['销售数量'] ____ df['单价']`
-5. 写出 CSV：`df.____('data/sales_01.csv', index=____)`
-6. `index=False` 的作用是 ____
-
-> [!TIP]- 填空答案（做完再点开）
-> 1. `to_xxx`（如 `to_csv`）　2. read_csv / `usecols`　3. `index_col` / `nrows`　4. `*`　5. to_csv / False　6. 不把索引列写进文件（否则会多出一列行号）
+1. 读取数据的方法是 `read_xxx`，写入是 `to_xxx`（如 `to_csv`）
+2. 读 CSV：`pd.read_csv('data/sales.csv')`；只读需要的列用参数 `usecols`
+3. 指定某列当行索引用参数 `index_col`；只读前 n 行用参数 `nrows`
+4. 新增一列"销售金额"：`df['销售金额'] = df['销售数量'] * df['单价']`
+5. 写出 CSV：`df.to_csv('data/sales_01.csv', index=False)`
+6. `index=False` 的作用是**不把索引列写进文件**（否则会多出一列行号）
 
 ### 二、裸写题
 

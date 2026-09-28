@@ -88,20 +88,17 @@ uvicorn main:app --reload
 
 ## 练习题
 
-### 一、回忆填空（写完再展开对答案）
+### 一、知识回顾（读完直接做下面的实践题）
 
-1. Web 全称 ____，是能通过 ____ 访问到的网站
-2. 网站三部分：____ 负责界面展示、____ 负责业务逻辑、____ 负责数据存储管理
-3. 前端网页由 ____（结构）、____（样式）、____（行为）组成
-4. Python 中开发服务端可以用 ____、____ 或 ____
-5. FastAPI 是____、____、高性能的 Web 框架，基于 Python 的 ____ 提示构建 API
-6. API 接口就是对外提供的 ____，供别人调用
-7. FastAPI 四步：导入 → 创建 ____ 实例 → 创建 ____ 函数 → 运行服务
-8. 两个启动命令：`fastapi ____ "main.py"` 或 `uvicorn ____:app --reload`
-9. uvicorn 是专门为 FastAPI/Starlette 设计的 ____ 服务器
-
-> [!TIP]- 填空答案（做完再点开）
-> 1. 万维网（World Wide Web）/ 浏览器　2. 前端程序 / 服务端程序 / 数据库　3. HTML / CSS / JavaScript　4. Django、Flask、FastAPI　5. 现代、快速 / 类型　6. 功能入口　7. FastAPI / 路径操作　8. dev / main　9. 高性能
+1. Web 全称**万维网（World Wide Web）**，是能通过**浏览器**访问到的网站
+2. 网站三部分：**前端程序**负责界面展示、**服务端程序**负责业务逻辑、**数据库**负责数据存储管理
+3. 前端网页由 **HTML**（结构）、**CSS**（样式）、**JavaScript**（行为）组成
+4. Python 中开发服务端可以用 **Django**、**Flask** 或 **FastAPI**
+5. FastAPI 是**现代**、**快速**、高性能的 Web 框架，基于 Python 的**类型**提示构建 API
+6. API 接口就是对外提供的**功能入口**，供别人调用
+7. FastAPI 四步：导入 → 创建 **FastAPI** 实例 → 创建**路径操作**函数 → 运行服务
+8. 两个启动命令：`fastapi dev "main.py"` 或 `uvicorn main:app --reload`
+9. uvicorn 是专门为 FastAPI/Starlette 设计的**高性能**服务器
 
 ### 二、裸写题
 

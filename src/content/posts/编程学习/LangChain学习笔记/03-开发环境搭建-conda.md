@@ -173,21 +173,18 @@ print(langchain.__version__)
 
 ## 练习题
 
-### 一、回忆填空（写完再展开对答案）
+### 一、知识回顾（读完直接做下面的实践题）
 
-1. LangChain 1.2 要求 Python >= ____，课程使用的版本是 ____；安装依赖包时必须显式指明 ____，否则容易出现不兼容；相比全局环境，每个虚拟环境都有自己独立的 ____、____ 和第三方依赖包，不和其它项目产生干扰
-2. 三种方案里，能管理 Python 解释器的是 ____ 和 ____；能管理 CUDA、编译器、系统库这类**非 Python 依赖**的只有 ____；venv 只能用 ____
-3. uv 的六个适用项目：FastAPI 项目、____ 项目、脚本工具、Web 后端、普通 AI Agent 应用、____；判断该用 conda 还是 uv 的标准是：项目里有没有需要 ____ 才能装的东西
-4. conda 能管的非 Python 依赖包括 ____、编译器、系统库、数据库驱动、科学计算底层库等；因此在 ____、深度学习、AI 工程、科学计算等场景中更稳妥
-5. conda 常用命令：创建环境 `conda ____`、查看已有环境 `conda ____ list`、初始化 `conda ____`（执行完要重启命令行窗口）、激活 `conda ____ langchain1.2`、退出 `conda ____`、删除环境 `conda remove --name langchain1.2 --all`
-6. 讲义演示 `python -V` 的输出时写成 `Python ____`，和它自己创建环境时指定的 `python=3.13.12` 对不上，这是 ____
-7. 用 conda 装包：指定版本 `conda install langchain==____`；指定频道用参数 `-c`（即 ____ 的缩写），课程提到更新更快的常用频道是 ____；更新用 `conda ____`、卸载用 `conda ____`、查看已装包用 `conda ____`
-8. 用 pip 装包：指定版本 `pip install langchain==____`；国内镜像加速要加参数 `____`（如清华源 ____）；升级用 `pip install ____`、卸载用 `pip ____`、查看已装包用 `pip ____`
-9. conda 与 pip 的区别：conda 支持 Python 包 + ____，依赖检查更 ____；建议优先用 ____，conda 没有的再用 ____；判断某个包是从哪来的，要看 ____ 输出的 Channel 列——pip 装的显示 ____
-10. PyCharm 课程使用的版本是 ____；它只是写代码的地方，真正干活的是 ____，所以新建工程时解释器要指向刚建好的 ____；验证环境是否装好，就写脚本打印 langchain 的 ____
-
-> [!TIP]- 填空答案（做完再点开）
-> 1. 3.10 / 3.13.12 / 版本；Python 解释器 / pip 命令　2. conda / uv；conda；已有的 Python 解释器（不能原生安装）　3. LangChain / RAG 应用层代码；conda（有没有需要 conda 才能装的东西）　4. CUDA / 数据科学　5. `create --name langchain1.2 python=3.13.12` / env / init / activate / deactivate　6. 3.12.13 / 数字顺序写反的笔误　7. 1.2.12 / `--channel` / conda-forge / update / uninstall / list　8. 1.2.12 / `-i` / `https://pypi.tuna.tsinghua.edu.cn/simple` / `--upgrade`（或 `-U`）/ uninstall / list　9. 非 Python 包 / 严格 / conda install / pip install / `conda list` / pypi　10. 2025.3 / conda 环境（Anaconda 环境）/ langchain1.2 / `__version__`
+1. LangChain 1.2 要求 Python >= **3.10**，课程使用的版本是 **3.13.12**；安装依赖包时必须显式指明**版本**，否则容易出现不兼容；相比全局环境，每个虚拟环境都有自己独立的 **Python 解释器**、**pip 命令**和第三方依赖包，不和其它项目产生干扰
+2. 三种方案里，能管理 Python 解释器的是 **conda** 和 **uv**；能管理 CUDA、编译器、系统库这类**非 Python 依赖**的只有 **conda**；venv 只能用**已有的 Python 解释器**（不能原生安装）
+3. uv 的六个适用项目：FastAPI 项目、**LangChain** 项目、脚本工具、Web 后端、普通 AI Agent 应用、**RAG 应用层代码**；判断该用 conda 还是 uv 的标准是：项目里有没有需要 **conda** 才能装的东西
+4. conda 能管的非 Python 依赖包括 **CUDA**、编译器、系统库、数据库驱动、科学计算底层库等；因此在**数据科学**、深度学习、AI 工程、科学计算等场景中更稳妥
+5. conda 常用命令：创建环境 `conda create --name langchain1.2 python=3.13.12`、查看已有环境 `conda env list`、初始化 `conda init`（执行完要重启命令行窗口）、激活 `conda activate langchain1.2`、退出 `conda deactivate`、删除环境 `conda remove --name langchain1.2 --all`
+6. 讲义演示 `python -V` 的输出时写成 `Python 3.12.13`，和它自己创建环境时指定的 `python=3.13.12` 对不上，这是**数字顺序写反的笔误**
+7. 用 conda 装包：指定版本 `conda install langchain==1.2.12`；指定频道用参数 `-c`（即 `--channel` 的缩写），课程提到更新更快的常用频道是 **conda-forge**；更新用 `conda update`、卸载用 `conda uninstall`、查看已装包用 `conda list`
+8. 用 pip 装包：指定版本 `pip install langchain==1.2.12`；国内镜像加速要加参数 `-i`（如清华源 `https://pypi.tuna.tsinghua.edu.cn/simple`）；升级用 `pip install --upgrade`（或 `-U`）、卸载用 `pip uninstall`、查看已装包用 `pip list`
+9. conda 与 pip 的区别：conda 支持 Python 包 + **非 Python 包**，依赖检查更**严格**；建议优先用 `conda install`，conda 没有的再用 `pip install`；判断某个包是从哪来的，要看 `conda list` 输出的 Channel 列——pip 装的显示 **pypi**
+10. PyCharm 课程使用的版本是 **2025.3**；它只是写代码的地方，真正干活的是 **conda 环境（Anaconda 环境）**，所以新建工程时解释器要指向刚建好的 **langchain1.2**；验证环境是否装好，就写脚本打印 langchain 的 `__version__`
 
 ### 二、裸写题（动手实操）
 

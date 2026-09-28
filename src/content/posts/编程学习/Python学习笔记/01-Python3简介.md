@@ -404,28 +404,17 @@ print("Runoob")
 
 ## 练习题
 
-### 一、回忆填空（写完再展开对答案）
+### 一、知识回顾（读完直接做下面的实践题）
 
-1. Python 是一种高层次的、结合了 ____、____、____ 和 ____ 的脚本语言。
-2. Python 的四个定位：____ 型语言（开发过程中没有编译环节）、____ 式语言（在 `>>>` 提示符后直接执行代码）、____ 语言（支持把代码封装在对象里）、____ 的语言（从文字处理到浏览器再到游戏都能做）。
-3. Python 官网是 ____（域名）；Windows 安装时务必勾选 ____，否则命令行不认 `python` 命令；验证版本用 ____ 命令，验证包管理工具用 ____ 命令。
-4. Linux 源码安装的三步是 `./____` → `make` → `make ____`；Ubuntu/Debian 用 ____ 安装、CentOS 8/RHEL 8 用 ____ 安装；多数 Linux 发行版 ____（自带 / 不带）Python3。
-5. 环境变量：____ 存可执行文件的搜索路径；____ 给 Python 找第三方库和自定义模块；____ 指定 Python 的安装根目录；____ 指定交互式解释器启动时自动执行的脚本；____ 让导入模块时忽略大小写（Windows 专属）；____ 禁止生成 `.pyc` 字节码缓存文件。
-6. 运行 Python 的三种方式：____ 解释器、____ 脚本（`python script.py`）、集成开发环境 ____；PyCharm 的功能包括调试、语法高亮、____、代码跳转、____、____、单元测试、版本控制等。
-7. 命令行参数：`-____ cmd` 直接执行一段代码字符串；`-____ module` 以模块方式运行；`-____` 执行完脚本后自动进入交互式环境；`-____` 输出当前版本号；`-____` 查看所有参数的完整帮助；`-____` 禁用输出缓冲、实现实时打印。
-8. 常用工具：面向数据科学的集成发行版 ____（内置 ____ 做环境与包管理，还自带 ____、____、____ 等库）；基于 Rust 构建的高速工具链 ____（可替代 pip、virtualenv）；基于 Web 的交互式编程环境 ____（文件是 JSON 格式，由多个 ____ 组成，支持 Markdown 与 LaTeX 公式）。
-9. VSCode 里写 Python 需要先安装 ____ 扩展；新建 `.py` 文件后可以右击选择"在 ____ 中运行 Python 文件"，也可以点击右上角的 ____ 图标运行；如果一直显示"在连接 Python 内核"，说明扩展 ____（已装好 / 没装好）。
-
-> [!TIP]- 填空答案（做完再点开）
-> 1. 解释性、编译性、互动性、面向对象
-> 2. 解释、交互、面向对象、初学者
-> 3. `python.org`、Add Python to PATH、`python3 --version`（Windows 也可用 `python --version`）、`pip3 --version`（Windows 也可用 `pip --version`）
-> 4. configure、install、apt（`sudo apt install python3 python3-pip -y`）、dnf（`sudo dnf install python3 python3-pip -y`）、自带
-> 5. PATH、PYTHONPATH、PYTHONHOME、PYTHONSTARTUP、PYTHONCASEOK、PYTHONDONTWRITEBYTECODE
-> 6. 交互式、命令行、PyCharm；Project 管理、智能提示、自动完成
-> 7. `-c`、`-m`、`-i`、`-V`（`--version`）、`-h`（`--help`）、`-u`
-> 8. Anaconda、conda、NumPy、Pandas、Matplotlib、uv、Jupyter Notebook、Cell
-> 9. Python、终端、绿色运行（▶）、没装好
+1. Python 是一种高层次的、结合了**解释性**、**编译性**、**互动性**和**面向对象**的脚本语言。
+2. Python 的四个定位：**解释**型语言（开发过程中没有编译环节）、**交互**式语言（在 `>>>` 提示符后直接执行代码）、**面向对象**语言（支持把代码封装在对象里）、**初学者**的语言（从文字处理到浏览器再到游戏都能做）。
+3. Python 官网是 `python.org`（域名）；Windows 安装时务必勾选 **Add Python to PATH**，否则命令行不认 `python` 命令；验证版本用 `python3 --version` 命令（Windows 也可用 `python --version`），验证包管理工具用 `pip3 --version` 命令（Windows 也可用 `pip --version`）。
+4. Linux 源码安装的三步是 `./configure` → `make` → `make install`；Ubuntu/Debian 用 **apt** 安装（`sudo apt install python3 python3-pip -y`）、CentOS 8/RHEL 8 用 **dnf** 安装（`sudo dnf install python3 python3-pip -y`）；多数 Linux 发行版**自带** Python3。
+5. 环境变量：`PATH` 存可执行文件的搜索路径；`PYTHONPATH` 给 Python 找第三方库和自定义模块；`PYTHONHOME` 指定 Python 的安装根目录；`PYTHONSTARTUP` 指定交互式解释器启动时自动执行的脚本；`PYTHONCASEOK` 让导入模块时忽略大小写（Windows 专属）；`PYTHONDONTWRITEBYTECODE` 禁止生成 `.pyc` 字节码缓存文件。
+6. 运行 Python 的三种方式：**交互式**解释器、**命令行**脚本（`python script.py`）、集成开发环境 **PyCharm**；PyCharm 的功能包括调试、语法高亮、**Project 管理**、代码跳转、**智能提示**、**自动完成**、单元测试、版本控制等。
+7. 命令行参数：`-c cmd` 直接执行一段代码字符串；`-m module` 以模块方式运行；`-i` 执行完脚本后自动进入交互式环境；`-V`（`--version`）输出当前版本号；`-h`（`--help`）查看所有参数的完整帮助；`-u` 禁用输出缓冲、实现实时打印。
+8. 常用工具：面向数据科学的集成发行版 **Anaconda**（内置 **conda** 做环境与包管理，还自带 **NumPy**、**Pandas**、**Matplotlib** 等库）；基于 Rust 构建的高速工具链 **uv**（可替代 pip、virtualenv）；基于 Web 的交互式编程环境 **Jupyter Notebook**（文件是 JSON 格式，由多个 **Cell** 组成，支持 Markdown 与 LaTeX 公式）。
+9. VSCode 里写 Python 需要先安装 **Python** 扩展；新建 `.py` 文件后可以右击选择"在**终端**中运行 Python 文件"，也可以点击右上角的**绿色运行（▶）**图标运行；如果一直显示"在连接 Python 内核"，说明扩展**没装好**。
 
 ### 二、概念自测（口头答得出来即可）
 

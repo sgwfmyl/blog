@@ -556,22 +556,18 @@ Returning structured response: ContactInfo(name='小明', email='songhk@atguigu.
 
 ## 练习题
 
-### 一、回忆填空（写完再展开对答案）
+### 一、知识回顾（读完直接做下面的实践题）
 
-1. 模型的结构化输出绑在____上（方法名 `with_structured_output`），Agent 的结构化输出写在 `create_agent` 的 `____` 参数里；解析时机也不同——模型是____都解析，Agent 只在它决定"____"、输出最终答案时才解析，所以结构化结果总是排在消息链的____；适用场景也不同：模型适合____的任务（提取字段、翻译、分类），Agent 适合____的任务（查文档后汇总报表）
-2. 四种策略：____只走模型厂商的原生能力（请求体里多出一个 `response_format` 字段、内容是 `json_schema`，而且 `tools` 是空的），所以**只适用于支持原生结构化输出的模型**（OpenAI / Claude / Grok 等）；____把 Schema 当成一个"工具"传给模型（官方推荐、兼容性最好，适用于任何支持工具调用的模型）；直接传类型会被自动包装成 ____；`None`（默认）表示____。**建议**：新代码一律____写策略
-3. 结构化结果存在 Agent 状态的 `____` 键里，取之前先写 `if "____" in result`，避免____；ToolStrategy 还会在消息列表末尾追加一条____的 ToolMessage（实际**没有执行任何工具**），它的 `name` 就是____，返回字典的两个键是 `messages` 和 `structured_response`
-4. ToolStrategy 三个参数：`____`（必需，支持 Pydantic、TypedDict、JSON Schema 字典、`@dataclass` 四类，还支持____——此时最终只会转换成一种结构）、`____`（自定义伪消息内容，让对话更自然 / 少占 token，但**不影响**结构化结果）、`____`（校验失败怎么办，默认 `True`）
-5. `handle_errors` 的五种取值：`True` 用____模板提示模型重试；`False` 关闭重试、异常直接____；字符串则把这句话当____回给模型；传异常类型只重试____的异常；传 callable 用自定义函数处理。最典型的错误是"____"错误，两个常见异常是 `MultipleStructuredOutputsError` 和____
-6. TypedDict 当 Schema 的三条要点：字段写成 `____` 格式；可选字段用____包装；**不支持____校验**（写错只会悄悄出错）
-7. 手写 JSON Schema 字典的标准关键字：`title`（结构名，会当作____的名字）、`type`、`description`、`properties`（字段字典）、____（枚举可选值）、`default`、____（必须输出的字段名列表）；用这种写法拿到的 `structured_response` 是普通____，不是 Pydantic 对象
-8. `@dataclass` 写法：字段描述用的是____的 `Field`（课程代码片段里缺这行 import，单独复制会 `NameError`）；`Field(...)` 当默认值时，字段的 `default` 是____对象；不写 `Field` 也能跑通，只是字段____
-9. 客户分析案例的三个技巧：枚举字段用____把取值锁死、所有字段都给____兜底、`send_email: bool` 充当"邮件发没发"的____；系统提示词的最后一条必须写"____"，否则模型会反复查一个不存在的客户。另外，结构化输出的要求要写在系统提示词的____，写在前面可能让部分工具____
-10. 两个模型供应商：供应商一用 `init_chat_model(..., model_provider="____")` 走 OpenAI 兼容；供应商二用第三方包 `____` 的 `ChatOpenRouter`，模型名要写成"____"的格式。源码里 `ResponseFormat` 把三种策略写成____关系，`AutoStrategy(Schema)` 与"____"等价
-
-> [!TIP]- 填空答案（做完再点开）
-> 1. 大模型（模型对象） / `response_format` / 每次模型调用 / 任务结束 / 最后 / 单次、确定性的任务（提取字段、翻译、分类） / 多步、复杂推理的任务（查文档后汇总报表）　2. ProviderStrategy / ToolStrategy / AutoStrategy / 不做结构化输出（自然语言回答） / 显式　3. `structured_response` / `structured_response` / KeyError / 伪（假的） / Schema 类名（如 `ContactInfo`）　4. `schema` / 联合类型 `Union[...]` / `tool_message_content` / `handle_errors`　5. 内置错误消息 / 抛出（中断程序） / 错误消息 / 指定类型 / 多结构化输出 / `StructuredOutputValidationError`
-> 6. `Annotated[类型, 默认值, "描述"]` / `Optional` / 运行时　7. "虚拟工具" / `enum` / `required` / 字典（`dict`）　8. pydantic / `FieldInfo` / 没有 description（模型少了一部分信息）　9. `Literal[...]` / 默认值 / 状态标记 / 查不到客户就返回空对象（不发送感谢邮件） / 最后 / 不再被调用　10. openai / `langchain-openrouter` / 供应商/模型名 / 平级（`|` 联合） / 直接传类型（`response_format=Schema`）
+1. 模型的结构化输出绑在**大模型（模型对象）**上（方法名 `with_structured_output`），Agent 的结构化输出写在 `create_agent` 的 `response_format` 参数里；解析时机也不同——模型是**每次模型调用**都解析，Agent 只在它决定"**任务结束**"、输出最终答案时才解析，所以结构化结果总是排在消息链的**最后**；适用场景也不同：模型适合**单次、确定性的任务（提取字段、翻译、分类）**，Agent 适合**多步、复杂推理的任务（查文档后汇总报表）**
+2. 四种策略：**ProviderStrategy** 只走模型厂商的原生能力（请求体里多出一个 `response_format` 字段、内容是 `json_schema`，而且 `tools` 是空的），所以**只适用于支持原生结构化输出的模型**（OpenAI / Claude / Grok 等）；**ToolStrategy** 把 Schema 当成一个"工具"传给模型（官方推荐、兼容性最好，适用于任何支持工具调用的模型）；直接传类型会被自动包装成 **AutoStrategy**；`None`（默认）表示**不做结构化输出（自然语言回答）**。**建议**：新代码一律**显式**写策略
+3. 结构化结果存在 Agent 状态的 `structured_response` 键里，取之前先写 `if "structured_response" in result`，避免 **KeyError**；ToolStrategy 还会在消息列表末尾追加一条**伪（假的）**的 ToolMessage（实际**没有执行任何工具**），它的 `name` 就是 **Schema 类名（如 `ContactInfo`）**，返回字典的两个键是 `messages` 和 `structured_response`
+4. ToolStrategy 三个参数：`schema`（必需，支持 Pydantic、TypedDict、JSON Schema 字典、`@dataclass` 四类，还支持**联合类型 `Union[...]`**——此时最终只会转换成一种结构）、`tool_message_content`（自定义伪消息内容，让对话更自然 / 少占 token，但**不影响**结构化结果）、`handle_errors`（校验失败怎么办，默认 `True`）
+5. `handle_errors` 的五种取值：`True` 用**内置错误消息**模板提示模型重试；`False` 关闭重试、异常直接**抛出（中断程序）**；字符串则把这句话当**错误消息**回给模型；传异常类型只重试**指定类型**的异常；传 callable 用自定义函数处理。最典型的错误是"**多结构化输出**"错误，两个常见异常是 `MultipleStructuredOutputsError` 和 `StructuredOutputValidationError`
+6. TypedDict 当 Schema 的三条要点：字段写成 `Annotated[类型, 默认值, "描述"]` 格式；可选字段用 `Optional` 包装；**不支持运行时校验**（写错只会悄悄出错）
+7. 手写 JSON Schema 字典的标准关键字：`title`（结构名，会当作"**虚拟工具**"的名字）、`type`、`description`、`properties`（字段字典）、`enum`（枚举可选值）、`default`、`required`（必须输出的字段名列表）；用这种写法拿到的 `structured_response` 是普通**字典（`dict`）**，不是 Pydantic 对象
+8. `@dataclass` 写法：字段描述用的是 **pydantic** 的 `Field`（课程代码片段里缺这行 import，单独复制会 `NameError`）；`Field(...)` 当默认值时，字段的 `default` 是 **`FieldInfo`** 对象；不写 `Field` 也能跑通，只是字段**没有 description（模型少了一部分信息）**
+9. 客户分析案例的三个技巧：枚举字段用 `Literal[...]` 把取值锁死、所有字段都给**默认值**兜底、`send_email: bool` 充当"邮件发没发"的**状态标记**；系统提示词的最后一条必须写"**查不到客户就返回空对象（不发送感谢邮件）**"，否则模型会反复查一个不存在的客户。另外，结构化输出的要求要写在系统提示词的**最后**，写在前面可能让部分工具**不再被调用**
+10. 两个模型供应商：供应商一用 `init_chat_model(..., model_provider="openai")` 走 OpenAI 兼容；供应商二用第三方包 `langchain-openrouter` 的 `ChatOpenRouter`，模型名要写成"**供应商/模型名**"的格式。源码里 `ResponseFormat` 把三种策略写成**平级（`|` 联合）**关系，`AutoStrategy(Schema)` 与"**直接传类型（`response_format=Schema`）**"等价
 
 ### 二、裸写题
 

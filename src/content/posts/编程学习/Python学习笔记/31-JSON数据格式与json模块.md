@@ -130,19 +130,16 @@ with open("resources/user.json", "r", encoding="utf-8") as f:
 
 ## 练习题
 
-### 一、回忆填空（写完再展开对答案）
+### 一、知识回顾（读完直接做下面的实践题）
 
-1. JSON 里所有的 key 都必须用 ____ 引起来
-2. 把 Python 对象写进文件：`json.____(obj, f)`
-3. 从文件读取并变成 Python 对象：`json.____(f)`
-4. 另外两个操作字符串（不落文件）的方法：`json.____()` 和 `json.____()`
-5. 写中文时必须加 `ensure_ascii=____`，否则中文会变成 ____ 形式
-6. `indent=2` 的作用是给输出的 JSON 加 ____
-7. 对应关系：JSON 对象 ↔ Python ____；JSON 列表 ↔ Python ____；`true/false` ↔ ____；`null` ↔ ____
-8. JSON 语法比 Python 严格：不支持 ____ 引号、不支持 ____、最后不能有多余的逗号
-
-> [!TIP]- 填空答案（做完再点开）
-> 1. 双引号（`""`）　2. `dump`　3. `load`　4. `dumps`、`loads`（带 s 的操作字符串）　5. `False`、`\uXXXX` 转义　6. 缩进（格式化）　7. 字典 dict、列表 list、`True/False`、`None`　8. 单引号、注释
+1. JSON 里所有的 key 都必须用**双引号**引起来
+2. 把 Python 对象写进文件：`json.dump(obj, f)`
+3. 从文件读取并变成 Python 对象：`json.load(f)`
+4. 另外两个操作字符串（不落文件）的方法：`json.dumps()` 和 `json.loads()`（带 s 的操作字符串）
+5. 写中文时必须加 `ensure_ascii=False`，否则中文会变成 `\uXXXX` 转义形式
+6. `indent=2` 的作用是给输出的 JSON 加**缩进**（格式化）
+7. 对应关系：JSON 对象 ↔ Python **字典 dict**；JSON 列表 ↔ Python **列表 list**；`true/false` ↔ `True` / `False`；`null` ↔ `None`
+8. JSON 语法比 Python 严格：不支持**单引号**、不支持**注释**、最后不能有多余的逗号
 
 ### 二、裸写题
 

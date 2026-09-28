@@ -126,18 +126,15 @@ s4 = df1['语文']                                                  # 从 DataFr
 
 ## 练习题
 
-### 一、回忆填空（写完再展开对答案）
+### 一、知识回顾（读完直接做下面的实践题）
 
-1. Pandas 是____分析工具集，底层基于 ____ 构建
-2. 两个核心结构：____ 像一张 Excel 表格；____ 像表格中的一列
-3. 安装命令：`____ install pandas`
-4. DataFrame 取列名用 `df.____`、取维度用 `df.____`、取单元格数量用 `df.____`、取每列类型用 `df.____`
-5. Series 取数据类型用 `s.____`（单数），DataFrame 用 `df.____`（复数）
-6. `df['语文'].`____`()` 求平均分；`max()` 求最大值、`min()` 求最小值
-7. 构造 DataFrame 时用参数 ____ 指定列名，用参数 ____ 指定行索引
-
-> [!TIP]- 填空答案（做完再点开）
-> 1. 结构化数据 / Numpy　2. DataFrame / Series　3. pip　4. columns / shape / size / dtypes　5. dtype / dtypes　6. mean　7. columns / index
+1. Pandas 是**结构化数据**分析工具集，底层基于 **Numpy** 构建
+2. 两个核心结构：**DataFrame** 像一张 Excel 表格；**Series** 像表格中的一列
+3. 安装命令：`pip install pandas`
+4. DataFrame 取列名用 `df.columns`、取维度用 `df.shape`、取单元格数量用 `df.size`、取每列类型用 `df.dtypes`
+5. Series 取数据类型用 `s.dtype`（单数），DataFrame 用 `df.dtypes`（复数）
+6. `df['语文'].mean()` 求平均分；`max()` 求最大值、`min()` 求最小值
+7. 构造 DataFrame 时用参数 `columns` 指定列名，用参数 `index` 指定行索引
 
 ### 二、裸写题
 

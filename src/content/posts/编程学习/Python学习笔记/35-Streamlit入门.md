@@ -173,20 +173,17 @@ Streamlit 的交互模型是：**用户每做一次交互（点按钮、输入�
 
 ## 练习题
 
-### 一、回忆填空（写完再展开对答案）
+### 一、知识回顾（读完直接做下面的实践题）
 
-1. 安装：`pip install ____`；运行：`streamlit ____ xxx.py`
-2. 为什么不能像普通脚本那样用 `python xxx.py` 启动？因为它是 ____ 应用，要由 streamlit 起服务
-3. 页面配置：`st.____(page_title=..., page_icon=..., layout="____", initial_sidebar_state="expanded")`
-4. 标题三件套：`st.title()` / `st.header()` / `st.____()`
-5. 文本输出：`st.write()`（支持 Markdown）、`st.text()`（纯文本）、`st.____()`（分隔线）
-6. 媒体组件：`st.image()` / `st.____()`（音频）/ `st.____()`（视频）/ `st.____()`（Logo）
-7. 表格：`st.____(数据字典)`
-8. 输入组件：____（单行文本）、____（多行文本）、____（密码框，加 `type="password"`）、____（单选框）
-9. 关键机制：用户每做一次交互，整个脚本会从头 ____ 一遍
-
-> [!TIP]- 填空答案（做完再点开）
-> 1. streamlit、run　2. Web　3. set_page_config / wide　4. subheader　5. divider　6. audio、video、logo　7. table　8. text_input、text_area、text_input、radio　9. 重新执行
+1. 安装：`pip install streamlit`；运行：`streamlit run xxx.py`
+2. 为什么不能像普通脚本那样用 `python xxx.py` 启动？因为它是 **Web** 应用，要由 streamlit 起服务
+3. 页面配置：`st.set_page_config(page_title=..., page_icon=..., layout="wide", initial_sidebar_state="expanded")`
+4. 标题三件套：`st.title()` / `st.header()` / `st.subheader()`
+5. 文本输出：`st.write()`（支持 Markdown）、`st.text()`（纯文本）、`st.divider()`（分隔线）
+6. 媒体组件：`st.image()` / `st.audio()`（音频）/ `st.video()`（视频）/ `st.logo()`（Logo）
+7. 表格：`st.table(数据字典)`
+8. 输入组件：`st.text_input()`（单行文本）、`st.text_area()`（多行文本）、`st.text_input()`（密码框，加 `type="password"`）、`st.radio()`（单选框）
+9. 关键机制：用户每做一次交互，整个脚本会从头**重新执行**一遍
 
 ### 二、裸写题
 
