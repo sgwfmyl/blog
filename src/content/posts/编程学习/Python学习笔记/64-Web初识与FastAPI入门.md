@@ -2,10 +2,10 @@
 title: Web初识与FastAPI入门
 published: 2026-09-20
 description: Web 网站的三个组成部分与 FastAPI 的四步入门用法、两种启动方式，以及 uvicorn 是什么
-image: https://img.tsh520.cn/file/blog/post-covers/python-64-fastapi-intro.webp
 tags:
   - Python
   - Web开发
+image: https://img.tsh520.cn/file/blog/post-covers/python-64-fastapi-intro.webp
 order: 64
 ---
 
@@ -110,57 +110,67 @@ uvicorn main:app --reload
   > **二级 · 方法**：`app = FastAPI()` / `@app.get("/")`
   > **三级 · 骨架**：函数返回字典或列表，FastAPI 会自动转成 JSON
 
+  > [!TIP]- 参考答案（做完再点开）
+  > ```python
+  > # 2-1
+  > from fastapi import FastAPI
+  >
+  > app = FastAPI(title="入门练习")
+  >
+  > USERS = [
+  >     {"id": 1, "name": "张三"},
+  >     {"id": 2, "name": "李四"},
+  >     {"id": 3, "name": "王五"},
+  > ]
+  >
+  > @app.get("/")
+  > def root():
+  >     return {"message": "Hello World"}
+  >
+  > @app.get("/users")
+  > def get_users():
+  >     return USERS
+  > ```
+
 - [ ] **2-2 带路径参数的接口**
   再加一个 `/users/{user_id}` 接口：根据路径里的编号返回对应用户（编号不存在就返回提示）。
 
-  > [!TIP]- 提示
+  > [!TIP]- 提示（先自己想，实在想不出再点开）
   > **一级 · 思路**：路径里的花括号就是"路径参数"，要写进函数形参
   > **二级 · 方法**：`@app.get("/users/{user_id}")` + `def get_user(user_id: int):`
   > **三级 · 骨架**：`user_id: int` 会让 FastAPI 自动把字符串转成整数
 
-- [ ] **2-3 用测试客户端验证**
-  不启动服务器，用 FastAPI 自带的 `TestClient` 直接请求两个接口，打印状态码和返回内容。
+  > [!TIP]- 参考答案（做完再点开）
+  > ```python
+  > # 2-2
+  > @app.get("/users/{user_id}")
+  > def get_user(user_id: int):
+  >     for user in USERS:
+  >         if user["id"] == user_id:
+  >             return user
+  >     return {"message": "用户不存在"}
+  > ```
 
-  > [!TIP]- 提示
+- [ ] **2-3 用测试客户端验证**
+  不启动服务器，用 FastAPI 自带的测试客户端直接请求上面几个接口，打印状态码和返回内容。
+
+  > [!TIP]- 提示（先自己想，实在想不出再点开）
   > **一级 · 思路**：像写单元测试一样调接口，不用真的开服务器
   > **二级 · 方法**：`from fastapi.testclient import TestClient` / `client = TestClient(app)`
   > **三级 · 骨架**：`print(response.status_code, response.json())`
 
-> [!TIP]- 参考答案（做完再点开）
-> ```python
-> from fastapi import FastAPI
-> from fastapi.testclient import TestClient
->
-> app = FastAPI(title="入门练习")
->
-> USERS = [
->     {"id": 1, "name": "张三"},
->     {"id": 2, "name": "李四"},
->     {"id": 3, "name": "王五"},
-> ]
->
-> @app.get("/")
-> def root():
->     return {"message": "Hello World"}
->
-> @app.get("/users")
-> def get_users():
->     return USERS
->
-> @app.get("/users/{user_id}")
-> def get_user(user_id: int):
->     for user in USERS:
->         if user["id"] == user_id:
->             return user
->     return {"message": "用户不存在"}
->
-> # 2-3：不启动服务器也能测
-> if __name__ == "__main__":
->     client = TestClient(app)
->     for path in ["/", "/users", "/users/2", "/users/99"]:
->         resp = client.get(path)
->         print(path, resp.status_code, resp.json())
->
-> # 真正启动服务时用：
-> #   fastapi dev main.py   或   uvicorn main:app --reload
-> ```
+  > [!TIP]- 参考答案（做完再点开）
+  > ```python
+  > # 2-3：不启动服务器也能测
+  > from fastapi.testclient import TestClient
+  >
+  > if __name__ == "__main__":
+  >     client = TestClient(app)
+  >     for path in ["/", "/users", "/users/2", "/users/99"]:
+  >         resp = client.get(path)
+  >         print(path, resp.status_code, resp.json())
+  >
+  > # 真正启动服务时用：
+  > #   fastapi dev main.py   或   uvicorn main:app --reload
+  > ```
+

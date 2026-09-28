@@ -99,39 +99,45 @@ with open("resources/仙逆人物志.html", "r", encoding="utf-8") as f:
   > **二级 · 方法**：`open(...)` / `html.fromstring` / `//table/thead/tr/th/text()`
   > **三级 · 骨架**：`document = html.____(html_text)`
 
+  > [!TIP]- 参考答案（做完再点开）
+  > ```python
+  > # 2-1
+  > from lxml import html
+  >
+  > with open("resources/仙逆人物志.html", "r", encoding="utf-8") as f:
+  >     html_text = f.read()
+  > document = html.fromstring(html_text)
+  > th_list = document.xpath("//table/thead/tr/th/text()")
+  > print(th_list)
+  > ```
+
 - [ ] **2-2 解析所有行**
   把表格里**每一行**的数据都打印出来（每行是一个列表）。
 
-  > [!TIP]- 提示
+  > [!TIP]- 提示（先自己想，实在想不出再点开）
   > **一级 · 思路**：先拿到所有行，再一行一行往里取格子
   > **二级 · 方法**：`//table/tbody/tr` + 循环里 `./td/text()`
   > **三级 · 骨架**：`for tr in tr_list:\n    print(tr.xpath("____/td/text()"))`
 
-- [ ] **2-3 只要第一行**
+  > [!TIP]- 参考答案（做完再点开）
+  > ```python
+  > # 2-2
+  > tr_list = document.xpath("//table/tbody/tr")
+  > for tr in tr_list:
+  >     print(tr.xpath("./td/text()"))
+  > ```
+
+- [ ] **2-3 只要第二行**
   只解析 tbody 的**第 2 行**（提示：Xpath 里序号从 1 开始），打印它的数据。
 
-  > [!TIP]- 提示
+  > [!TIP]- 提示（先自己想，实在想不出再点开）
   > **一级 · 思路**：用序号过滤
   > **二级 · 方法**：`//table/tbody/tr[2]/td/text()`
   > **三级 · 骨架**：`tr[____]`
 
-> [!TIP]- 参考答案（做完再点开）
-> ```python
-> from lxml import html
->
-> # 2-1
-> with open("resources/仙逆人物志.html", "r", encoding="utf-8") as f:
->     html_text = f.read()
-> document = html.fromstring(html_text)
-> th_list = document.xpath("//table/thead/tr/th/text()")
-> print(th_list)
->
-> # 2-2
-> tr_list = document.xpath("//table/tbody/tr")
-> for tr in tr_list:
->     print(tr.xpath("./td/text()"))
->
-> # 2-3（Xpath 序号从 1 开始，第 2 行就是 tr[2]）
-> td_list = document.xpath("//table/tbody/tr[2]/td/text()")
-> print(td_list)
-> ```
+  > [!TIP]- 参考答案（做完再点开）
+  > ```python
+  > # 2-3（Xpath 序号从 1 开始，第 2 行就是 tr[2]）
+  > td_list = document.xpath("//table/tbody/tr[2]/td/text()")
+  > print(td_list)
+  > ```

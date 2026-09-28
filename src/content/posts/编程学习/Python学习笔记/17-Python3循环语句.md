@@ -1,9 +1,9 @@
 ---
 title: Python3 循环语句
 published: 2026-09-15
+description: Python3 while、for 循环、break、continue 和 range() 函数
 tags:
   - Python
-description: Python3 while、for 循环、break、continue 和 range() 函数
 image: https://img.tsh520.cn/file/blog/post-covers/python-17-loop.webp
 order: 17
 ---
@@ -14,6 +14,8 @@ Python 中的循环语句有 for 和 while。
 Python 循环语句的控制结构图如下所示：
 
 ![](https://img.tsh520.cn/file/blog/article/loop.png)
+
+## 循环语句
 
 ### 循环控制关键字与方法
 
@@ -612,130 +614,192 @@ Good bye!
 
 ---
 
+## 相关
+
+- [Python3 条件控制](/posts/编程学习/python学习笔记/16-python3条件控制/)
+- [Python 推导式](/posts/编程学习/python学习笔记/18-python推导式/)
+
 ## 练习题
 
-- [x] **1. while 循环基础**
+### 一、知识回顾（读完直接做下面的实践题）
+
+1. 两种循环：`while 条件:`（条件为真就一直转）和 `for 变量 in 可迭代对象:`（遍历序列，逐个取值）
+2. 通用要点：循环头后面要写**冒号**，循环体靠**缩进**；Python 里没有 do...while
+3. `range()` 生成整数序列：`range(5)` → 0~4、`range(1, 11)` → 1~10（含头不含尾）、`range(0, 10, 2)` 指定步长、`range(10, 0, -1)` 倒着走；`list(range(5))` 还能直接得到列表
+4. `break`：立刻终止整个循环（for/while 都能用），循环的 `else` 子句也不会执行
+5. `continue`：跳过本轮剩下的语句，直接进入下一轮
+6. `for...else` / `while...else`：循环**正常结束**（没被 break 打断）时执行 else，被 break 终止时不执行
+7. `enumerate()`：遍历时同时拿到下标和值，写成 `for i, v in enumerate(列表):`
+8. `pass`：空语句，什么都不做，只用来占位（写循环、类、函数的空实现时保证语法完整）
+9. 无限循环：`while True:` 会一直转，要靠 `break` 退出（命令行里可以用 Ctrl+C 强停）
+10. 嵌套循环：外层转一圈，内层转满一轮；想在一行里连续打印不换行，用 `print(值, end=" ")` 控制结尾
+
+### 二、裸写题
+
+- [x] **2-1 while 循环基础**
   创建文件 `test_while.py`，完成以下操作：
   - 用 while 循环打印 1 到 10 的数字
   - 每个数字换行输出
 
-  **知识点：** while 条件:、print(数字)
+  > **批改（2026-09-28）**：✅ 正确（实测输出 1~10 每个数字一行，`while i <= 10` 和 `i += 1` 都对）。
 
-  **参考答案：**
-  ```python
-  i = 1
-  while i <= 10:
-      print(i)
-      i += 1
-  ```
+  > [!TIP]- 提示（先自己想，实在想不出再点开）
+  > **一级 · 思路**：循环条件写成"还没数到 10"，每转一圈打印一次、再把计数器加一；计数器别忘了在循环外面先起个步
+  > **二级 · 方法**：`while 条件:` 循环体里 `print(数字)`，再 `i += 1`（等价于 `i = i + 1`）
+  > **三级 · 骨架**：`i = 1` / `while i ____ 10:` / `    print(i)` / `    i ____ 1`
 
-- [x] **2. for 循环遍历**
+  > [!TIP]- 参考答案（做完再点开）
+  > ```python
+  > # 2-1
+  > i = 1
+  > while i <= 10:
+  >     print(i)
+  >     i += 1
+  > ```
+
+- [x] **2-2 for 循环遍历**
   创建文件 `test_for.py`，完成以下操作：
   - 用 for 循环遍历列表 `["苹果", "香蕉", "橘子", "葡萄"]`
   - 打印每个元素
 
-  **知识点：** for 变量 in 序列:
+  > **批改（2026-09-28）**：✅ 正确（实测 `苹果/香蕉/橘子/葡萄` 逐个打印，顺序和题面列表一致）。
 
-  **参考答案：**
-  ```python
-  fruits = ["苹果", "香蕉", "橘子", "葡萄"]
-  for fruit in fruits:
-      print(fruit)
-  ```
+  > [!TIP]- 提示（先自己想，实在想不出再点开）
+  > **一级 · 思路**：for 循环会自发地一个接一个把元素交给你，不需要自己数下标
+  > **二级 · 方法**：`for 变量 in 序列:`，循环体里直接打印这个变量
+  > **三级 · 骨架**：`for fruit ____ fruits:` / `    print(____)`
 
-- [x] **3. range() 函数**
+  > [!TIP]- 参考答案（做完再点开）
+  > ```python
+  > # 2-2
+  > fruits = ["苹果", "香蕉", "橘子", "葡萄"]
+  > for fruit in fruits:
+  >     print(fruit)
+  > ```
+
+- [x] **2-3 range() 函数**
   创建文件 `test_range.py`，完成以下操作：
   - 用 range(1, 11) 打印 1 到 10
   - 用 range(0, 10, 2) 打印 0 到 10 的偶数
   - 用 range(10, 0, -1) 倒序打印 10 到 1
 
-  **知识点：** range(开始, 结束, 步长)
+  > **批改（2026-09-28）**：✅ 正确（三段输出都对：1~10、0 2 4 6 8 10、倒序 10~1）；第 2 段你写的是 `range(0, 11, 2)`（题面字面是 `range(0, 10, 2)`），把"0 到 10 的偶数"里的 10 也打出来了，与题面说明一致。
 
-  **参考答案：**
-  ```python
-  print("1到10:")
-  for i in range(1, 11):
-      print(i, end=" ")
-  print()
+  > [!TIP]- 提示（先自己想，实在想不出再点开）
+  > **一级 · 思路**：这个函数管"从哪开始、到哪结束、每次迈多大"，结束值本身取不到；步长写成负数就能倒着走
+  > **二级 · 方法**：`range(开始, 结束, 步长)`——`range(1, 11)`、`range(0, 10, 2)`、`range(10, 0, -1)`
+  > **三级 · 骨架**：`for i in range(1, ____):` / `for i in range(0, 10, ____):` / `for i in range(10, ____, -1):`
 
-  print("偶数:")
-  for i in range(0, 10, 2):
-      print(i, end=" ")
-  print()
+  > [!TIP]- 参考答案（做完再点开）
+  > ```python
+  > # 2-3
+  > print("1到10:")
+  > for i in range(1, 11):
+  >     print(i, end=" ")
+  > print()
+  >
+  > print("偶数:")
+  > for i in range(0, 10, 2):
+  >     print(i, end=" ")
+  > print()
+  >
+  > print("倒序:")
+  > for i in range(10, 0, -1):
+  >     print(i, end=" ")
+  > print()
+  > ```
 
-  print("倒序:")
-  for i in range(10, 0, -1):
-      print(i, end=" ")
-  print()
-  ```
-
-- [x] **4. break 跳出循环**
+- [x] **2-4 break 跳出循环**
   创建文件 `test_break.py`，完成以下操作：
   - 用 while 循环，从 1 开始累加
   - 当总和超过 100 时，用 break 跳出循环
   - 打印最后加的数字和总和
 
-  **知识点：** while True:、break
+  > **批改（2026-09-28）**：⚠️ 总和 105 正确（实测累加到 14 时超过 100 跳出），但题面要求"打印最后加的数字和总和"，你只打印了 105，缺最后加的数字 14（你的 `i` 就是 14，应写成 `print(f"最后加的数字: {i}")` 和 `print(f"总和: {z}")`）。
 
-  **参考答案：**
-  ```python
-  total = 0
-  i = 0
-  while True:
-      i += 1
-      total += i
-      if total > 100:
-          break
-  print(f"最后加的数字: {i}")
-  print(f"总和: {total}")
-  ```
+  > [!TIP]- 提示（先自己想，实在想不出再点开）
+  > **一级 · 思路**：先让循环"永远为真"不停加下去，加到超过 100 的瞬间立刻跳出；跳出后把这两个数字都打印出来
+  > **二级 · 方法**：`while True:` 配 `break`；累加 `total += i`
+  > **三级 · 骨架**：`while ____:` / `    i += 1` / `    total += i` / `    if total > 100:` / `        ____`
 
-- [x] **5. continue 跳过本次**
+  > [!TIP]- 参考答案（做完再点开）
+  > ```python
+  > # 2-4
+  > total = 0
+  > i = 0
+  > while True:
+  >     i += 1
+  >     total += i
+  >     if total > 100:
+  >         break
+  > print(f"最后加的数字: {i}")
+  > print(f"总和: {total}")
+  > ```
+
+- [x] **2-5 continue 跳过本次**
   创建文件 `test_continue.py`，完成以下操作：
   - 用 for 循环打印 1 到 10
   - 如果数字是 5，用 continue 跳过不打印
 
-  **知识点：** continue（跳过本次循环）
+  > **批改（2026-09-28）**：✅ 正确（实测输出 `1 2 3 4 6 7 8 9 10`，5 被 `continue` 跳过；末尾没换行，参考答案补了一行 `print()`）。
 
-  **参考答案：**
-  ```python
-  for i in range(1, 11):
-      if i == 5:
-          continue
-      print(i, end=" ")
-  print()
-  ```
+  > [!TIP]- 提示（先自己想，实在想不出再点开）
+  > **一级 · 思路**：遇到 5 就"这一轮到此为止"，后面的打印语句不执行，直接进入下一轮
+  > **二级 · 方法**：`if i == 5:` 之后写 `continue`（跳过本次循环的剩余代码）
+  > **三级 · 骨架**：`for i in range(1, 11):` / `    if i == ____:` / `        ____`
 
-- [x] **6. for...else 语句**
+  > [!TIP]- 参考答案（做完再点开）
+  > ```python
+  > # 2-5
+  > for i in range(1, 11):
+  >     if i == 5:
+  >         continue
+  >     print(i, end=" ")
+  > print()
+  > ```
+
+- [x] **2-6 for...else 语句** ❌
   创建文件 `test_for_else.py`，完成以下操作：
   - 在列表 `[1, 3, 5, 7, 9]` 中查找数字 6
   - 如果找到，打印"找到了"
   - 如果没找到（循环正常结束），打印"没找到"
 
-  **知识点：** for...else:（循环没被break中断时执行else）
+  > **批改（2026-09-28）**：❌ 你的 `else` 缩进在 `if` 那一层，成了 if-else，不是题面要求的 for...else；它是靠 `i == nums[-1]`（走到最后一个元素）才碰巧输出 `没找到`。正确写法是 `else:` 与 `for` 对齐：循环体里 `if num == 6: print("找到了"); break`，循环外面写 `else: print("没找到")`。
 
-  **参考答案：**
-  ```python
-  nums = [1, 3, 5, 7, 9]
-  for num in nums:
-      if num == 6:
-          print("找到了")
-          break
-  else:
-      print("没找到")
-  ```
+  > [!TIP]- 提示（先自己想，实在想不出再点开）
+  > **一级 · 思路**：找到就打印并跳出，跳出了就不会走"没找到"那一支；只有循环从头到尾跑完也没跳出，才执行循环自带的 else
+  > **二级 · 方法**：`for...else:`——`else` 要和 `for` 对齐（别缩进到 `if` 那一层），循环里命中时 `break`
+  > **三级 · 骨架**：`for num in nums:` / `    if num == 6:` / `        print("找到了")` / `        ____` / `else:`（与 for 对齐）/ `    print("没找到")`
 
-- [x] **7. 嵌套循环**
+  > [!TIP]- 参考答案（做完再点开）
+  > ```python
+  > # 2-6
+  > nums = [1, 3, 5, 7, 9]
+  > for num in nums:
+  >     if num == 6:
+  >         print("找到了")
+  >         break
+  > else:
+  >     print("没找到")
+  > ```
+
+- [x] **2-7 嵌套循环**
   创建文件 `test_nested.py`，完成以下操作：
   - 用嵌套 for 循环打印乘法表（1-5）
   - 输出格式：`1x1=1`、`1x2=2`...`5x5=25`
 
-  **知识点：** for i in range(1, 6):、for j in range(1, 6):
+  > **批改（2026-09-28）**：✅ 正确（实测 5×5 乘法表全部输出，行内用 `end="\t"` 分隔、每行结尾 `print()` 换行，格式与题面一致）。
 
-  **参考答案：**
-  ```python
-  for i in range(1, 6):
-      for j in range(1, 6):
-          print(f"{i}x{j}={i*j}", end="\t")
-      print()
-  ```
+  > [!TIP]- 提示（先自己想，实在想不出再点开）
+  > **一级 · 思路**：外层管行、内层管列——内层每转一圈打印一个算式且不换行，内层转完后由外层补一个换行
+  > **二级 · 方法**：两层 `for i in range(1, 6):` 嵌套；行内用 `print(f"{i}x{j}={i*j}", end="\t")` 不换行，一行结束再 `print()` 换行
+  > **三级 · 骨架**：`for i in range(1, 6):` / `    for j in range(1, ____):` / `        print(f"{i}x{j}={i*j}", end="____")` / `    ____()`
+
+  > [!TIP]- 参考答案（做完再点开）
+  > ```python
+  > # 2-7
+  > for i in range(1, 6):
+  >     for j in range(1, 6):
+  >         print(f"{i}x{j}={i*j}", end="\t")
+  >     print()
+  > ```

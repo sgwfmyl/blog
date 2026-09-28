@@ -2,10 +2,10 @@
 title: RESTful接口规范
 published: 2026-09-20
 description: REST 架构风格：用 URL 定位资源、用 HTTP 动词描述操作，以及传统风格与 REST 风格接口的对比
-image: https://img.tsh520.cn/file/blog/post-covers/python-65-restful.webp
 tags:
   - Python
   - Web开发
+image: https://img.tsh520.cn/file/blog/post-covers/python-65-restful.webp
 order: 65
 ---
 
@@ -74,25 +74,41 @@ Restful 指的是**遵循 REST 架构风格的 API 接口服务**，而 REST（R
 8. 本项目的接口（一）：新建会话用 **POST** 请求 `/api/sessions`；获取会话列表用 **GET** 请求 `/api/sessions`；与 AI 交互（提交一条消息）用 **POST** 请求 `/api/chat`
 9. 本项目的接口（二）：查询指定会话用 **GET** 请求 `/api/sessions/{id}`；删除指定会话用 **DELETE** 请求 `/api/sessions/{id}`；地址里的 `{id}` 表示**路径里的变量（占位符）**
 
-### 二、概念与动手
+### 二、概念自测
 
 - [ ] **2-1** 把 `/book/getBookById?id=5`、`/book/addBook`、`/book/delete?id=5` 三个传统接口改写成 REST 风格
+
+  > [!TIP]- 提示（先自己想，实在想不出再点开）
+  > **一级 · 思路**：URL 里只留"复数名词表示的资源"（图书 → books），把动作词（getBookById、addBook、delete）丢掉，再想每个操作该交给哪个 HTTP 动词、资源后面要不要带编号
+
+  > [!TIP]- 参考答案（做完再点开）
+  > **2-1**
+  > ```text
+  > GET    /books/5      查询 id 为 5 的图书
+  > POST   /books        新增图书
+  > DELETE /books/5      删除 id 为 5 的图书
+  > ```
+
 - [ ] **2-2** 一个"学生管理"系统要支持：查列表、查单个、新增、修改、删除，写出 5 个 REST 接口（路径 + 方式）
+
+  > [!TIP]- 提示（先自己想，实在想不出再点开）
+  > **一级 · 思路**：先定唯一的资源名（学生 → students），再按"列表 / 单个 / 新增 / 修改 / 删除"五种操作各挑一个动词与路径
+
+  > [!TIP]- 参考答案（做完再点开）
+  > **2-2**
+  > ```text
+  > GET    /students        查询列表
+  > GET    /students/{id}   查询单个
+  > POST   /students        新增
+  > PUT    /students/{id}   修改
+  > DELETE /students/{id}   删除
+  > ```
+
 - [ ] **2-3** 为什么 DELETE 用 `/users/1` 而不是 `/users/delete/1`？（用"URL 定位资源"这句话解释）
 
-> [!TIP]- 参考答案（做完再点开）
-> **2-1**
-> ```text
-> GET    /books/5      查询 id 为 5 的图书
-> POST   /books        新增图书
-> DELETE /books/5      删除 id 为 5 的图书
-> ```
-> **2-2**
-> ```text
-> GET    /students        查询列表
-> GET    /students/{id}   查询单个
-> POST   /students        新增
-> PUT    /students/{id}   修改
-> DELETE /students/{id}   删除
-> ```
-> **2-3** 因为 URL 只负责**定位资源**（"要操作 id 为 1 的那个用户"），"要做什么"由 HTTP 动词（DELETE）表达。把动作塞进 URL 里（`/users/delete/1`）就退化成了传统风格，又多又乱。
+  > [!TIP]- 提示（先自己想，实在想不出再点开）
+  > **一级 · 思路**：从"URL 只负责定位资源"出发——`/users/1` 已经把"操作哪个用户"说清楚了，"要做什么"交给请求方式
+
+  > [!TIP]- 参考答案（做完再点开）
+  > **2-3** 因为 URL 只负责**定位资源**（"要操作 id 为 1 的那个用户"），"要做什么"由 HTTP 动词（DELETE）表达。把动作塞进 URL 里（`/users/delete/1`）就退化成了传统风格，又多又乱。
+

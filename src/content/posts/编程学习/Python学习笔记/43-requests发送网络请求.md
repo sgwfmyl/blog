@@ -97,47 +97,53 @@ for tr in tr_list:
   > **二级 · 方法**：`requests.get(url)` / `response.text`
   > **三级 · 骨架**：`print(response.text[:____])`
 
+  > [!TIP]- 参考答案（做完再点开）
+  > ```python
+  > # 2-1
+  > import requests
+  >
+  > response = requests.get("https://www.itcast.cn", timeout=60)
+  > print(response.text[:200])
+  > ```
+
 - [ ] **2-2 抓 TIOBE 榜单的表头**
   请求 TIOBE 排行榜页面，解析出榜单表格的表头（一行列表），加上 `timeout=60`。
 
-  > [!TIP]- 提示
+  > [!TIP]- 提示（先自己想，实在想不出再点开）
   > **一级 · 思路**：请求 → 解析成文档对象 → Xpath 取表头
   > **二级 · 方法**：`html.fromstring` / `document.xpath("//*[@id='top20']/thead/tr/th/text()")`
   > **三级 · 骨架**：`response = requests.get(url, timeout=____)`
 
+  > [!TIP]- 参考答案（做完再点开）
+  > ```python
+  > # 2-2
+  > import requests
+  > from lxml import html
+  >
+  > response = requests.get("https://www.tiobe.com/tiobe-index/", timeout=60)
+  > document = html.fromstring(response.text)
+  > th_list = document.xpath("//*[@id='top20']/thead/tr/th/text()")
+  > print(th_list)
+  > ```
+
 - [ ] **2-3 请求失败也要优雅**
   把 2-2 的请求用 try/except 包住：网络出问题时打印"请求失败：原因"，程序不崩溃。可以用一个不存在的域名（如 https://www.this-domain-not-exist-12345.com）来测试。
 
-  > [!TIP]- 提示
+  > [!TIP]- 提示（先自己想，实在想不出再点开）
   > **一级 · 思路**：网络请求随时可能失败（超时、连不上、域名不存在），失败时要有兜底
   > **二级 · 方法**：`try ... except Exception as e`（第 25 篇异常处理）
   > **三级 · 骨架**：`except Exception as e:\n    print(f"请求失败: {e}")`
 
-> [!TIP]- 参考答案（做完再点开）
-> ```python
-> # 2-1
-> import requests
->
-> response = requests.get("https://www.itcast.cn", timeout=60)
-> print(response.text[:200])
->
-> # 2-2
-> import requests
-> from lxml import html
->
-> response = requests.get("https://www.tiobe.com/tiobe-index/", timeout=60)
-> document = html.fromstring(response.text)
-> th_list = document.xpath("//*[@id='top20']/thead/tr/th/text()")
-> print(th_list)
->
-> # 2-3
-> import requests
-> from lxml import html
->
-> try:
->     response = requests.get("https://www.tiobe.com/tiobe-index/", timeout=60)
->     document = html.fromstring(response.text)
->     print(document.xpath("//*[@id='top20']/thead/tr/th/text()"))
-> except Exception as e:
->     print(f"请求失败: {e}")
-> ```
+  > [!TIP]- 参考答案（做完再点开）
+  > ```python
+  > # 2-3
+  > import requests
+  > from lxml import html
+  >
+  > try:
+  >     response = requests.get("https://www.tiobe.com/tiobe-index/", timeout=60)
+  >     document = html.fromstring(response.text)
+  >     print(document.xpath("//*[@id='top20']/thead/tr/th/text()"))
+  > except Exception as e:
+  >     print(f"请求失败: {e}")
+  > ```

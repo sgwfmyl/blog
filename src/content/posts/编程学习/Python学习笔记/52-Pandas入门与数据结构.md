@@ -146,43 +146,49 @@ s4 = df1['语文']                                                  # 从 DataFr
   > **二级 · 方法**：`pd.DataFrame({...})`
   > **三级 · 骨架**：`df = pd.DataFrame({"姓名": [...], "语文": [...], "数学": [...]})`
 
+  > [!TIP]- 参考答案（做完再点开）
+  > ```python
+  > # 2-1
+  > import pandas as pd
+  >
+  > df = pd.DataFrame({
+  >     "姓名": ["小王", "小李", "小张"],
+  >     "语文": [90, 80, 70],
+  >     "数学": [80, 90, 80],
+  > })
+  > print(df.shape)      # (3, 3)
+  > print(df.columns.tolist())  # ['姓名', '语文', '数学']
+  > ```
+
 - [ ] **2-2 取属性**
   对上面造出的表，分别打印：行索引、列名、值、单元格数量、每列类型、维度。
 
-  > [!TIP]- 提示
+  > [!TIP]- 提示（先自己想，实在想不出再点开）
   > **一级 · 思路**：六个属性各一行
   > **二级 · 方法**：`index` / `columns` / `values` / `size` / `dtypes` / `shape`
   > **三级 · 骨架**：`print(df.index.tolist())`（转成列表看得更清楚）
 
+  > [!TIP]- 参考答案（做完再点开）
+  > ```python
+  > # 2-2
+  > print(df.index.tolist())    # [0, 1, 2]
+  > print(df.columns.tolist())
+  > print(df.values.tolist())
+  > print(df.size)              # 9
+  > print(df.dtypes)
+  > print(df.shape)             # (3, 3)
+  > ```
+
 - [ ] **2-3 统计一列**
   取出"语文"这一列，打印最高分、最低分、平均分（平均分保留两位小数）。
 
-  > [!TIP]- 提示
+  > [!TIP]- 提示（先自己想，实在想不出再点开）
   > **一级 · 思路**：先取列，再用统计方法
   > **二级 · 方法**：`df['语文'].max()` / `.min()` / `.mean()`
   > **三级 · 骨架**：`f"{df['语文'].mean():.____}"` 保留两位小数
 
-> [!TIP]- 参考答案（做完再点开）
-> ```python
-> import pandas as pd
->
-> # 2-1
-> df = pd.DataFrame({
->     "姓名": ["小王", "小李", "小张"],
->     "语文": [90, 80, 70],
->     "数学": [80, 90, 80],
-> })
-> print(df.shape)      # (3, 3)
-> print(df.columns.tolist())  # ['姓名', '语文', '数学']
->
-> # 2-2
-> print(df.index.tolist())    # [0, 1, 2]
-> print(df.columns.tolist())
-> print(df.values.tolist())
-> print(df.size)              # 9
-> print(df.dtypes)
-> print(df.shape)             # (3, 3)
->
-> # 2-3
-> print(f"最高分: {df['语文'].max()}, 最低分: {df['语文'].min()}, 平均分: {df['语文'].mean():.2f}")
-> ```
+  > [!TIP]- 参考答案（做完再点开）
+  > ```python
+  > # 2-3
+  > print(f"最高分: {df['语文'].max()}, 最低分: {df['语文'].min()}, 平均分: {df['语文'].mean():.2f}")
+  > ```

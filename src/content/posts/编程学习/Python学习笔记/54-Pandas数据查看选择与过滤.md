@@ -1,5 +1,5 @@
 ---
-title: Pandas数据查看、选择与过滤
+title: Pandas 数据查看选择与过滤
 published: 2026-09-20
 description: 用 head/tail/describe/info 查看数据，用单列/多列/iloc/loc 选择数据，用条件表达式过滤数据
 tags:
@@ -96,52 +96,61 @@ df[(df['销售数量'] >= 8) & (df['单价'] >= 100)]
   > **二级 · 方法**：`head()` / `shape` / `describe()`
   > **三级 · 骨架**：`pd.read_csv('data/sales.csv')`
 
+  > [!TIP]- 参考答案（做完再点开）
+  > ```python
+  > import pandas as pd
+  >
+  > df = pd.read_csv('data/sales.csv')
+  >
+  > # 2-1
+  > print(df.head(5))
+  > print(df.shape)
+  > print(df.describe())
+  > ```
+
 - [ ] **2-2 选出需要的列**
   用两种写法选出"产品名称、单价"两列，并单独取出"产品名称"这一列，观察返回类型有什么不同。
 
-  > [!TIP]- 提示
+  > [!TIP]- 提示（先自己想，实在想不出再点开）
   > **一级 · 思路**：一列是 Series，多列是 DataFrame
   > **二级 · 方法**：`df['产品名称']` / `df[['产品名称', '单价']]`
   > **三级 · 骨架**：用 `type()` 打印类型对比
 
+  > [!TIP]- 参考答案（做完再点开）
+  > ```python
+  > # 2-2
+  > print(type(df['产品名称']))            # <class 'pandas.core.series.Series'>
+  > print(type(df[['产品名称', '单价']]))   # <class 'pandas.core.frame.DataFrame'>
+  > ```
+
 - [ ] **2-3 条件过滤**
   找出：① 销售数量 ≥ 10 的订单；② 产品类别是"食品"或"图书"的订单；③ 单价在 79~199 之间；④ 销售数量 ≥ 8 **并且** 单价 ≥ 100 的订单。
 
-  > [!TIP]- 提示
+  > [!TIP]- 提示（先自己想，实在想不出再点开）
   > **一级 · 思路**：四种过滤各写一行，注意多条件的括号
   > **二级 · 方法**：比较运算 / `isin([...])` / `between(a, b)` / `(条件1) & (条件2)`
   > **三级 · 骨架**：`df[(df['销售数量'] >= 8) ____ (df['单价'] >= 100)]`
 
+  > [!TIP]- 参考答案（做完再点开）
+  > ```python
+  > # 2-3
+  > print(df[df['销售数量'] >= 10])
+  > print(df[df['产品类别'].isin(['食品', '图书'])])
+  > print(df[df['单价'].between(79, 199)])
+  > print(df[(df['销售数量'] >= 8) & (df['单价'] >= 100)])
+  > ```
+
 - [ ] **2-4 行切片**
   用 `iloc` 取前 5 行，再用 `loc` 取第 3 到第 5 行（按行索引标签），对比两者取到的行数。
 
-  > [!TIP]- 提示
+  > [!TIP]- 提示（先自己想，实在想不出再点开）
   > **一级 · 思路**：iloc 数"第几行"、不含结尾；loc 看"索引值"、含结尾
   > **二级 · 方法**：`df.iloc[0:5]` / `df.loc[2:4]`
   > **三级 · 骨架**：打印 `len()` 对比
 
-> [!TIP]- 参考答案（做完再点开）
-> ```python
-> import pandas as pd
->
-> df = pd.read_csv('data/sales.csv')
->
-> # 2-1
-> print(df.head(5))
-> print(df.shape)
-> print(df.describe())
->
-> # 2-2
-> print(type(df['产品名称']))            # <class 'pandas.core.series.Series'>
-> print(type(df[['产品名称', '单价']]))   # <class 'pandas.core.frame.DataFrame'>
->
-> # 2-3
-> print(df[df['销售数量'] >= 10])
-> print(df[df['产品类别'].isin(['食品', '图书'])])
-> print(df[df['单价'].between(79, 199)])
-> print(df[(df['销售数量'] >= 8) & (df['单价'] >= 100)])
->
-> # 2-4
-> print(len(df.iloc[0:5]))    # 5 行
-> print(len(df.loc[2:4]))     # 3 行（含索引 2、3、4）
-> ```
+  > [!TIP]- 参考答案（做完再点开）
+  > ```python
+  > # 2-4
+  > print(len(df.iloc[0:5]))    # 5 行
+  > print(len(df.loc[2:4]))     # 3 行（含索引 2、3、4）
+  > ```

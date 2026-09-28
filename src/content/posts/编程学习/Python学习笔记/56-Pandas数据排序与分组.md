@@ -94,40 +94,47 @@ df.groupby('产品类别').agg({
   > **二级 · 方法**：`sort_values('销售数量', ascending=False)` / `sort_values(['单价', '销售数量'], ascending=[True, False])`
   > **三级 · 骨架**：结果用 `.head(5)` 看前 5 行
 
+  > [!TIP]- 参考答案（做完再点开）
+  > ```python
+  > import pandas as pd
+  >
+  > df = pd.read_csv('data/sales.csv')
+  > df['销售金额'] = df['销售数量'] * df['单价']
+  >
+  > # 2-1
+  > print(df.sort_values('销售数量', ascending=False).head(5))
+  > print(df.sort_values(['单价', '销售数量'], ascending=[True, False]).head(5))
+  > ```
+
 - [ ] **2-2 分组统计**
   按"产品类别"分组，统计各类别的订单数量、销售数量之和。
 
-  > [!TIP]- 提示
+  > [!TIP]- 提示（先自己想，实在想不出再点开）
   > **一级 · 思路**：`df.groupby(按什么分)[看哪一列].(算什么)`
   > **二级 · 方法**：`df.groupby('产品类别')['订单号'].count()` / `['销售数量'].sum()`
   > **三级 · 骨架**：先算出"销售金额"列再分组求和更有业务意义
 
+  > [!TIP]- 参考答案（做完再点开）
+  > ```python
+  > # 2-2
+  > print(df.groupby('产品类别')['订单号'].count())
+  > print(df.groupby('产品类别')['销售数量'].sum())
+  > ```
+
 - [ ] **2-3 一行出多个指标**
   按"产品类别"分组，一次算出各类别的"平均单价、最高单价、最低单价"。
 
-  > [!TIP]- 提示
+  > [!TIP]- 提示（先自己想，实在想不出再点开）
   > **一级 · 思路**：同一列要多个指标 → 用 agg 传列表
   > **二级 · 方法**：`df.groupby('产品类别')['单价'].agg(['mean', 'max', 'min'])`
   > **三级 · 骨架**：如果想再多一列"销售金额合计"，改用 agg 传字典
 
-> [!TIP]- 参考答案（做完再点开）
-> ```python
-> import pandas as pd
->
-> df = pd.read_csv('data/sales.csv')
-> df['销售金额'] = df['销售数量'] * df['单价']
->
-> # 2-1
-> print(df.sort_values('销售数量', ascending=False).head(5))
-> print(df.sort_values(['单价', '销售数量'], ascending=[True, False]).head(5))
->
-> # 2-2
-> print(df.groupby('产品类别')['订单号'].count())
-> print(df.groupby('产品类别')['销售数量'].sum())
->
-> # 2-3
-> print(df.groupby('产品类别')['单价'].agg(['mean', 'max', 'min']))
->
-> # 扩展：不同列不同聚合
-> print(df.groupby('产品类别').agg({'销售数量': 'sum', '销售金额': 'sum', '单价': 'mean'}))
-> ```
+  > [!TIP]- 参考答案（做完再点开）
+  > ```python
+  > # 2-3
+  > print(df.groupby('产品类别')['单价'].agg(['mean', 'max', 'min']))
+  >
+  > # 扩展：不同列不同聚合
+  > print(df.groupby('产品类别').agg({'销售数量': 'sum', '销售金额': 'sum', '单价': 'mean'}))
+  > ```
+

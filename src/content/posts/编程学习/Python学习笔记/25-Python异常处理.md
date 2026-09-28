@@ -1,10 +1,10 @@
 ---
 title: Python异常处理
 published: 2026-09-16
+description: Python异常的概念、异常处理语法、捕获多种异常、finally关键字、异常的传递
 tags:
   - Python
   - 异常处理
-description: Python异常的概念、异常处理语法、捕获多种异常、finally关键字、异常的传递
 image: https://img.tsh520.cn/file/blog/post-covers/python-25-exception.webp
 order: 25
 ---
@@ -171,6 +171,11 @@ Exception被捕获或程序崩溃
 - **Exception**：兜底捕获所有异常，放最后面
 - **异常传递**：层层上报找人处理，没人处理程序崩
 
+## 相关
+
+- [Python面向对象编程基础](/posts/编程学习/python学习笔记/24-python面向对象编程基础/)
+- [Python with 关键字](/posts/编程学习/python学习笔记/26-python-with关键字/)
+
 ## 练习题
 
 ### 一、知识回顾（读完直接做下面的实践题）
@@ -195,6 +200,19 @@ Exception被捕获或程序崩溃
   > **二级 · 方法**：`try` / `except 异常类型 as e` / `finally`
   > **三级 · 骨架**：`except ____ as e:` / `finally:`（"名字不存在"的异常类型是 NameError）
 
+  > [!TIP]- 参考答案（做完再点开）
+  > ```python
+  > # 2-1
+  > try:
+  >     print("=" * 30)
+  >     print(my_name)          # 变量不存在 → NameError
+  >     print("=" * 30)         # 这行不会执行（出错后直接跳到 except）
+  > except NameError as e:
+  >     print("程序运行报错，错误信息：", e)
+  > finally:
+  >     print("释放资源 ~")
+  > ```
+
 - [ ] **2-2 一份代码里捕获多种异常**
   1. 写一段业务代码，依次可能触发三种错误：取列表的第 10 个元素（列表只有 3 个元素）、取字典里不存在的键、用一个数除以 0
   2. 每种错误写一个单独的捕获分支，分别打印中文提示 + 错误信息
@@ -202,10 +220,32 @@ Exception被捕获或程序崩溃
   4. 加上收尾块打印"资源释放 ~"
   5. 运行后想一想：三个错误会依次都触发吗？第一个错误发生后，后面的代码还会不会往下走？
 
-  > [!TIP]- 提示
+  > [!TIP]- 提示（先自己想，实在想不出再点开）
   > **一级 · 思路**：一个 try 可以配多个 except，按异常类型从上往下匹配，匹配上就跳出去，不会回到出错的那一行继续
   > **二级 · 方法**：`except IndexError as e` / `except KeyError as e` / `except ZeroDivisionError as e` / `except Exception as e`
   > **三级 · 骨架**：`except ____ as e:  # 索引错误` / `except ____ as e:  # 兜底，放最后`
+
+  > [!TIP]- 参考答案（做完再点开）
+  > ```python
+  > # 2-2
+  > try:
+  >     print("=" * 30)
+  >     print([1, 2, 3][10])          # 索引越界 → IndexError
+  >     print({"a": 1}["b"])          # 键不存在 → KeyError
+  >     print(1 / 0)                  # 除零 → ZeroDivisionError
+  >     print("=" * 30)
+  > except IndexError as e:
+  >     print("索引错误，请检查下标是否越界，异常信息：", e)
+  > except KeyError as e:
+  >     print("键不存在，请检查字典的键，异常信息：", e)
+  > except ZeroDivisionError as e:
+  >     print("0 不能做除数，异常信息：", e)
+  > except Exception as e:
+  >     print("程序运行出错了，请联系管理员，错误信息：", e)
+  > finally:
+  >     print("资源释放 ~")
+  > # 实际只会走到第一个出错的那行：先报 IndexError，剩下两行不会执行
+  > ```
 
 - [ ] **2-3 异常的传递**
   1. 写三个函数 `fun1()` → 调用 `fun2()` → 调用 `fun3()`，每个函数进来先打印一行 `xxx running ...`
@@ -213,64 +253,35 @@ Exception被捕获或程序崩溃
   3. 先在主程序里直接调用 `fun1()`，运行并观察报错信息里显示的调用链顺序
   4. 再把调用放进捕获结构里（在最外层捕获），打印"在最外层捕获到异常：xxx"，观察程序不再崩溃
 
-  > [!TIP]- 提示
+  > [!TIP]- 提示（先自己想，实在想不出再点开）
   > **一级 · 思路**：底层函数不处理，异常就沿着"谁调用了我"一层层往上报，谁接住谁负责
   > **二级 · 方法**：`if __name__ == "__main__":` 里写 `try: fun1()` + `except NameError as e`
   > **三级 · 骨架**：`def fun3(): print(my_color)` 制造异常；报错信息最后一行就是异常类型和说明
 
-> [!TIP]- 参考答案（做完再点开）
-> ```python
-> # 2-1
-> try:
->     print("=" * 30)
->     print(my_name)          # 变量不存在 → NameError
->     print("=" * 30)         # 这行不会执行（出错后直接跳到 except）
-> except NameError as e:
->     print("程序运行报错，错误信息：", e)
-> finally:
->     print("释放资源 ~")
->
-> # 2-2
-> try:
->     print("=" * 30)
->     print([1, 2, 3][10])          # 索引越界 → IndexError
->     print({"a": 1}["b"])          # 键不存在 → KeyError
->     print(1 / 0)                  # 除零 → ZeroDivisionError
->     print("=" * 30)
-> except IndexError as e:
->     print("索引错误，请检查下标是否越界，异常信息：", e)
-> except KeyError as e:
->     print("键不存在，请检查字典的键，异常信息：", e)
-> except ZeroDivisionError as e:
->     print("0 不能做除数，异常信息：", e)
-> except Exception as e:
->     print("程序运行出错了，请联系管理员，错误信息：", e)
-> finally:
->     print("资源释放 ~")
-> # 实际只会走到第一个出错的那行：先报 IndexError，剩下两行不会执行
->
-> # 2-3
-> def fun1():
->     print("fun1 ... running ...")
->     fun2()
->
-> def fun2():
->     print("fun2 ... running ...")
->     fun3()
->
-> def fun3():
->     print("fun3 ... running ...")
->     print(my_color)          # 异常发生在这里
->
-> if __name__ == "__main__":
->     try:
->         fun1()
->     except NameError as e:
->         print("在最外层捕获到异常：", e)
->     finally:
->         print("资源释放 ~")
-> # 不捕获时，报错信息里的调用链是：<module> → fun1 → fun2 → fun3
-> ```
+  > [!TIP]- 参考答案（做完再点开）
+  > ```python
+  > # 2-3
+  > def fun1():
+  >     print("fun1 ... running ...")
+  >     fun2()
+  >
+  > def fun2():
+  >     print("fun2 ... running ...")
+  >     fun3()
+  >
+  > def fun3():
+  >     print("fun3 ... running ...")
+  >     print(my_color)          # 异常发生在这里
+  >
+  > if __name__ == "__main__":
+  >     try:
+  >         fun1()
+  >     except NameError as e:
+  >         print("在最外层捕获到异常：", e)
+  >     finally:
+  >         print("资源释放 ~")
+  > # 不捕获时，报错信息里的调用链是：<module> → fun1 → fun2 → fun3
+  > ```
 
 ### 三、综合题
 
@@ -282,31 +293,31 @@ Exception被捕获或程序崩溃
   4. 统计成功条数，循环结束后打印"处理完成，成功 N 条"
   5. 加一个收尾块，每处理一条就打印一行分隔线，观察它是不是成功失败都会执行
 
-  > [!TIP]- 提示
+  > [!TIP]- 提示（先自己想，实在想不出再点开）
   > **一级 · 思路**：把 try 写在循环里面，一条数据出错只影响这一条；转整数和做除法分别会抛不同的异常
   > **二级 · 方法**：`int(文本)` 抛 `ValueError`；除以 0 抛 `ZeroDivisionError`；`finally` 放在 except 之后
   > **三级 · 骨架**：`for item in raw_data:` → `try:` → `num = int(item)` → `result = 100 / num`；`except ____ as e:` / `except ____ as e:` / `finally: print("-" * 30)`
 
-> [!TIP]- 参考答案（做完再点开）
-> ```python
-> raw_data = ["88", "abc", "0", "", "92"]
->
-> success = 0
-> for item in raw_data:
->     try:
->         num = int(item)             # "abc"、"" 转不了 → ValueError
->         result = 100 / num          # 除数为 0 → ZeroDivisionError
->         print(f"「{item}」通过：100 ÷ {num} = {result:.2f}")
->         success += 1
->     except ValueError as e:
->         print(f"「{item}」不能转成数字，跳过。异常信息：{e}")
->     except ZeroDivisionError as e:
->         print(f"「{item}」是 0，不能做除数，跳过。异常信息：{e}")
->     except Exception as e:
->         print(f"「{item}」出现其它错误，跳过。异常信息：{e}")
->     finally:
->         print("-" * 30)             # 每条数据成功失败都会执行
->
-> print(f"处理完成，成功 {success} 条")
-> # 运行结果：88 和 92 通过，abc / 空字符串 / 0 各自被对应分支拦下，最后打印"成功 2 条"
-> ```
+  > [!TIP]- 参考答案（做完再点开）
+  > ```python
+  > raw_data = ["88", "abc", "0", "", "92"]
+  >
+  > success = 0
+  > for item in raw_data:
+  >     try:
+  >         num = int(item)             # "abc"、"" 转不了 → ValueError
+  >         result = 100 / num          # 除数为 0 → ZeroDivisionError
+  >         print(f"「{item}」通过：100 ÷ {num} = {result:.2f}")
+  >         success += 1
+  >     except ValueError as e:
+  >         print(f"「{item}」不能转成数字，跳过。异常信息：{e}")
+  >     except ZeroDivisionError as e:
+  >         print(f"「{item}」是 0，不能做除数，跳过。异常信息：{e}")
+  >     except Exception as e:
+  >         print(f"「{item}」出现其它错误，跳过。异常信息：{e}")
+  >     finally:
+  >         print("-" * 30)             # 每条数据成功失败都会执行
+  >
+  > print(f"处理完成，成功 {success} 条")
+  > # 运行结果：88 和 92 通过，abc / 空字符串 / 0 各自被对应分支拦下，最后打印"成功 2 条"
+  > ```

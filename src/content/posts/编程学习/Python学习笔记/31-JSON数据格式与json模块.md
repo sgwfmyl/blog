@@ -143,8 +143,6 @@ with open("resources/user.json", "r", encoding="utf-8") as f:
 
 ### 二、裸写题
 
-
-
 - [ ] **2-1 把字典写进 JSON 文件**
   把一个包含姓名、年龄、性别、爱好的字典写进 `user.json`，要求文件里能看到中文、并且有缩进方便阅读。
 
@@ -171,7 +169,7 @@ with open("resources/user.json", "r", encoding="utf-8") as f:
 - [ ] **2-2 读回 JSON 文件**
   读取上一步写出的 `user.json`，打印内容并打印它的类型。
 
-  > [!TIP]- 提示
+  > [!TIP]- 提示（先自己想，实在想不出再点开）
   > **一级 · 思路**：读文件 + 把 JSON 文本变回 Python 对象
   > **二级 · 方法**：`json.load(f)`、`type()`
   > **三级 · 骨架**：`with open("user.json", "r", encoding="utf-8") as f:\n    user = json.____(f)`
@@ -190,7 +188,7 @@ with open("resources/user.json", "r", encoding="utf-8") as f:
 - [ ] **2-3 不落文件的字符串互转**
   把一个字典转成 JSON 字符串打印出来，再把这个字符串转回字典并取出其中一个值。
 
-  > [!TIP]- 提示
+  > [!TIP]- 提示（先自己想，实在想不出再点开）
   > **一级 · 思路**：想想哪两个方法名带 `s`（string）
   > **二级 · 方法**：`json.dumps()` / `json.loads()`
   > **三级 · 骨架**：`s = json.____(obj)` ／ `obj2 = json.____(s)`

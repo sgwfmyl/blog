@@ -86,46 +86,70 @@ with open("csv_data/02.csv", "r", encoding="utf-8") as f:
   > **二级 · 方法**：`open(..., "w")` + `f.write(...)`
   > **三级 · 骨架**：`f.write("姓名,年龄,性别\____")`
 
+  > [!TIP]- 参考答案（做完再点开）
+  > ```python
+  > # 2-1 原始方式
+  > with open("students_raw.csv", "w", encoding="utf-8") as f:
+  >     f.write("姓名,年龄,性别,爱好\n")
+  >     f.write("小王,18,男,'football,Java'\n")
+  >     f.write("小李,18,女,Python\n")
+  >     f.write("小张,18,男,C++\n")
+  > ```
+
 - [ ] **2-2 DictWriter 写 + DictReader 读**
   用 csv 模块把 3 个学生（含一个爱好带逗号的）写入 `students.csv`，再读回来打印每一行。
 
-  > [!TIP]- 提示
+  > [!TIP]- 提示（先自己想，实在想不出再点开）
   > **一级 · 思路**：写用 DictWriter（先 writeheader），读用 DictReader
   > **二级 · 方法**：`csv.DictWriter` / `writerow` / `csv.DictReader`
   > **三级 · 骨架**：`with open(..., "w", encoding="utf-8", newline="") as f:`
 
+  > [!TIP]- 参考答案（做完再点开）
+  > ```python
+  > import csv
+  >
+  > students = [
+  >     {"姓名": "小王", "年龄": 18, "性别": "男", "爱好": "football,Java"},
+  >     {"姓名": "小李", "年龄": 18, "性别": "女", "爱好": "Python"},
+  >     {"姓名": "小张", "年龄": 18, "性别": "男", "爱好": "C++"},
+  > ]
+  >
+  > # 2-2 / 2-3 csv 模块（writerows 一次写多行）
+  > with open("students.csv", "w", encoding="utf-8", newline="") as f:
+  >     writer = csv.DictWriter(f, fieldnames=["姓名", "年龄", "性别", "爱好"])
+  >     writer.writeheader()
+  >     writer.writerows(students)
+  >
+  > with open("students.csv", "r", encoding="utf-8") as f:
+  >     for row in csv.DictReader(f):
+  >         print(row)
+  > ```
+
 - [ ] **2-3 批量写入**
   把一个包含 3 个学生字典的列表，用 **一次调用** 全部写入 CSV。
 
-  > [!TIP]- 提示
+  > [!TIP]- 提示（先自己想，实在想不出再点开）
   > **一级 · 思路**：DictWriter 有一个方法就是"写多行"
-  > **二级 · 方法**：`writer.____(学生列表)`
-  > **三级 · 骨架**：`writer.writerows(students)`
+  > **二级 · 方法**：`writer.writerows(列表)`（一次写多行）
+  > **三级 · 骨架**：`writer.____(students)`
 
-> [!TIP]- 参考答案（做完再点开）
-> ```python
-> import csv
->
-> students = [
->     {"姓名": "小王", "年龄": 18, "性别": "男", "爱好": "football,Java"},
->     {"姓名": "小李", "年龄": 18, "性别": "女", "爱好": "Python"},
->     {"姓名": "小张", "年龄": 18, "性别": "男", "爱好": "C++"},
-> ]
->
-> # 2-1 原始方式
-> with open("students_raw.csv", "w", encoding="utf-8") as f:
->     f.write("姓名,年龄,性别,爱好\n")
->     f.write("小王,18,男,'football,Java'\n")
->     f.write("小李,18,女,Python\n")
->     f.write("小张,18,男,C++\n")
->
-> # 2-2 / 2-3 csv 模块（writerows 一次写多行）
-> with open("students.csv", "w", encoding="utf-8", newline="") as f:
->     writer = csv.DictWriter(f, fieldnames=["姓名", "年龄", "性别", "爱好"])
->     writer.writeheader()
->     writer.writerows(students)
->
-> with open("students.csv", "r", encoding="utf-8") as f:
->     for row in csv.DictReader(f):
->         print(row)
-> ```
+  > [!TIP]- 参考答案（做完再点开）
+  > ```python
+  > import csv
+  >
+  > students = [
+  >     {"姓名": "小王", "年龄": 18, "性别": "男", "爱好": "football,Java"},
+  >     {"姓名": "小李", "年龄": 18, "性别": "女", "爱好": "Python"},
+  >     {"姓名": "小张", "年龄": 18, "性别": "男", "爱好": "C++"},
+  > ]
+  >
+  > # 2-2 / 2-3 csv 模块（writerows 一次写多行）
+  > with open("students.csv", "w", encoding="utf-8", newline="") as f:
+  >     writer = csv.DictWriter(f, fieldnames=["姓名", "年龄", "性别", "爱好"])
+  >     writer.writeheader()
+  >     writer.writerows(students)
+  >
+  > with open("students.csv", "r", encoding="utf-8") as f:
+  >     for row in csv.DictReader(f):
+  >         print(row)
+  > ```

@@ -1,9 +1,9 @@
 ---
 title: Python3 迭代器与生成器
 published: 2026-09-16
+description: Python3 迭代器、iter()、next() 和 yield 生成器
 tags:
   - Python
-description: Python3 迭代器、iter()、next() 和 yield 生成器
 image: /assets/images/posts/python-19-iterator.png
 order: 19
 ---
@@ -255,109 +255,134 @@ while True:
 
 ---
 
+## 相关
+
+- [Python 推导式](/posts/编程学习/python学习笔记/18-python推导式/)
+- [Python函数基础](/posts/编程学习/python学习笔记/20-python函数基础/)
+
 ## 练习题
 
-- [x] **1. 基本迭代器使用**
+### 一、知识回顾（读完直接做下面的实践题）
+
+1. 迭代器：能"记住遍历位置"的对象，只能往前走、不能后退；字符串、列表、元组都能转成迭代器
+2. 两个基本操作：`iter(可迭代对象)` 创建迭代器；`next(迭代器)` 取出下一个元素（取完还取会抛 `StopIteration`）
+3. 迭代器也能直接被 `for` 循环遍历；迭代器是"一次性"的，取过的元素不会再来
+4. 自定义迭代器类要实现两个方法：`__iter__()`（初始化并返回迭代器对象，通常是 `return self`）和 `__next__()`（每次调用返回下一个值）
+5. `StopIteration` 异常：迭代完成的信号——`__next__()` 里没有更多值时就 `raise StopIteration`，`for` 循环靠它知道该停下
+6. 生成器：函数里用了 `yield`，它就是生成器函数；调用它返回的是**生成器对象**（一种迭代器），函数体不会立刻执行
+7. `yield` 的作用：返回本次迭代的值并**暂停**函数，下次取下一个值（`next()` 或下一轮 for）时从暂停处继续
+8. 生成器的好处：按需产生值，不必一次性算完、存下所有结果，省内存；并且能和其他迭代工具（如 for）无缝配合
+9. 常见例子：倒计时 `countdown(n)` 用 `yield n` 逐步倒数；斐波那契用 `a, b = b, a + b` 边算边 `yield`
+
+### 二、裸写题
+
+- [x] **2-1 基本迭代器使用**
   创建文件 `test_iter.py`，完成以下操作：
   - 用 `iter()` 创建列表 `[1, 2, 3, 4, 5]` 的迭代器
   - 用 `next()` 逐个获取元素
   - 用 `for` 循环遍历剩余元素
 
-  **知识点：** iter(列表) 创建迭代器、next(迭代器) 获取下一个
+  > [!TIP]- 提示（先自己想，实在想不出再点开）
+  > **一级 · 思路**：先把列表变成"逐个别取"的迭代器，取走几个之后再用循环把剩下的取完——取过的不会重复出现
+  > **二级 · 方法**：`it = iter(lst)` 创建迭代器；`next(it)` 取下一个；剩下的交给 `for x in it:`
+  > **三级 · 骨架**：`it = ____(lst)` / `print(____(it))` / `for x in ____:`
 
-  **参考答案：**
-  ```python
-  lst = [1, 2, 3, 4, 5]
-  it = iter(lst)
+  > [!TIP]- 参考答案（做完再点开）
+  > ```python
+  > # 2-1
+  > lst = [1, 2, 3, 4, 5]
+  > it = iter(lst)
+  >
+  > print(next(it))  # 1
+  > print(next(it))  # 2
+  > print(next(it))  # 3
+  >
+  > for x in it:
+  >     print(x, end=" ")  # 4 5
+  > print()
+  > ```
 
-  print(next(it))  # 1
-  print(next(it))  # 2
-  print(next(it))  # 3
-
-  for x in it:
-      print(x, end=" ")  # 4 5
-  print()
-  ```
-
-- [ ] **2. 自定义迭代器类**
+- [ ] **2-2 自定义迭代器类**
   创建文件 `test_class.py`，完成以下操作：
   - 创建一个迭代器类，生成 1-10 的数字
 
-  **知识点：** __iter__() 返回迭代器对象、__next__() 返回下一个值
+  > [!TIP]- 提示（先自己想，实在想不出再点开）
+  > **一级 · 思路**：写一个"会自己数数"的类：每次别人来要值就吐出一个、内部计数加一，数到 10 以后发出"结束"信号
+  > **二级 · 方法**：实现迭代器协议的两个方法——`__iter__()`（初始化迭代器，返回 `self`）、`__next__()`（每次返回下一个值，没有值时 `raise StopIteration` 异常）——这就是 Python 的迭代器协议，实现了这两个方法的类就是迭代器
+  > **三级 · 骨架**：`class MyNumbers:` / `    def ____(self):` / `        self.a = 1` / `        return ____` / `    def ____(self):` / `        if self.a <= 10: ... else: raise ____`
 
-  **说明：**
-  - `__iter__()` 方法：初始化迭代器，返回 `self`
-  - `__next__()` 方法：每次调用返回下一个值，没有值时抛出 `StopIteration` 异常
-  - 这是 Python 的迭代器协议，实现了这两个方法的类就是迭代器
+  > [!TIP]- 参考答案（做完再点开）
+  > ```python
+  > # 2-2
+  > class MyNumbers:
+  >     def __iter__(self):
+  >         self.a = 1      # 初始化计数器
+  >         return self     # 返回迭代器对象
+  >
+  >     def __next__(self):
+  >         if self.a <= 10:
+  >             x = self.a
+  >             self.a += 1
+  >             return x
+  >         else:
+  >             raise StopIteration  # 没有更多值时抛出异常
+  >
+  > myclass = MyNumbers()
+  > for x in myclass:
+  >     print(x, end=" ")
+  > print()
+  > ```
 
-  **参考答案：**
-  ```python
-  class MyNumbers:
-      def __iter__(self):
-          self.a = 1      # 初始化计数器
-          return self     # 返回迭代器对象
-
-      def __next__(self):
-          if self.a <= 10:
-              x = self.a
-              self.a += 1
-              return x
-          else:
-              raise StopIteration  # 没有更多值时抛出异常
-
-  myclass = MyNumbers()
-  for x in myclass:
-      print(x, end=" ")
-  print()
-  ```
-
-- [x] **3. 生成器函数**
+- [x] **2-3 生成器函数**
   创建文件 `test_generator.py`，完成以下操作：
   - 用 `yield` 创建一个生成器，生成 1-10 的平方数
 
-  **知识点：** yield 暂停函数并返回值、生成器函数调用后返回生成器对象
+  > **批改（2026-09-28）**：✅ 正确（`next()` 取到 1、4 后 `for` 取完剩下 9~100，1-10 的平方数全部输出）。
 
-  **说明：**
-  - `yield` 关键字：暂停函数执行，返回一个值，下次调用时从暂停处继续
-  - 生成器函数：包含 `yield` 的函数，调用后返回一个生成器对象
-  - 可以用 `next()` 或 `for` 循环逐步获取值
+  > [!TIP]- 提示（先自己想，实在想不出再点开）
+  > **一级 · 思路**：把"算平方"放进循环里，每算出一个就交出去一个并暂停，等下次被要值时继续算下一个
+  > **二级 · 方法**：`yield` 关键字暂停函数执行并返回一个值，下次调用时从暂停处继续；含 `yield` 的函数就是生成器函数，调用后返回生成器对象；可以用 `next()` 或 `for` 循环逐步获取值
+  > **三级 · 骨架**：`def squares(n):` / `    for i in range(1, n + 1):` / `        ____ i ** 2` / `gen = squares(10)` / `print(____(gen))`
 
-  **参考答案：**
-  ```python
-  def squares(n):
-      for i in range(1, n + 1):
-          yield i ** 2  # 暂停并返回平方数
+  > [!TIP]- 参考答案（做完再点开）
+  > ```python
+  > # 2-3
+  > def squares(n):
+  >     for i in range(1, n + 1):
+  >         yield i ** 2  # 暂停并返回平方数
+  >
+  > gen = squares(10)  # 调用生成器函数，返回生成器对象
+  > print(next(gen))  # 1
+  > print(next(gen))  # 4
+  > print(next(gen))  # 9
+  >
+  > for x in gen:
+  >     print(x, end=" ")  # 16 25 36 49 64 81 100
+  > print()
+  > ```
 
-  gen = squares(10)  # 调用生成器函数，返回生成器对象
-  print(next(gen))  # 1
-  print(next(gen))  # 4
-  print(next(gen))  # 9
-
-  for x in gen:
-      print(x, end=" ")  # 16 25 36 49 64 81 100
-  print()
-  ```
-
-- [x] **4. 斐波那契生成器**
+- [x] **2-4 斐波那契生成器**
   创建文件 `test_fibonacci.py`，完成以下操作：
   - 用 `yield` 实现斐波那契数列生成器
 
-  **知识点：** yield a 返回当前值、a, b = b, a + b 同时赋值
+  > **批改（2026-09-28）**：✅ 正确（`range(20)` 输出 0、1、1、2、3、5、8、13 … 4181，与斐波那契数列一致）。
 
-  **说明：**
-  - 斐波那契数列：0, 1, 1, 2, 3, 5, 8, 13...（每个数是前两个数之和）
-  - `a, b = b, a + b` 是同时赋值：先计算右边，再同时赋给左边
+  > [!TIP]- 提示（先自己想，实在想不出再点开）
+  > **一级 · 思路**：斐波那契数列是 0, 1, 1, 2, 3, 5, 8, 13 ...（每个数是前两个数之和）；每轮先把当前值交出去，再让两个变量一起往前挪一位
+  > **二级 · 方法**：`yield a` 返回当前值；`a, b = b, a + b` 是**同时赋值**（先算右边，再同时赋给左边）
+  > **三级 · 骨架**：`def fibonacci():` / `    a, b = 0, 1` / `    while True:` / `        ____ a` / `        a, b = b, ____`
 
-  **参考答案：**
-  ```python
-  def fibonacci():
-      a, b = 0, 1
-      while True:
-          yield a      # 返回当前斐波那契数
-          a, b = b, a + b  # 计算下一个数
-
-  fib = fibonacci()
-  for _ in range(20):
-      print(next(fib), end=" ")
-  print()
-  ```
+  > [!TIP]- 参考答案（做完再点开）
+  > ```python
+  > # 2-4
+  > def fibonacci():
+  >     a, b = 0, 1
+  >     while True:
+  >         yield a      # 返回当前斐波那契数
+  >         a, b = b, a + b  # 计算下一个数
+  >
+  > fib = fibonacci()
+  > for _ in range(20):
+  >     print(next(fib), end=" ")
+  > print()
+  > ```

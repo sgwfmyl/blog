@@ -1,5 +1,5 @@
 ---
-title: Python调用大模型（openai库）
+title: Python 调用大模型（OpenAI 库）
 published: 2026-09-18
 description: 用 pip 安装 openai 库并调用 DeepSeek：客户端创建、请求参数、返回值解析的完整流程
 tags:
@@ -95,6 +95,11 @@ print(response.choices[0].message.content)
 | 让 AI 记住之前的对话 | [实战-AI智能伴侣-会话记忆](/posts/编程学习/python学习笔记/38-实战-ai智能伴侣-会话记忆/) |
 | 让 AI 按指定身份和风格回答 | [提示词工程](/posts/编程学习/python学习笔记/34-提示词工程/) |
 
+## 相关
+
+- [Apifox 测试大模型接口](/posts/编程学习/python学习笔记/32-apifox测试大模型接口/)
+- [提示词工程](/posts/编程学习/python学习笔记/34-提示词工程/)
+
 ## 练习题
 
 ### 一、知识回顾（读完直接做下面的实践题）
@@ -109,8 +114,6 @@ print(response.choices[0].message.content)
 8. 用环境变量存 API Key 是为了避免把密钥**写死在代码里**（泄露）
 
 ### 二、裸写题
-
-
 
 - [ ] **2-1 最小调用程序**
   写一个程序：从环境变量读 API Key，向 deepseek-chat 提一个问题，把回复打印出来。
@@ -139,7 +142,7 @@ print(response.choices[0].message.content)
 - [ ] **2-2 流式输出**
   把上面的调用改成流式，把回复**逐段**打印到控制台（不是一次性打印）。
 
-  > [!TIP]- 提示
+  > [!TIP]- 提示（先自己想，实在想不出再点开）
   > **一级 · 思路**：让接口一段一段给，而不是等全部生成完
   > **二级 · 方法**：`stream=True` + `for chunk in response:`
   > **三级 · 骨架**：`if chunk.choices[0].____.content is not None:`
@@ -163,10 +166,10 @@ print(response.choices[0].message.content)
   > print()
   > ```
 
-- [ ] **2-3 用 system 设定身份**
+- [ ] **2-3 设定 AI 的身份**
   给 AI 设定身份"你是一名非常可爱的AI助理，名字叫小甜甜"，再问"你是谁"，对比不设身份时的回答有什么不同。
 
-  > [!TIP]- 提示
+  > [!TIP]- 提示（先自己想，实在想不出再点开）
   > **一级 · 思路**：身份写在 messages 的第一条，角色不是 user
   > **二级 · 方法**：`{"role": "system", "content": "..."}`
   > **三级 · 骨架**：`messages=[{"role": "____", "content": 身份}, {"role": "user", "content": "你是谁"}]`

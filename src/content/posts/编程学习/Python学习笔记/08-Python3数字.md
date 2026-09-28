@@ -1,9 +1,9 @@
 ---
-title: Python3 数字(Number)
+title: Python3 数字
 published: 2026-09-14
+description: Python3 数字类型、数学函数、随机数函数和三角函数
 tags:
   - Python
-description: Python3 数字类型、数学函数、随机数函数和三角函数
 image: https://img.tsh520.cn/file/blog/post-covers/python-08-numbers.webp
 order: 8
 ---
@@ -246,111 +246,177 @@ Python包括以下三角函数：
 
 ---
 
+## 相关
+
+- [Python3 运算符](/posts/编程学习/python学习笔记/07-python3运算符/)
+- [Python3 字符串](/posts/编程学习/python学习笔记/09-python3字符串/)
+
 ## 练习题
 
-- [x] **1. 数字类型识别**
+### 一、知识回顾（读完直接做下面的实践题）
+
+1. 三种数值类型：整型 `int`（**没有大小限制**，Python3 没有 Long 类型）、浮点型 `float`（可以用科学计数法，如 `2.5e2` = 250）、复数 `complex`（写成 `a + bj` 或 `complex(a, b)`，实部虚部都是浮点型）
+2. 进制字面量：十六进制加 `0x` 前缀（`0xA0F` 得 2575）、八进制加 `0o` 前缀（`0o37` 得 31）、二进制加 `0b` 前缀
+3. 类型转换就用与类型同名的内置函数：`int(x)` 转整数、`float(x)` 转浮点数、`complex(x)` 或 `complex(x, y)` 转复数
+4. 除法：`/` 总是返回**浮点数**（`17 / 3` 得 5.666…）；`//` 是整除（向下取整，`17 // 3` 得 5）；`%` 取余数（`17 % 3` 得 2）
+5. `//` 的结果类型跟操作数有关：`7 // 2` 得 `3`，但 `7.0 // 2` 和 `7 // 2.0` 都得 `3.0`
+6. 幂运算用 `**`：`5 ** 2` 得 25、`2 ** 7` 得 128；不同数值类型混合运算时整数会自动转成浮点数
+7. 变量必须先赋值再使用，否则报 `NameError: name 'n' is not defined`；`del 变量名` 删除对象的引用
+8. 交互模式里最后输出过的表达式结果会自动存进变量 `_`，可以直接参与下一次计算（如 `price + _`）；要把 `_` 当成**只读变量**
+9. 常用数学函数：`abs(x)` 求绝对值；数学模块里还有 `ceil(x)` 上入、`floor(x)` 下舍、`sqrt(x)` 平方根、`exp(x)` e 的 x 次幂、`log/log10` 对数、`pow(x, y)` 幂、`factorial` 阶乘；`round(x, n)` 保留 n 位小数（内置函数，不用导模块）
+10. 随机数与常量：随机小数用 `random.random()`（[0, 1) 区间）、从序列挑一个用 `random.choice(seq)`、区间内随机整数用 `random.randint(a, b)`、打乱用 `shuffle(lst)`；圆周率和自然常数分别是 `math.pi`、`math.e`，三角函数（`sin`、`cos`、`degrees`、`radians` 等）也都在数学模块里
+
+### 二、裸写题
+
+- [x] **2-1 数字类型识别**
   创建文件 `test_number_type.py`，完成以下操作：
   - 创建变量 `a = 10`、`b = 3.14`、`c = 2 + 3j`
   - 用 `type()` 打印每个变量的类型
   - 用 `isinstance()` 判断 `a` 是否是 int 类型
 
-  **参考答案：**
-  ```python
-  a = 10
-  b = 3.14
-  c = 2 + 3j
+  > **批改（2026-09-28）**：✅ 正确（`<class 'int'>`、`<class 'float'>`、`<class 'complex'>`，`isinstance(a, int)` 输出 True）。
 
-  print(f"a = {a}, 类型: {type(a)}")    # <class 'int'>
-  print(f"b = {b}, 类型: {type(b)}")    # <class 'float'>
-  print(f"c = {c}, 类型: {type(c)}")    # <class 'complex'>
+  > [!TIP]- 提示（先自己想，实在想不出再点开）
+  > **一级 · 思路**：三个变量按题面写好，再一行一个变量地输出"值 + 它的类型"；类型不用自己判断，有一个内置函数能问出来
+  > **二级 · 方法**：查类型用 `type(变量)`；判断是不是某个类型用 `isinstance(变量, 类型)`
+  > **三级 · 骨架**：`print(f"a = {a}, 类型: {____(a)}")` / `print(f"isinstance(a, int): {____(a, int)}")`
 
-  print(f"isinstance(a, int): {isinstance(a, int)}")  # True
-  ```
+  > [!TIP]- 参考答案（做完再点开）
+  > ```python
+  > # 2-1
+  > a = 10
+  > b = 3.14
+  > c = 2 + 3j
+  >
+  > print(f"a = {a}, 类型: {type(a)}")    # <class 'int'>
+  > print(f"b = {b}, 类型: {type(b)}")    # <class 'float'>
+  > print(f"c = {c}, 类型: {type(c)}")    # <class 'complex'>
+  >
+  > print(f"isinstance(a, int): {isinstance(a, int)}")  # True
+  > ```
 
-- [x] **2. 数字类型转换**
+- [x] **2-2 数字类型转换**
   创建文件 `test_convert.py`，完成以下操作：
   - 将浮点数 `3.14` 转换为整数
   - 将整数 `100` 转换为浮点数
   - 将整数 `10` 转换为复数
   - 打印每个结果及其类型
 
-  **参考答案：**
-  ```python
-  a = int(3.14)
-  b = float(100)
-  c = complex(10)
+  > [!TIP]- 提示（先自己想，实在想不出再点开）
+  > **一级 · 思路**：类型转换用的是与目标类型**同名**的内置函数；转完把值和类型一起打印出来核对
+  > **二级 · 方法**：`int(3.14)` 转整数、`float(100)` 转浮点数、`complex(10)` 转复数；类型用 `type()` 查
+  > **三级 · 骨架**：`a = ____(3.14)` / `b = float(____)` / `c = ____(10)`
 
-  print(f"int(3.14) = {a}, 类型: {type(a)}")      # 3, <class 'int'>
-  print(f"float(100) = {b}, 类型: {type(b)}")      # 100.0, <class 'float'>
-  print(f"complex(10) = {c}, 类型: {type(c)}")    # (10+0j), <class 'complex'>
-  ```
+  > [!TIP]- 参考答案（做完再点开）
+  > ```python
+  > # 2-2
+  > a = int(3.14)
+  > b = float(100)
+  > c = complex(10)
+  >
+  > print(f"int(3.14) = {a}, 类型: {type(a)}")      # 3, <class 'int'>
+  > print(f"float(100) = {b}, 类型: {type(b)}")      # 100.0, <class 'float'>
+  > print(f"complex(10) = {c}, 类型: {type(c)}")    # (10+0j), <class 'complex'>
+  > ```
 
-- [x] **3. 进制转换**
+- [x] **2-3 进制转换**
   创建文件 `test_hex.py`，完成以下操作：
   - 将十进制数 `255` 转换为十六进制、八进制、二进制
   - 将十六进制 `0xFF` 转换为十进制
   - 打印每个结果
 
-  **参考答案：**
-  ```python
-  a = 255
+  > **批改（2026-09-28）**：⚠️ 缺第 2 项：没有把十六进制 `0xFF` 转成十进制，补上 `print(f"0xFF 转十进制: {0xFF}")`；其余正确（`0xff`、`0o377`、`0b11111111`）。
 
-  print(f"十六进制: {hex(a)}")   # 0xff
-  print(f"八进制: {oct(a)}")     # 0o377
-  print(f"二进制: {bin(a)}")     # 0b11111111
+  > [!TIP]- 提示（先自己想，实在想不出再点开）
+  > **一级 · 思路**：十进制转其它进制有三个现成的内置函数，结果都是带前缀的字符串；反过来，`0x` 开头的十六进制字面量在 Python 里本身就是那个十进制数，直接打印就看得到
+  > **二级 · 方法**：`hex(255)` 转十六进制、`oct(255)` 转八进制、`bin(255)` 转二进制；`0xFF` 字面量的值就是 255
+  > **三级 · 骨架**：`print(f"十六进制: {____(a)}")` / `print(f"0xFF 转十进制: {____}")`
 
-  print(f"0xFF 转十进制: {0xFF}")  # 255
-  ```
+  > [!TIP]- 参考答案（做完再点开）
+  > ```python
+  > # 2-3
+  > a = 255
+  >
+  > print(f"十六进制: {hex(a)}")   # 0xff
+  > print(f"八进制: {oct(a)}")     # 0o377
+  > print(f"二进制: {bin(a)}")     # 0b11111111
+  >
+  > print(f"0xFF 转十进制: {0xFF}")  # 255
+  > ```
 
-- [x] **4. 数学函数练习**
-  创建文件 `test_math.py`，完成以下操作（需要 `import math`）：
+- [x] **2-4 数学函数练习**
+  创建文件 `test_math.py`，完成以下计算并打印结果：
   - 计算 `-10` 的绝对值
-  - 计算 `4.1` 的上入整数
-  - 计算 `4.9` 的下舍整数
+  - 计算 `4.1` 的上入整数（往大的方向取整）
+  - 计算 `4.9` 的下舍整数（往小的方向取整）
   - 计算 `2` 的平方根
-  - 计算 `e` 的 `1` 次幂
+  - 计算自然常数 `e` 的 `1` 次幂
 
-  **参考答案：**
-  ```python
-  import math
+  > **批改（2026-09-28）**：✅ 正确（10、5、4、1.4142135623730951、2.718281828459045，五项都对）。
 
-  print(f"abs(-10) = {abs(-10)}")           # 10
-  print(f"math.ceil(4.1) = {math.ceil(4.1)}")  # 5
-  print(f"math.floor(4.9) = {math.floor(4.9)}")  # 4
-  print(f"math.sqrt(2) = {math.sqrt(2)}")    # 1.4142135623730951
-  print(f"math.exp(1) = {math.exp(1)}")      # 2.718281828459045
-  ```
+  > [!TIP]- 提示（先自己想，实在想不出再点开）
+  > **一级 · 思路**：求绝对值有现成的内置函数；上入、下舍、平方根、e 的幂这四件事都在数学模块里，先把模块导进来，再用"模块名.函数名"调用
+  > **二级 · 方法**：`abs(-10)`；`import math` 后用 `math.ceil(4.1)`、`math.floor(4.9)`、`math.sqrt(2)`、`math.exp(1)`
+  > **三级 · 骨架**：`print(f"abs(-10) = {____(-10)}")` / `print(f"math.sqrt(2) = {math.____(2)}")`
 
-- [x] **5. 随机数函数练习**
-  创建文件 `test_random.py`，完成以下操作（需要 `import random`）：
+  > [!TIP]- 参考答案（做完再点开）
+  > ```python
+  > # 2-4
+  > import math
+  >
+  > print(f"abs(-10) = {abs(-10)}")           # 10
+  > print(f"math.ceil(4.1) = {math.ceil(4.1)}")  # 5
+  > print(f"math.floor(4.9) = {math.floor(4.9)}")  # 4
+  > print(f"math.sqrt(2) = {math.sqrt(2)}")    # 1.4142135623730951
+  > print(f"math.exp(1) = {math.exp(1)}")      # 2.718281828459045
+  > ```
+
+- [x] **2-5 随机数函数练习**
+  创建文件 `test_random.py`，完成以下操作：
   - 生成一个 `[0, 1)` 之间的随机小数
-  - 从 `[0, 1, 2, 3, 4, 5]` 中随机选一个数
+  - 从 `[0, 1, 2, 3, 4, 5]` 中随机挑一个数
   - 生成一个 `[1, 100]` 之间的随机整数
 
-  **参考答案：**
-  ```python
-  import random
+  > **批改（2026-09-28）**：✅ 正确（实测 `random.random()` 输出 0.5084…、`random.choice` 取到列表里的 3、`random.randint(1, 100)` 输出 43，三个函数用法都对）。
 
-  print(f"随机小数: {random.random()}")           # 例如：0.7134
-  print(f"随机选择: {random.choice([0,1,2,3,4,5])}")  # 例如：3
-  print(f"随机整数: {random.randint(1, 100)}")    # 例如：42
-  ```
+  > [!TIP]- 提示（先自己想，实在想不出再点开）
+  > **一级 · 思路**：三件事都要用随机数模块，先导进来，再分别挑三个对应的函数：一个生成小数、一个从序列里挑、一个取整数区间
+  > **二级 · 方法**：`import random` 后用 `random.random()`（[0, 1) 小数）、`random.choice([0,1,2,3,4,5])`（序列里挑一个）、`random.randint(1, 100)`（区间内整数）
+  > **三级 · 骨架**：`print(f"随机小数: {random.____()}")` / `print(f"随机选择: {random.____([0,1,2,3,4,5])}")` / `print(f"随机整数: {random.____(1, 100)}")`
 
-- [x] **6. 数字运算综合练习**
+  > [!TIP]- 参考答案（做完再点开）
+  > ```python
+  > # 2-5
+  > import random
+  >
+  > print(f"随机小数: {random.random()}")           # 例如：0.7134
+  > print(f"随机选择: {random.choice([0,1,2,3,4,5])}")  # 例如：3
+  > print(f"随机整数: {random.randint(1, 100)}")    # 例如：42
+  > ```
+
+- [x] **2-6 数字运算综合练习**
   创建文件 `test_calculate.py`，完成以下操作：
-  - 计算圆的面积（半径 = 5，用 `math.pi`）
-  - 计算 `10` 的阶乘（用 `math.factorial`）
+  - 计算圆的面积（半径 = 5，圆周率用数学模块里的常量）
+  - 计算 `10` 的阶乘（用数学模块里现成的阶乘函数，不用自己写循环）
   - 对 `3.14159` 四舍五入保留 2 位小数
 
-  **参考答案：**
-  ```python
-  import math
+  > **批改（2026-09-28）**：✅ 正确（圆面积 78.53981633974483、10 的阶乘 3628800、`round(3.14159, 2)` 得 3.14）。
 
-  r = 5
-  area = math.pi * r ** 2
-  print(f"半径为{r}的圆面积: {area}")  # 78.53981633974483
+  > [!TIP]- 提示（先自己想，实在想不出再点开）
+  > **一级 · 思路**：圆面积 = 圆周率 × 半径的平方；阶乘有现成函数直接调；四舍五入到指定小数位也有内置函数，把"保留几位"当第二个参数传进去
+  > **二级 · 方法**：`math.pi` 是圆周率常量；`math.factorial(10)` 算阶乘；`round(3.14159, 2)` 保留两位小数
+  > **三级 · 骨架**：`area = math.____ * r ** 2` / `print(f"10的阶乘: {math.____(10)}")` / `print(f"四舍五入: {____(3.14159, 2)}")`
 
-  print(f"10的阶乘: {math.factorial(10)}")  # 3628800
-
-  print(f"四舍五入: {round(3.14159, 2)}")   # 3.14
-  ```
+  > [!TIP]- 参考答案（做完再点开）
+  > ```python
+  > # 2-6
+  > import math
+  >
+  > r = 5
+  > area = math.pi * r ** 2
+  > print(f"半径为{r}的圆面积: {area}")  # 78.53981633974483
+  >
+  > print(f"10的阶乘: {math.factorial(10)}")  # 3628800
+  >
+  > print(f"四舍五入: {round(3.14159, 2)}")   # 3.14
+  > ```

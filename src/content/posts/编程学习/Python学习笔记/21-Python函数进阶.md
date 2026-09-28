@@ -1,10 +1,10 @@
 ---
 title: Python函数进阶
 published: 2026-09-16
+description: Python变量作用域、参数详解（位置参数、关键字参数、默认参数、不定长参数）、函数作为参数、匿名函数
 tags:
   - Python
   - 函数
-description: Python变量作用域、参数详解（位置参数、关键字参数、默认参数、不定长参数）、函数作为参数、匿名函数
 image: https://img.tsh520.cn/file/blog/post-covers/python-21-advanced-function.webp
 order: 21
 ---
@@ -374,65 +374,103 @@ print(add(100, 200))
 
 ---
 
+## 相关
+
+- [Python函数基础](/posts/编程学习/python学习笔记/20-python函数基础/)
+- [Python类型注解](/posts/编程学习/python学习笔记/22-python类型注解/)
+
 ## 练习题
 
-- [x] **1. 三角形类型判断**
+### 一、知识回顾（读完直接做下面的实践题）
+
+1. 作用域：函数**外**定义的是全局变量（整个文件都能用），函数**内**定义的是局部变量（只在该函数里能用，函数执行完就销毁）
+2. 想在函数里**修改**全局变量，要在函数内先声明 `global 变量名`（先声明，再使用）
+3. 位置参数：调用时实参顺序必须与形参顺序**完全一致**（参数少、顺序自然时用）
+4. 关键字参数：调用时写成 `形参名=值`，顺序随意、可读性好
+5. 两种混用时，**位置参数必须在前、关键字参数在后**（关键字参数之间没有顺序要求）
+6. 默认参数（缺省参数）：定义时给参数一个默认值，如 `def reg_stu(name, age, gender, city='北京'):`；不传就用默认值，传了就覆盖；默认参数要放在没有默认值的参数后面
+7. 不定长位置参数 `*args`：把多传的位置参数收集成一个**元组**（`args` 只是约定名，可以叫别的）
+8. 不定长关键字参数 `**kwargs`：把多传的关键字参数收集成一个**字典**（常用来收配置项，如 `round=2`）
+9. 函数也是"值"：函数可以当参数传给另一个函数，传进去的是它封装的逻辑，如 `calc(10, 20, add)`
+10. 匿名函数 `lambda 参数列表 : 函数体`：没有名字、一行写完，适合逻辑简单且只在一处使用的场景；返回结果不用写 `return`，表达式的值就是结果
+
+### 二、裸写题
+
+- [x] **2-1 三角形类型判断**
   定义一个函数 `triangle_type(a, b, c)`，根据传入的三个边长判定三角形类型：
   - 等边三角形：三边相等
   - 等腰三角形：两边相等
   - 普通三角形：三边都不相等
   - 不能构成三角形：任意两边之和小于等于第三边
 
-  **知识点：** 多参数函数、if-elif-else 条件判断、return 返回字符串
+  > **批改（2026-09-28）**：⚠️ 判断逻辑正确，但只测了 `triangle_type(3, 3, 999)`（不能构成三角形）一种情况，等边/等腰/普通三种分支都没验证；建议按参考答案把 4 种情况各跑一遍。
 
-  **参考答案：**
-  ```python
-  def triangle_type(a, b, c):
-      if a + b > c and a + c > b and b + c > a:
-          if a == b == c:
-              return "等边三角形"
-          elif a == b or a == c or b == c:
-              return "等腰三角形"
-          else:
-              return "普通三角形"
-      else:
-          return "不能构成三角形"
+  > [!TIP]- 提示（先自己想，实在想不出再点开）
+  > **一级 · 思路**：先过一遍"能不能围成三角形"的关（任意两边之和都要大于第三边），能围成的再按"三边相等 / 有两边相等 / 都不等"往下分
+  > **二级 · 方法**：外层 `if a + b > c and a + c > b and b + c > a:`，内层用 `if a == b == c:` / `elif a == b or a == c or b == c:` / `else:`，各分支 `return` 对应的字符串
+  > **三级 · 骨架**：`if a + b > ____ and a + c > b and b + c > a:` / `    if a == b == ____:` / `    elif a == b ____ a == c ____ b == c:` / `else: return "不能构成三角形"`
 
-  print(triangle_type(3, 4, 5))    # 普通三角形
-  print(triangle_type(3, 3, 5))    # 等腰三角形
-  print(triangle_type(8, 8, 8))    # 等边三角形
-  print(triangle_type(3, 4, 7))    # 不能构成三角形
-  ```
+  > [!TIP]- 参考答案（做完再点开）
+  > ```python
+  > # 2-1
+  > def triangle_type(a, b, c):
+  >     if a + b > c and a + c > b and b + c > a:
+  >         if a == b == c:
+  >             return "等边三角形"
+  >         elif a == b or a == c or b == c:
+  >             return "等腰三角形"
+  >         else:
+  >             return "普通三角形"
+  >     else:
+  >         return "不能构成三角形"
+  >
+  > print(triangle_type(3, 4, 5))    # 普通三角形
+  > print(triangle_type(3, 3, 5))    # 等腰三角形
+  > print(triangle_type(8, 8, 8))    # 等边三角形
+  > print(triangle_type(3, 4, 7))    # 不能构成三角形
+  > ```
 
-- [x] **2. 成绩统计函数**
+- [x] **2-2 成绩统计函数**
   定义一个函数 `calc_stats(*scores)`，接收任意数量的成绩，返回最高分、最低分、平均分。
 
-  **知识点：** 不定长参数 `*args`、内置函数 max/min/sum/len、return 多个返回值
+  > **批改（2026-09-28）**：✅ 正确（最高分 96、最低分 78、平均分 87.8，输出与预期一致）。代码与文件末尾注释答案高度相似（连那组测试数据都一样），建议重做一遍确认掌握。
 
-  **参考答案：**
-  ```python
-  def calc_stats(*scores):
-      return max(scores), min(scores), round(sum(scores) / len(scores), 1)
+  > [!TIP]- 提示（先自己想，实在想不出再点开）
+  > **一级 · 思路**：参数个数不定，就把它收成一包整体处理：最高、最低、平均值各用现成函数算出来，一起返回
+  > **二级 · 方法**：定义时用不定长位置参数 `*scores`（收集成元组）；最高 `max(scores)`、最低 `min(scores)`、平均 `sum(scores) / len(scores)`（要保留一位小数可以再套 `round(值, 1)`）；`return 最高, 最低, 平均` 一次返回三个值
+  > **三级 · 骨架**：`def calc_stats(____scores):` / `    return ____(scores), min(scores), round(sum(scores) / ____(scores), 1)`
 
-  highest, lowest, avg = calc_stats(85, 92, 78, 96, 88)
-  print(f"最高分: {highest}, 最低分: {lowest}, 平均分: {avg}")
-  ```
+  > [!TIP]- 参考答案（做完再点开）
+  > ```python
+  > # 2-2
+  > def calc_stats(*scores):
+  >     return max(scores), min(scores), round(sum(scores) / len(scores), 1)
+  >
+  > highest, lowest, avg = calc_stats(85, 92, 78, 96, 88)
+  > print(f"最高分: {highest}, 最低分: {lowest}, 平均分: {avg}")
+  > ```
 
-- [x] **3. 学生信息注册**
+- [x] **2-3 学生信息注册**
   定义一个函数 `register(name, age, gender, city='北京')`，使用默认参数，返回学生信息字典。
 
-  **知识点：** 默认参数、return 返回字典
+  > **批改（2026-09-28）**：✅ 正确（默认值 `城市=北京`、传参覆盖成 `城市=上海` 两组输出都对）。与文件末尾注释答案高度相似（注释和测试数据都一致），建议重做一遍确认掌握。
 
-  **参考答案：**
-  ```python
-  def register(name, age, gender, city='北京'):
-      return {"name": name, "age": age, "gender": gender, "city": city}
+  > [!TIP]- 提示（先自己想，实在想不出再点开）
+  > **一级 · 思路**：其中一个参数在定义时就给好默认值——调用时不传就是默认的，传了就按传的来
+  > **二级 · 方法**：默认参数写在参数列表最后，如 `city='北京'`；函数里把参数装进字典 `return {"name": name, "age": age, "gender": gender, "city": city}`
+  > **三级 · 骨架**：`def register(name, age, gender, ____='北京'):` / `    return {"name": ____, "age": age, "gender": gender, "city": city}`
 
-  # 使用默认值
-  stu1 = register("张三", 18, "男")
-  print(stu1)  # {'name': '张三', 'age': 18, 'gender': '男', 'city': '北京'}
-
-  # 覆盖默认值
-  stu2 = register("李四", 20, "女", "上海")
-  print(stu2)  # {'name': '李四', 'age': 20, 'gender': '女', 'city': '上海'}
-  ```
+  > [!TIP]- 参考答案（做完再点开）
+  > ```python
+  > # 2-3
+  > def register(name, age, gender, city='北京'):
+  >     return {"name": name, "age": age, "gender": gender, "city": city}
+  >
+  > # 使用默认值
+  > stu1 = register("张三", 18, "男")
+  > print(stu1)  # {'name': '张三', 'age': 18, 'gender': '男', 'city': '北京'}
+  >
+  > # 覆盖默认值
+  > stu2 = register("李四", 20, "女", "上海")
+  > print(stu2)  # {'name': '李四', 'age': 20, 'gender': '女', 'city': '上海'}
+  > ```

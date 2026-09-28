@@ -1,9 +1,9 @@
 ---
 title: Python3 基础语法
 published: 2026-08-19
+description: Python3 编码、标识符、关键字、注释、缩进和数据类型等基础语法
 tags:
   - Python
-description: Python3 编码、标识符、关键字、注释、缩进和数据类型等基础语法
 image: https://img.tsh520.cn/file/blog/post-covers/python-02-grammar.webp
 order: 2
 ---
@@ -363,145 +363,182 @@ Options and arguments (and corresponding environment variables):
 
 ---
 
+## 相关
+
+- [Python3 简介](/posts/编程学习/python学习笔记/01-python3简介/)
+- [Python3 基本数据类型](/posts/编程学习/python学习笔记/03-python3基本数据类型/)
+
 ## 练习题
 
-- [x] **1. 标识符合法性判断**
-  打开记事本，创建文件 `test_identifier.py`，编写一个程序：让用户输入一个标识符名称，然后判断它是否是合法的 Python 标识符（不能以数字开头，不能是关键字，只能包含字母、数字、下划线）。运行程序并测试 `2name`、`user_name`、`class` 这三个输入。
+### 一、知识回顾（读完直接做下面的实践题）
 
-  **参考答案：**
-  ```python
-  import keyword
+1. 源码文件默认以 **UTF-8** 编码；要指定别的编码，就在文件第一行写 `# -*- coding: cp-1252 -*-` 这样的编码声明
+2. 标识符规则：第一个字符必须是**字母或下划线**，其余部分由字母、数字、下划线组成；**大小写敏感**（`count` 和 `Count` 是两个标识符）；不能使用保留**关键字**；建议保持简洁（一般不超过 20 个字符）
+3. 判断一个名字能不能当标识符要看四件事：不能为空、首字符是字母或下划线、其余字符都是字母/数字/下划线、不是关键字；Python 3 还允许中文等非 ASCII 字符做标识符（如 `姓名`、`π`）
+4. 查看关键字：`keyword` 模块的 `keyword.kwlist` 输出当前版本的全部关键字（Python 3.13 共 **35** 个），`keyword.iskeyword(名字)` 判断某个名字是不是关键字
+5. 缩进就是 Python 的代码块标记（不需要大括号 `{}`）；同一个代码块里的语句**缩进必须一致**，否则报 `IndentationError: unindent does not match any outer indentation level`
+6. 多行语句：语句太长可以用反斜杠 `\` 续行；在 `[]`、`{}`、`()` 里面的多行语句**不需要**反斜杠
+7. 数字有四种类型：整数 `int`（没有 Python 2 的 Long）、布尔 `bool`、浮点数 `float`、复数 `complex`（如 `1 + 2j`）
+8. 字符串：单引号和双引号**完全等价**；三引号可以写多行；`+` 连接、`*` 重复；索引从左往右从 0 开始、从右往左从 -1 开始；切片 `str[start:end:step]`（含 start、不含 end）；字符串**不可变**
+9. 同一行写多条语句用分号 `;` 分隔（如 `import sys; x = 'runoob'`）；导入模块的三种写法：`import 模块`、`from 模块 import 函数`、`from 模块 import *`
+10. 输出与输入：`print` 默认**换行**，末尾加上 `end=" "` 就能**不换行**；`input("提示语")` 会等用户按下回车才继续；空行不是语法的一部分，但能分隔代码、方便阅读
 
-  def is_valid_identifier(name):
-      # 检查是否为空
-      if not name:
-          return False
-      # 检查第一个字符是否为字母或下划线
-      if not (name[0].isalpha() or name[0] == '_'):
-          return False
-      # 检查是否包含非法字符
-      for char in name:
-          if not (char.isalnum() or char == '_'):
-              return False
-      # 检查是否为关键字
-      if keyword.iskeyword(name):
-          return False
-      return True
+### 二、裸写题
 
-  # 测试
-  print(is_valid_identifier("2name"))    # False
-  print(is_valid_identifier("user_name"))  # True
-  print(is_valid_identifier("class"))    # False
-  ```
+- [x] **2-1 标识符合法性判断** ❌
+  创建文件 `test_identifier.py`，编写程序：让用户输入一个名字，判断它能不能作为合法的 Python 标识符（不能以数字开头、不能是保留关键字、只能包含字母、数字、下划线），并把判断结果输出。运行程序，分别用 `2name`、`user_name`、`class` 这三个输入各测一次，输出应为 `False`、`True`、`False`。
 
-- [x] **2. 查看 Python 关键字**
-  打开命令提示符（CMD），输入 `python` 进入交互模式，然后输入以下代码查看所有关键字：
-  ```python
-  import keyword
-  print(keyword.kwlist)
-  ```
-  统计一下共有多少个关键字。
+  > **批改（2026-09-28）**：❌ 只写了 `user_name = 10` 一行有效代码（`2name`、`class` 两行被注释掉），没有题面要求的"输入标识符、判断是否合法"程序，运行后没有任何输出。把参考代码敲进 `test_identifier.py` 跑一遍，三个测试的输出应是 `False`、`True`、`False`。
 
-  **参考答案：**
-  Python 3.13 共有 **35** 个关键字。运行代码后会输出完整列表，可以用 `len(keyword.kwlist)` 直接获取数量。
+  > [!TIP]- 提示（先自己想，实在想不出再点开）
+  > **一级 · 思路**：分四步检查——空名字先判否；再看首字符是不是字母或下划线；再逐个字符看是否只由字母、数字、下划线组成；最后查是不是保留关键字
+  > **二级 · 方法**：`input()` 拿输入；`name[0].isalpha()` 判首字符；`char.isalnum()` 判字母数字；`keyword.iskeyword(name)` 查关键字
+  > **三级 · 骨架**：`if not (name[0].____() or name[0] == "_"): return False` / 循环里逐字检查 `if not (char.____() or char == "_")` / `if keyword.____(name): return False`
 
-- [x] **3. 缩进错误实验**
-  创建文件 `test_indent.py`，故意写一个缩进不一致的代码：
-  ```python
-  if True:
-      print("正确缩进")
-    print("错误缩进")
-  ```
-  运行它，观察报错信息 `IndentationError`，然后修正缩进使程序正常运行。
+  > [!TIP]- 参考答案（做完再点开）
+  > ```python
+  > # 2-1
+  > import keyword
+  >
+  > def is_valid_identifier(name):
+  >     # 检查是否为空
+  >     if not name:
+  >         return False
+  >     # 检查第一个字符是否为字母或下划线
+  >     if not (name[0].isalpha() or name[0] == '_'):
+  >         return False
+  >     # 检查是否包含非法字符
+  >     for char in name:
+  >         if not (char.isalnum() or char == '_'):
+  >             return False
+  >     # 检查是否为关键字
+  >     if keyword.iskeyword(name):
+  >         return False
+  >     return True
+  >
+  > # 测试
+  > print(is_valid_identifier("2name"))    # False
+  > print(is_valid_identifier("user_name"))  # True
+  > print(is_valid_identifier("class"))    # False
+  > ```
 
-  **参考答案：**
-  ```python
-  # 修正后：统一使用4个空格缩进
-  if True:
-      print("正确缩进")
-      print("错误缩进")  # 也改成4个空格
-  ```
-  或者让第二行不缩进，成为独立语句：
-  ```python
-  if True:
-      print("正确缩进")
-  print("错误缩进")  # 不缩进，属于if外面的语句
-  ```
+- [x] **2-2 查看 Python 关键字**
+  打开命令提示符（CMD）进入 Python 交互模式，查看当前版本有哪些保留关键字；然后把完整的列表输出一遍，并统计一下共有多少个关键字。
 
-- [x] **4. 多行语句练习**
-  创建文件 `test_multiline.py`，用反斜杠 `\` 把下面的加法拆成多行写：
-  ```python
-  total = 1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10
-  ```
-  运行程序，输出结果应为 `55`。
+  > **批改（2026-09-28）**：⚠️ 写了 `test_keyword.py`，实测打印出完整的 35 个关键字列表，但没有做题面要求的"统计共有多少个"——补一行 `print(len(keyword.kwlist))`，输出应为 `35`。
 
-  **参考答案：**
-  ```python
-  total = 1 + 2 + 3 + 4 + 5 + \
-          6 + 7 + 8 + 9 + 10
-  print(total)  # 输出：55
-  ```
+  > [!TIP]- 提示（先自己想，实在想不出再点开）
+  > **一级 · 思路**：关键字列表由标准库里的一个专门模块提供；先把整个列表打印出来看，再用长度函数数出个数
+  > **二级 · 方法**：`import keyword`；`keyword.kwlist` 是全部关键字组成的列表；`len(keyword.kwlist)` 取个数
+  > **三级 · 骨架**：`print(keyword.____)` / `print(____(keyword.kwlist))`
 
-- [x] **5. 字符串操作练习**
-  创建文件 `test_string.py`，完成以下操作：
-  ```python
-  s = "Hello Python"
-  print(s[0])      # 输出第一个字符
-  print(s[-1])     # 输出最后一个字符
-  print(s[0:5])    # 输出切片
-  print(s * 2)     # 重复输出
-  ```
-  运行并记录每行的输出结果。
+  > [!TIP]- 参考答案（做完再点开）
+  > **2-2**：Python 3.13 共有 **35** 个关键字。运行代码后会输出完整列表，可以用 `len(keyword.kwlist)` 直接获取数量。
 
-  **参考答案：**
-  ```
-  H
-  n
-  Hello
-  Hello PythonHello Python
-  ```
+- [x] **2-3 缩进错误实验**
+  创建文件 `test_indent.py`，故意写一段缩进不一致的代码：让同一个分支里的第二行比第一行少缩进两格。运行它，观察报错信息，然后修正缩进让程序正常运行、两行内容都输出。
 
-- [x] **6. 不换行输出练习**
-  创建文件 `test_print.py`，使用 `end=" "` 参数让多个 `print` 在同一行输出：
-  ```python
-  for i in range(1, 6):
-      print(i, end=" ")
-  print()  # 最后换行
-  ```
-  运行程序，观察输出结果是否为 `1 2 3 4 5`。
+  > [!TIP]- 提示（先自己想，实在想不出再点开）
+  > **一级 · 思路**：同一个代码块里的缩进必须一致；把第二行故意少缩进两格，运行就会在那一行报缩进错误
+  > **二级 · 方法**：`if True:` 下面放两行输出语句，第二行只缩进 2 个空格；报错类型是 `IndentationError`
+  > **三级 · 骨架**：
+  > ```python
+  > if True:
+  >     print("正确缩进")
+  >   print("错误缩进")    # 故意只缩进 2 格 → 运行报错
+  > ```
 
-  **参考答案：**
-  输出结果：`1 2 3 4 5 `（末尾有一个空格）
+  > [!TIP]- 参考答案（做完再点开）
+  > ```python
+  > # 2-3
+  > # 修正后：统一使用4个空格缩进
+  > if True:
+  >     print("正确缩进")
+  >     print("错误缩进")  # 也改成4个空格
+  > ```
+  > 或者让第二行不缩进，成为独立语句：
+  > ```python
+  > if True:
+  >     print("正确缩进")
+  > print("错误缩进")  # 不缩进，属于if外面的语句
+  > ```
 
-- [x] **7. input 等待用户输入**
-  创建文件 `test_input.py`，编写程序：提示用户输入姓名，然后打印问候语。
-  ```python
-  name = input("请输入你的姓名: ")
-  print("你好，" + name + "！欢迎学习Python！")
-  ```
-  运行程序，输入你的名字，观察输出。
+- [x] **2-4 多行语句练习**
+  创建文件 `test_multiline.py`，把 `1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10` 这段加法拆成多行来写，运行后输出总和（应为 `55`）。
 
-  **参考答案：**
-  运行后输入 `小明`，输出：`你好，小明！欢迎学习Python！`
+  > **批改（2026-09-28）**：✅ 正确（`test_multiline.py` 用反斜杠 `\` 把加法拆成两行，实测输出 `55`；续行没有缩进也能跑）。
 
-- [x] **8. 导入模块练习**
-  创建文件 `test_import.py`，分别用两种方式导入 `math` 模块并计算平方根：
-  ```python
-  # 方式一：import
-  import math
-  print(math.sqrt(16))
+  > [!TIP]- 提示（先自己想，实在想不出再点开）
+  > **一级 · 思路**：语句太长想换行，得先告诉 Python"下一行还是这条语句的一部分"
+  > **二级 · 方法**：反斜杠 `\` 是续行符，写在要换行的那一行末尾；在 `[]`、`{}`、`()` 里面的多行语句不需要反斜杠
+  > **三级 · 骨架**：`total = 1 + 2 + 3 + 4 + 5 + \` 换行后接着写 `6 + 7 + ____ + 10`
 
-  # 方式二：from...import
-  from math import sqrt
-  print(sqrt(25))
-  ```
-  运行程序，输出结果应为 `4.0` 和 `5.0`。
+  > [!TIP]- 参考答案（做完再点开）
+  > ```python
+  > # 2-4
+  > total = 1 + 2 + 3 + 4 + 5 + \
+  >         6 + 7 + 8 + 9 + 10
+  > print(total)  # 输出：55
+  > ```
 
-  **参考答案：**
-  运行输出：
-  ```
-  4.0
-  5.0
-  ```
+- [x] **2-5 字符串操作练习**
+  创建文件 `test_string.py`：定义字符串 `"Hello Python"`，依次输出第一个字符、最后一个字符、前 5 个字符组成的切片、以及把整个字符串重复两遍的结果。运行并记录每行的输出。
 
----
+  > **批改（2026-09-28）**：⚠️ `test_string.py` 四行操作都对（`s[0]` 取首字符、`s[-1]` 取末字符、`s[0:5]` 切片、`s * 2` 重复），但字符串写成了小写 `"hello python"`（题面是 `"Hello Python"`），实测输出 `h`、`n`、`hello`、`hello pythonhello python`。
+
+  > [!TIP]- 提示（先自己想，实在想不出再点开）
+  > **一级 · 思路**：索引从左往右从 0 开始、从右往左从 -1 开始；切片"含头不含尾"；重复用乘号
+  > **二级 · 方法**：`s[0]` 取首字符、`s[-1]` 取末字符、`s[0:5]` 切片、`s * 2` 重复
+  > **三级 · 骨架**：`print(s[____])  # 第一个字符` / `print(s[-____])  # 最后一个字符` / `print(s[0:____])  # 切片` / `print(s ____ 2)  # 重复`
+
+  > [!TIP]- 参考答案（做完再点开）
+  > **2-5**：输出结果：
+  > ```text
+  > H
+  > n
+  > Hello
+  > Hello PythonHello Python
+  > ```
+
+- [x] **2-6 不换行输出练习**
+  创建文件 `test_print.py`，让 1 到 5 这五个数字输出在同一行、每个数字后面跟一个空格，最后再补一次换行。运行程序，观察输出是不是 `1 2 3 4 5 `（末尾有一个空格）。
+
+  > **批改（2026-09-28）**：✅ 正确（`test_print.py` 实测输出 `1 2 3 4 5 `，1 到 5 每个数字后面都带空格；末尾那句 `print()` 换行也写了）。
+
+  > [!TIP]- 提示（先自己想，实在想不出再点开）
+  > **一级 · 思路**：输出默认会换行，要在每次输出末尾把"换行"换成空格；循环结束之后再单独换一次行
+  > **二级 · 方法**：`print(i, end=" ")` 把结尾换成空格；数字范围用 `range(1, 6)`；最后写一个空的 `print()`
+  > **三级 · 骨架**：`for i in range(____, ____):` / `print(i, end="____")` / `print()`
+
+  > [!TIP]- 参考答案（做完再点开）
+  > **2-6**：输出结果：`1 2 3 4 5 `（末尾有一个空格）
+
+- [x] **2-7 等待用户输入**
+  创建文件 `test_input.py`，编写程序：提示用户输入姓名，然后输出问候语 `你好，<姓名>！欢迎学习Python！`（姓名后面要紧跟叹号）。运行程序，输入自己的名字观察输出。
+
+  > **批改（2026-09-28）**：⚠️ `test_input.py` 的 `input()` 和字符串 `+` 拼接都对，但漏了名字后面的叹号：实测输入 `张三` 输出 `你好，张三欢迎学习Python！`，题面要求 `你好，张三！欢迎学习Python！`，应写成 `print("你好，" + name + "！欢迎学习Python！")`。
+
+  > [!TIP]- 提示（先自己想，实在想不出再点开）
+  > **一级 · 思路**：先把用户输入存进变量，再把三截文字拼成一句输出（注意叹号在姓名和后半句之间）
+  > **二级 · 方法**：`input("提示语")` 拿到的直接是字符串；拼接用 `+`
+  > **三级 · 骨架**：`name = input("请输入你的姓名: ")` / `print("你好，" + name + "____欢迎学习Python！")`
+
+  > [!TIP]- 参考答案（做完再点开）
+  > **2-7**：运行后输入 `小明`，输出：`你好，小明！欢迎学习Python！`
+
+- [x] **2-8 导入模块练习**
+  创建文件 `test_import.py`，用两种导入方式计算 16 和 25 的平方根：第一种把整个标准库模块拿进来，第二种只从模块里拿要用的那个函数。运行程序，输出结果应为 `4.0` 和 `5.0`。
+
+  > **批改（2026-09-28）**：✅ 正确（`test_import.py` 中 `import math` + `math.sqrt(16)` 得 `4.0`，`from math import sqrt` + `sqrt(25)` 得 `5.0`，两种导入方式都对）。
+
+  > [!TIP]- 提示（先自己想，实在想不出再点开）
+  > **一级 · 思路**：第一种导入后要写"模块名.函数名"才能调用；第二种导入后直接写函数名调用
+  > **二级 · 方法**：`import math` + `math.sqrt(16)`；`from math import sqrt` + `sqrt(25)`
+  > **三级 · 骨架**：`____ math` / `print(math.____(16))` / `from math import ____` / `print(____(25))`
+
+  > [!TIP]- 参考答案（做完再点开）
+  > **2-8**：运行输出：
+  > ```text
+  > 4.0
+  > 5.0
+  > ```

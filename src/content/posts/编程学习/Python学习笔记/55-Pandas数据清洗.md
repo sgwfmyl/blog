@@ -101,55 +101,64 @@ df['订单日期'] = df['订单日期'].str.replace('/', '-')   # 2025/06/01 →
   > **二级 · 方法**：`df.isnull().sum()` / `df.duplicated(subset=['订单号']).sum()`
   > **三级 · 骨架**：`duplicated` 返回的是 True/False 序列，`sum()` 就是重复条数
 
+  > [!TIP]- 参考答案（做完再点开）
+  > ```python
+  > import pandas as pd
+  >
+  > df = pd.read_csv('data/sales.csv')
+  >
+  > # 2-1
+  > print(df.isnull().sum())
+  > print(df.duplicated(subset=['订单号']).sum())
+  > ```
+
 - [ ] **2-2 缺失值两种处理**
   分别用"删除"和"填充"两种方式处理缺失值（各跑一次，观察行数变化）。
 
-  > [!TIP]- 提示
+  > [!TIP]- 提示（先自己想，实在想不出再点开）
   > **一级 · 思路**：删除会少行，填充不会；填充时想清楚用什么值合理
   > **二级 · 方法**：`df.dropna()` / `df.fillna('--')` / `df.ffill()`
   > **三级 · 骨架**：用 `len(df)` 前后对比行数
 
+  > [!TIP]- 参考答案（做完再点开）
+  > ```python
+  > # 2-2
+  > print(len(df))                      # 处理前行数
+  > print(len(df.dropna()))             # 删除缺失值后的行数
+  > print(len(df.fillna('--')))         # 填充后行数不变
+  > print(len(df.ffill()))              # 用上一行填充
+  > ```
+
 - [ ] **2-3 按订单号去重**
   删除按"订单号"重复的行（保留第一条），打印前后行数对比。
 
-  > [!TIP]- 提示
+  > [!TIP]- 提示（先自己想，实在想不出再点开）
   > **一级 · 思路**：去重前先记录行数，去重后再看
   > **二级 · 方法**：`df.drop_duplicates(subset=['订单号'])`
   > **三级 · 骨架**：`keep='____'` 是默认值（保留第一条）
 
+  > [!TIP]- 参考答案（做完再点开）
+  > ```python
+  > # 2-3
+  > before = len(df)
+  > df2 = df.drop_duplicates(subset=['订单号'], keep='first')
+  > print(before, '→', len(df2))
+  > ```
+
 - [ ] **2-4 处理异常值与格式**
   找出单价为负的行并删除；把"订单日期"里的 `/` 统一替换成 `-`。
 
-  > [!TIP]- 提示
+  > [!TIP]- 提示（先自己想，实在想不出再点开）
   > **一级 · 思路**：定位异常 → 删；格式问题 → 整列字符串替换
   > **二级 · 方法**：`df.drop(df[df['单价'] < 0].index)` / `.str.replace('/', '-')`
   > **三级 · 骨架**：负单价也可以用 `.abs()` 修复而不是删除，两种都试试
 
-> [!TIP]- 参考答案（做完再点开）
-> ```python
-> import pandas as pd
->
-> df = pd.read_csv('data/sales.csv')
->
-> # 2-1
-> print(df.isnull().sum())
-> print(df.duplicated(subset=['订单号']).sum())
->
-> # 2-2
-> print(len(df))                      # 处理前行数
-> print(len(df.dropna()))             # 删除缺失值后的行数
-> print(len(df.fillna('--')))         # 填充后行数不变
-> print(len(df.ffill()))              # 用上一行填充
->
-> # 2-3
-> before = len(df)
-> df2 = df.drop_duplicates(subset=['订单号'], keep='first')
-> print(before, '→', len(df2))
->
-> # 2-4
-> df3 = df.drop(df[df['单价'] < 0].index)          # 删除单价为负的行
-> print(len(df), '→', len(df3))
->
-> df['订单日期'] = df['订单日期'].str.replace('/', '-')   # 统一日期格式
-> print(df['订单日期'].head(3))
-> ```
+  > [!TIP]- 参考答案（做完再点开）
+  > ```python
+  > # 2-4
+  > df3 = df.drop(df[df['单价'] < 0].index)          # 删除单价为负的行
+  > print(len(df), '→', len(df3))
+  >
+  > df['订单日期'] = df['订单日期'].str.replace('/', '-')   # 统一日期格式
+  > print(df['订单日期'].head(3))
+  > ```

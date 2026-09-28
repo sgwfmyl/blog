@@ -1,11 +1,11 @@
 ---
 title: Python模块与包
 published: 2026-09-16
+description: Python模块的概念、导入方式、自定义模块、__all__与__name__变量、包的概念与导入方式
 tags:
   - Python
   - 模块
   - 包
-description: Python模块的概念、导入方式、自定义模块、__all__与__name__变量、包的概念与导入方式
 image: https://img.tsh520.cn/file/blog/post-covers/python-23-modules.webp
 order: 23
 ---
@@ -323,6 +323,11 @@ from 第二章.utils.my_fun import log_separator1, log_separator3
 - **包**：文件夹加__init__，管理多个模块用
 - **路径**：相对从当前找，绝对从根目录找
 
+## 相关
+
+- [Python类型注解](/posts/编程学习/python学习笔记/22-python类型注解/)
+- [Python面向对象编程基础](/posts/编程学习/python学习笔记/24-python面向对象编程基础/)
+
 ## 练习题
 
 ### 一、知识回顾（读完直接做下面的实践题）
@@ -340,88 +345,100 @@ from 第二章.utils.my_fun import log_separator1, log_separator3
 
 ### 二、裸写题
 
-- [ ] **2-1 随机点名器（三种导入方式）**
+- [x] **2-1 随机点名器（三种导入方式）**
   准备一个 5 人名单，用三种不同的导入方式各抽一次名并打印：① 导入模块名 ② 导入模块并起别名 ③ 只导入需要的那一个功能。
+
+  > **批改（2026-09-28）**：✅ 正确。`import random` / `import random as r` / `from random import choice` 三种写法都对，实测三次抽名结果随机。
 
   > [!TIP]- 提示（先自己想，实在想不出再点开）
   > **一级 · 思路**：三种写法的区别只在导入语句，以及调用时要不要写模块名/别名
   > **二级 · 方法**：`import random` / `import random as rd` / `from random import choice`，功能是 `choice(名单)`
   > **三级 · 骨架**：`import random as ____` → `print(____.choice(names))`
 
-- [ ] **2-2 自定义模块 + 主程序保护**
+  > [!TIP]- 参考答案（做完再点开）
+  > ```python
+  > # 2-1 三种导入方式
+  > names = ["王林", "李慕婉", "许立国", "韩立", "涛哥"]
+  >
+  > import random                       # 方式1：模块名.功能名
+  > print("方式1：", random.choice(names))
+  >
+  > import random as rd                 # 方式2：别名.功能名
+  > print("方式2：", rd.choice(names))
+  >
+  > from random import choice           # 方式3：直接用功能名
+  > print("方式3：", choice(names))
+  > ```
+
+- [x] **2-2 自定义模块 + 主程序保护**
   1. 在本目录新建 `my_tools.py`：定义一个函数打印一句问候，再定义一个变量保存作者名
   2. 给它加上主程序保护，让其中一行"自我介绍"的测试代码只在直接运行这个文件时执行
   3. 回到本文件里导入这个模块，调用它的函数、打印它的变量
   4. 分别运行"直接运行 `my_tools.py`"和"运行本文件"，观察那行测试代码有没有执行
 
-  > [!TIP]- 提示
+  > **批改（2026-09-28）**：✅ 正确。`my_tools.py` 里函数、变量、`if __name__ == "__main__":` 保护都到位；实测直接运行 `my_tools.py` 会打印那行自我介绍，被 `test_02` 导入时不打印——保护块生效。
+
+  > [!TIP]- 提示（先自己想，实在想不出再点开）
   > **一级 · 思路**：模块被导入时也有一个"当前模块名"，只是值变成了文件名，用它就能区分"直接运行"和"被导入"
   > **二级 · 方法**：`if __name__ == "__main__":`；导入用 `import 模块名`，调用写 `模块名.功能名`
   > **三级 · 骨架**：`if ____ == "__main__":`
 
-- [ ] **2-3 控制通配导入的范围**
+  > [!TIP]- 参考答案（做完再点开）
+  > ```python
+  > # 2-2 my_tools.py（新建的文件）
+  > # def say_hi():
+  > #     print("你好，我是自定义模块里的函数")
+  > #
+  > # AUTHOR = "涛哥"
+  > #
+  > # if __name__ == "__main__":
+  > #     print("my_tools 被直接运行，当前模块名：", __name__)
+  > #     say_hi()
+  >
+  > # 2-2 本文件里：
+  > import my_tools
+  >
+  > my_tools.say_hi()
+  > print("模块里的变量 AUTHOR =", my_tools.AUTHOR)
+  > print("当前模块名：", __name__)      # __main__
+  > # 运行本文件：my_tools 的保护块不执行；直接运行 my_tools.py：保护块才执行
+  > ```
+
+- [x] **2-3 控制通配导入的范围**
   1. 在 `my_tools.py` 里再补上 3 个打印分隔线的函数和 1 个变量
   2. 用模块级的特殊变量只放行其中 2 个功能（其余的不让 `import *` 拿到）
   3. 在本文件里用通配方式导入，逐个使用这 4 个功能：不能用的先注释掉，并在旁边写明报错原因
 
-  > [!TIP]- 提示
+  > **批改（2026-09-28）**：⚠️ 两处：① `__all__` 只放行 `print_hello`、`print_jian` 是对的，但注释掉的两行**没写报错原因**（题面要求写明），应该补一句 `# ✗ NameError: name 'print_jia' is not defined`；② `my_tools.py` 里 `print_jia` 印的是 `-`×30，题面要求三个函数分别用 `-`、`+`、`#`（`print_jia` 应该是 `+`；你在 `utils/my_fun.py` 里写对了）。
+
+  > [!TIP]- 提示（先自己想，实在想不出再点开）
   > **一级 · 思路**：通配导入默认把模块里的功能全搬过来，可以用一个列表变量限定白名单
   > **二级 · 方法**：`__all__ = ["功能名", ...]`（写的是字符串名字）
   > **三级 · 骨架**：`____ = ["log_separator1", "PI"]`
 
-> [!TIP]- 参考答案（做完再点开）
-> ```python
-> # 2-1 三种导入方式
-> names = ["王林", "李慕婉", "许立国", "韩立", "涛哥"]
->
-> import random                       # 方式1：模块名.功能名
-> print("方式1：", random.choice(names))
->
-> import random as rd                 # 方式2：别名.功能名
-> print("方式2：", rd.choice(names))
->
-> from random import choice           # 方式3：直接用功能名
-> print("方式3：", choice(names))
->
-> # 2-2 my_tools.py（新建的文件）
-> # def say_hi():
-> #     print("你好，我是自定义模块里的函数")
-> #
-> # AUTHOR = "涛哥"
-> #
-> # if __name__ == "__main__":
-> #     print("my_tools 被直接运行，当前模块名：", __name__)
-> #     say_hi()
->
-> # 2-2 本文件里：
-> import my_tools
->
-> my_tools.say_hi()
-> print("模块里的变量 AUTHOR =", my_tools.AUTHOR)
-> print("当前模块名：", __name__)      # __main__
-> # 运行本文件：my_tools 的保护块不执行；直接运行 my_tools.py：保护块才执行
->
-> # 2-3 my_tools.py 里补上：
-> # __all__ = ["log_separator1", "PI"]
-> # PI = 3.1415926
-> # NAME = "黑马☆涛哥"
-> # def log_separator1(): print("- " * 30)
-> # def log_separator2(): print("+ " * 30)
-> # def log_separator3(): print("# " * 30)
->
-> # 2-3 本文件里：
-> from my_tools import *
->
-> log_separator1()      # ✓ 放行了
-> print(PI)             # ✓ 放行了
->
-> # log_separator2()    # ✗ NameError: name 'log_separator2' is not defined
-> # print(NAME)         # ✗ NameError: name 'NAME' is not defined
-> ```
+  > [!TIP]- 参考答案（做完再点开）
+  > ```python
+  > # 2-3 my_tools.py 里补上：
+  > # __all__ = ["log_separator1", "PI"]
+  > # PI = 3.1415926
+  > # NAME = "黑马☆涛哥"
+  > # def log_separator1(): print("- " * 30)
+  > # def log_separator2(): print("+ " * 30)
+  > # def log_separator3(): print("# " * 30)
+  >
+  > # 2-3 本文件里：
+  > from my_tools import *
+  >
+  > log_separator1()      # ✓ 放行了
+  > print(PI)             # ✓ 放行了
+  >
+  > # log_separator2()    # ✗ NameError: name 'log_separator2' is not defined
+  > # print(NAME)         # ✗ NameError: name 'NAME' is not defined
+  > ```
 
 ### 三、综合题
 
-- [ ] **3-1 把一个小项目拆成包**
+- [x] **3-1 把一个小项目拆成包**
   照着笔记里"项目模块拆分"的思路做一遍：
   1. 在本目录下建包 `utils/`：里面要有描述包信息的文件、一个放函数的模块 `my_fun.py`、一个放常量的模块 `my_var.py`
   2. `my_fun.py` 里定义 3 个打印分隔线的函数（分别用 `-`、`+`、`#` 重复 30 次）；`my_var.py` 里定义 `PI = 3.1415926` 和 `NAME = "黑马☆涛哥"`
@@ -429,50 +446,52 @@ from 第二章.utils.my_fun import log_separator1, log_separator3
   4. 在本文件里用三种方式各导入一次并调用，观察调用写法有什么区别：① 导入"包.模块" ② 从包里导入模块 ③ 从"包.模块"里导入功能
   5. 最后打印本文件的当前模块名，想一想直接运行本文件时它的值是什么
 
-  > [!TIP]- 提示
+  > **批改（2026-09-28）**：⚠️ 包结构、`__init__.py` 里的 `__all__`、三种导入方式与输出全对（`utils/` 下 `my_fun.py`、`my_var.py` 都在，`-`/`+`/`#` 三种分隔线也对）；唯一漏做的是**第 5 步**——没打印本文件的当前模块名（应该是 `__main__`）。
+
+  > [!TIP]- 提示（先自己想，实在想不出再点开）
   > **一级 · 思路**：包 = 文件夹 + `__init__.py`；导入的层级不同，调用时写的前缀就不同
   > **二级 · 方法**：`import utils.my_fun` / `from utils import my_var` / `from utils.my_fun import log_separator1`；包描述文件里写 `__all__ = ["my_fun", "my_var"]`
   > **三级 · 骨架**：`import utils.my_fun` → `utils.my_fun.____()` ／ `from utils import ____` → `my_var.PI`
 
-> [!TIP]- 参考答案（做完再点开）
-> ```python
-> # utils/__init__.py（描述包信息，并控制 import * 时导入哪些模块）
-> __all__ = ["my_fun", "my_var"]
->
-> # utils/my_fun.py
-> def log_separator1():
->     print("- " * 30)
->
-> def log_separator2():
->     print("+ " * 30)
->
-> def log_separator3():
->     print("# " * 30)
->
-> # utils/my_var.py
-> PI = 3.1415926
-> NAME = "黑马☆涛哥"
->
-> # 本文件里：
-> # ① import 包名.模块名  →  包名.模块名.功能名
-> import utils.my_fun
-> utils.my_fun.log_separator1()
->
-> # ② from 包名 import 模块名  →  模块名.功能名
-> from utils import my_var
-> print("② 从包里导入模块：", my_var.PI, my_var.NAME)
->
-> # ③ from 包名.模块名 import 功能名  →  功能名
-> from utils.my_fun import log_separator3
-> log_separator3()
->
-> # ④ from 包名 import *（受 __init__.py 里 __all__ 控制） →  模块名.功能名
-> from utils import *
-> my_fun.log_separator2()
->
-> # ⑤ from 包名.模块名 import *  →  功能名
-> from utils.my_var import *
-> print("⑤ 通配导入模块：", NAME)
->
-> print("当前模块名：", __name__)      # __main__
-> ```
+  > [!TIP]- 参考答案（做完再点开）
+  > ```python
+  > # utils/__init__.py（描述包信息，并控制 import * 时导入哪些模块）
+  > __all__ = ["my_fun", "my_var"]
+  >
+  > # utils/my_fun.py
+  > def log_separator1():
+  >     print("- " * 30)
+  >
+  > def log_separator2():
+  >     print("+ " * 30)
+  >
+  > def log_separator3():
+  >     print("# " * 30)
+  >
+  > # utils/my_var.py
+  > PI = 3.1415926
+  > NAME = "黑马☆涛哥"
+  >
+  > # 本文件里：
+  > # ① import 包名.模块名  →  包名.模块名.功能名
+  > import utils.my_fun
+  > utils.my_fun.log_separator1()
+  >
+  > # ② from 包名 import 模块名  →  模块名.功能名
+  > from utils import my_var
+  > print("② 从包里导入模块：", my_var.PI, my_var.NAME)
+  >
+  > # ③ from 包名.模块名 import 功能名  →  功能名
+  > from utils.my_fun import log_separator3
+  > log_separator3()
+  >
+  > # ④ from 包名 import *（受 __init__.py 里 __all__ 控制） →  模块名.功能名
+  > from utils import *
+  > my_fun.log_separator2()
+  >
+  > # ⑤ from 包名.模块名 import *  →  功能名
+  > from utils.my_var import *
+  > print("⑤ 通配导入模块：", NAME)
+  >
+  > print("当前模块名：", __name__)      # __main__
+  > ```
