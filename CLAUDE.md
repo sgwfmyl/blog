@@ -243,6 +243,7 @@ Layout.astro          ← HTML 骨架：<html>, <head>, <body>, 全局组件, �
 - **两个字段互斥**，同时配以 `showOnPages` 为准；都不写则回落到旧的 `showOnPostPage` / `showOnNonPostPage`。
 - **为什么必须"服务端渲染全部 + 运行期切 class"**：侧栏渲染在 Swup 容器之外（`#left-sidebar-wrapper` / `#right-sidebar-static`），客户端导航时不重新渲染。实现链路：`SideBar.astro` 输出 `data-show-pages` / `data-hide-pages` 并按当前页给出初始 `hidden`（防闪烁）→ `src/utils/sidebar-utils.ts#updateSidebarComponentsVisibility` 在首屏与 `swup:content:replaced` / `page:view` 后重算。**不要改成构建期过滤**——那样导航后侧栏不会更新。
 - **`/posts/` 列表页与 `/posts/<slug>/` 详情页是不同类型**：`isCurrentPagePost()`（`grid-layout-utils.ts`）已修正为严格匹配详情页（旧实现 `includes("/posts/")` 会把列表页误判成文章页）。所以 `showOnPostPage: false` 的组件现在**在文章列表页会显示**（原先被误隐藏）。
+- **无侧栏页面（2026-09-22）**：文章列表 / 导航站 / 归档 / 说说 / 留言板 / 更新日志 / 友链这几个页面**整栏隐藏左右侧栏**、内容区放宽到约原中间列宽的 4/3（`src/styles/features/no-sidebar-pages.css`）。标记由 `MainGridLayout.astro` 按页面类型写到 `#content-wrapper[data-no-sidebar]`——该元素在 Swup 容器内、导航时随内容替换，所以**纯 CSS `:has()` 就能跟随切换，不需要 JS**（用 JS 会有一帧闪烁）。增删页面改 `NO_SIDEBAR_PAGE_TYPES` 数组；调宽度改 CSS 里的 `4 / 3` 系数。
 
 ### 3.9 文章朗读（TTS，2026-09-15 新增）
 

@@ -66,6 +66,7 @@
 @import './features/scrollbar.css';
 @import './features/custom-scrollbar.css';
 @import './features/widget-responsive.css';
+@import './features/no-sidebar-pages.css';
 @import './features/moments.css';
 @import './features/movies-games.css';
 @import './pages/music-visualizer.css';

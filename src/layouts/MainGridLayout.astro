@@ -20,6 +20,7 @@ import {
 import { LinkPresets } from "@/constants/link-presets";
 import { LinkPreset, type NavBarLink } from "@/types/config";
 import { isHomePage } from "@/utils/layout-utils";
+import { getSidebarPageType, type SidebarPageType } from "@/utils/page-type";
 import {
 	generateGridClasses,
 	generateMainContentClasses,
@@ -62,6 +63,23 @@ const isHomePageCheck = isHomePage(Astro.url.pathname);
 
 // 检查是否在文章详情页
 const isPostPage = !!postSlug;
+
+// 不显示左右侧栏、并把中间内容区放宽的页面（2026-09-22 站长指定）。
+// 判定复用统一的页面类型分类器（与侧栏组件的 showOnPages / hideOnPages 同一套规则）。
+// 标记写到 #content-wrapper 上（它在 Swup 容器内，导航时会随内容替换），
+// 这样纯 CSS 的 :has() 就能跟着页面切换自动生效，不需要 JS 参与。
+const NO_SIDEBAR_PAGE_TYPES: SidebarPageType[] = [
+	"posts-list",
+	"projects",
+	"archive",
+	"moments",
+	"guestbook",
+	"changelog",
+	"friends",
+];
+const isNoSidebarPage = NO_SIDEBAR_PAGE_TYPES.includes(
+	getSidebarPageType(Astro.url.pathname),
+);
 
 // banner 启用时用 35vh 偏移，否则用 5.5rem
 const finalMainPanelTop = "5.5rem";
@@ -207,7 +225,7 @@ const navLinks = navBarConfig.links.map((item: NavBarLink | LinkPreset) => {
                 <div id="grid-class-carrier" data-grid-class={gridCols} class="hidden"></div>
                 {/* 备用 h1 标题 - 提供隐藏的主标题，满足 Swup A11y 和无 h1 页面的可访问性 */}
                 <h1 class="sr-only">{title || siteConfig.title}</h1>
-                <div id="content-wrapper" class="onload-animation transition-leaving">
+                <div id="content-wrapper" class="onload-animation transition-leaving" data-no-sidebar={isNoSidebarPage ? "true" : undefined}>
                     <slot></slot>
 
                 </div>

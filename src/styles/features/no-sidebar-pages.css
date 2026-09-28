@@ -1,0 +1,47 @@
+/**
+ * 无侧栏页面（2026-09-22）
+ *
+ * 站长指定的这几个页面不显示左右侧栏小组件，并把中间内容区放宽——
+ * 否则侧栏隐藏后两侧会留下大片空白：
+ *   文章列表 /posts/、导航站 /projects/、归档 /archive/、说说 /moments/、
+ *   留言板 /guestbook/、更新日志 /changelog/、友链 /friends/
+ * （音乐页 /music/ 不用 MainGridLayout、本来就没有侧栏，不在此列）
+ *
+ * 标记来源：`MainGridLayout.astro` 按页面类型给 `#content-wrapper` 加 `data-no-sidebar`。
+ * `#content-wrapper` 在 Swup 容器内、导航时随内容一起替换，所以纯 CSS 的 `:has()`
+ * 就能跟着页面切换自动生效，不需要 JS 介入（否则导航后会有一帧闪烁）。
+ *
+ * 内容宽度 ≈ 原中间列宽 × 4/3：
+ *   原中间列宽 = 整行宽 − 两侧栏（17.5rem × 2 = 35rem）
+ *   想调宽窄只改下面的 4/3 这个系数即可。
+ */
+
+@media (min-width: 768px) {
+	/* 1) 隐藏左右侧栏与移动底栏 */
+	html:has(#content-wrapper[data-no-sidebar])
+		:is(
+			#left-sidebar-wrapper,
+			#left-sidebar-dynamic,
+			#right-sidebar-static,
+			#right-sidebar-dynamic,
+			#mobile-bottom-sidebar
+		) {
+		display: none !important;
+	}
+
+	/* 2) 主网格改单列，否则侧栏那两列仍然占位、留下空白 */
+	html:has(#content-wrapper[data-no-sidebar]) #main-grid {
+		display: block !important;
+	}
+
+	/* 3) 内容区放宽到原来的约 4/3 并居中 */
+	html:has(#content-wrapper[data-no-sidebar]) #content-wrapper {
+		max-width: calc((100% - 35rem) * 4 / 3);
+		margin-inline: auto;
+	}
+
+	/* 4) 文章列表页自身还带 760px 上限，一并放开，否则内容仍被压窄 */
+	html:has(#content-wrapper[data-no-sidebar]) .article-list-page {
+		max-width: 100%;
+	}
+}
