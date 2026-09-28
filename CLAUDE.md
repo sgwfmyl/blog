@@ -354,6 +354,19 @@ Layout.astro          ← HTML 骨架：<html>, <head>, <body>, 全局组件, �
 
 **验证**：修改 Svelte 组件后跑 `pnpm build` 或 dev，确认无 `vite-plugin-svelte` 警告输出。
 
+### 5.5 页面大标题（PageTitle，"签写"入场动效）
+
+`src/components/common/PageTitle.astro` + `src/styles/components/page-title.css`（动效复刻自参考博客 MMZMING）。用在需要大标题的页面（当前 `/projects/`、`/about/`）：
+
+```astro
+<PageTitle title="网站导航" eyebrow="Collections" description="一句话介绍" variant="stacked" />
+```
+
+- 标题用 **SVG `<text>` 双层绘制**：描边层跑 `stroke-dashoffset` 做「写字」动效（1.9s），实心层 0.95s 后淡入；`eyebrow`（英文小字）与 `description`（带弯引号，伪元素生成）都是 0.7~0.9s 的淡入上移。**纯 CSS @keyframes、挂载即播**，不用 GSAP / IntersectionObserver（Swup 换页重建 DOM 会重播）。
+- **DOM 里标题文字会出现 3 次**（隐藏 measure + 描边层 + 实心层，另有 sr-only），抓正文/写测试选择器时注意去重（参考项目线上就被抓重过）。
+- `prefers-reduced-motion` 下自动降级为实心标题、关掉全部入场动画。
+- `#content-wrapper:has(.page-title)` 会自动补顶部留白（`--page-title-top-gap`），不需要在页面里额外加。
+
 ---
 
 ## 6. 配置系统

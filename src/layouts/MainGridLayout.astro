@@ -77,9 +77,12 @@ const NO_SIDEBAR_PAGE_TYPES: SidebarPageType[] = [
 	"changelog",
 	"friends",
 ];
-const isNoSidebarPage = NO_SIDEBAR_PAGE_TYPES.includes(
-	getSidebarPageType(Astro.url.pathname),
-);
+// data-no-sidebar 的值写成**具体页面类型**，这样 CSS 里能按页面单独设内容宽度
+// （站长要逐页调整左右留白，共用一条规则会互相牵连）
+const currentPageType = getSidebarPageType(Astro.url.pathname);
+const noSidebarPageType = NO_SIDEBAR_PAGE_TYPES.includes(currentPageType)
+	? currentPageType
+	: undefined;
 
 // banner 启用时用 35vh 偏移，否则用 5.5rem
 const finalMainPanelTop = "5.5rem";
@@ -225,7 +228,7 @@ const navLinks = navBarConfig.links.map((item: NavBarLink | LinkPreset) => {
                 <div id="grid-class-carrier" data-grid-class={gridCols} class="hidden"></div>
                 {/* 备用 h1 标题 - 提供隐藏的主标题，满足 Swup A11y 和无 h1 页面的可访问性 */}
                 <h1 class="sr-only">{title || siteConfig.title}</h1>
-                <div id="content-wrapper" class="onload-animation transition-leaving" data-no-sidebar={isNoSidebarPage ? "true" : undefined}>
+                <div id="content-wrapper" class="onload-animation transition-leaving" data-no-sidebar={noSidebarPageType}>
                     <slot></slot>
 
                 </div>

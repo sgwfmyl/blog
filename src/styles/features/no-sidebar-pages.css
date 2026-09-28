@@ -1,19 +1,22 @@
 /**
  * 无侧栏页面（2026-09-22）
  *
- * 站长指定的这几个页面不显示左右侧栏小组件，并把中间内容区放宽——
- * 否则侧栏隐藏后两侧会留下大片空白：
+ * 站长指定的这几个页面不显示左右侧栏小组件，内容区居中并留白：
  *   文章列表 /posts/、导航站 /projects/、归档 /archive/、说说 /moments/、
  *   留言板 /guestbook/、更新日志 /changelog/、友链 /friends/
  * （音乐页 /music/ 不用 MainGridLayout、本来就没有侧栏，不在此列）
  *
- * 标记来源：`MainGridLayout.astro` 按页面类型给 `#content-wrapper` 加 `data-no-sidebar`。
- * `#content-wrapper` 在 Swup 容器内、导航时随内容一起替换，所以纯 CSS 的 `:has()`
- * 就能跟着页面切换自动生效，不需要 JS 介入（否则导航后会有一帧闪烁）。
+ * 标记来源：`MainGridLayout.astro` 按页面类型给 `#content-wrapper` 加
+ * `data-no-sidebar="<页面类型>"`。该元素在 Swup 容器内、导航时随内容一起替换，
+ * 所以纯 CSS 的 `:has()` 就能跟着页面切换自动生效，不需要 JS（用 JS 会闪一帧）。
  *
- * 内容宽度 ≈ 原中间列宽 × 4/3：
- *   原中间列宽 = 整行宽 − 两侧栏（17.5rem × 2 = 35rem）
- *   想调宽窄只改下面的 4/3 这个系数即可。
+ * ⚠️ 内容宽度在文件下半部分**逐页一条规则**，互不影响：
+ *    要调某个页面的左右留白，只改对应那一行的数值（数值 = 内容区最大宽度，越大留白越少）。
+ *
+ * 宽度取值说明：文章列表页等取 932px —— 这个数与网格列表自身的上限
+ * `calc(3 * 300px + 2 * 1rem)`（`src/styles/pages/article-list.css` 的 `.article-list-masonry`）
+ * 保持一致，否则「置顶区 / 标题栏 / 网格列表」的左右边缘会对不齐（置顶区会比列表突出）。
+ * 导航站 /projects/ 单独放宽到 1024px（对齐参考博客的 64rem 内容区）。
  */
 
 @media (min-width: 768px) {
@@ -29,19 +32,71 @@
 		display: none !important;
 	}
 
-	/* 2) 主网格改单列，否则侧栏那两列仍然占位、留下空白 */
+	/* 2) 主网格改单列，否则侧栏那两列仍占位、留下空白 */
 	html:has(#content-wrapper[data-no-sidebar]) #main-grid {
 		display: block !important;
 	}
 
-	/* 3) 内容区放宽到原来的约 4/3 并居中 */
+	/* 3) 内容区居中（宽度在各页面规则里单独给） */
 	html:has(#content-wrapper[data-no-sidebar]) #content-wrapper {
-		max-width: calc((100% - 35rem) * 4 / 3);
 		margin-inline: auto;
 	}
 
 	/* 4) 文章列表页自身还带 760px 上限，一并放开，否则内容仍被压窄 */
 	html:has(#content-wrapper[data-no-sidebar]) .article-list-page {
 		max-width: 100%;
+	}
+}
+
+/* ==========================================================================
+   内容区宽度 —— 每个页面一条，单独调整互不影响
+   ========================================================================== */
+
+/* 文章列表 /posts/ */
+@media (min-width: 768px) {
+	html:has(#content-wrapper[data-no-sidebar="posts-list"]) #content-wrapper {
+		max-width: 932px;
+	}
+}
+
+/* 导航站 /projects/ —— 比列表页宽一档（对齐参考博客的 64rem 内容区） */
+@media (min-width: 768px) {
+	html:has(#content-wrapper[data-no-sidebar="projects"]) #content-wrapper {
+		max-width: 1024px;
+	}
+}
+
+/* 归档 /archive/ */
+@media (min-width: 768px) {
+	html:has(#content-wrapper[data-no-sidebar="archive"]) #content-wrapper {
+		max-width: 932px;
+	}
+}
+
+/* 说说 /moments/ */
+@media (min-width: 768px) {
+	html:has(#content-wrapper[data-no-sidebar="moments"]) #content-wrapper {
+		max-width: 932px;
+	}
+}
+
+/* 留言板 /guestbook/ */
+@media (min-width: 768px) {
+	html:has(#content-wrapper[data-no-sidebar="guestbook"]) #content-wrapper {
+		max-width: 932px;
+	}
+}
+
+/* 更新日志 /changelog/ */
+@media (min-width: 768px) {
+	html:has(#content-wrapper[data-no-sidebar="changelog"]) #content-wrapper {
+		max-width: 932px;
+	}
+}
+
+/* 友链 /friends/ */
+@media (min-width: 768px) {
+	html:has(#content-wrapper[data-no-sidebar="friends"]) #content-wrapper {
+		max-width: 932px;
 	}
 }
