@@ -105,8 +105,8 @@
 	fill: none;
 	stroke: var(--deep-text);
 	/* 0.9 是参考项目的值，但中文笔画（尤其霞鹜文楷这类手写体）本就偏细，
-	   描边太粗会糊成一团，收细到 0.4 */
-	stroke-width: 0.4;
+	   描边太粗会糊成一团；收到 0.15 只留一道纤线做「写字」的引导 */
+	stroke-width: 0.15;
 	stroke-linejoin: round;
 	stroke-dasharray: 2400;
 	stroke-dashoffset: 2400;
