@@ -367,6 +367,18 @@ Layout.astro          ← HTML 骨架：<html>, <head>, <body>, 全局组件, �
 - `prefers-reduced-motion` 下自动降级为实心标题、关掉全部入场动画。
 - `#content-wrapper:has(.page-title)` 会自动补顶部留白（`--page-title-top-gap`），不需要在页面里额外加。
 
+### 5.6 文章页信息面板组与文章目录（2026-09-28，复刻自参考博客）
+
+**信息面板组** —— `src/pages/posts/[...slug].astro` 的 Layer 2 + `post-hero.css` 的「信息面板组」一节：标题下方一张浅灰卡 `post-intro-card`，内含三个用**原生 `<details>`** 折叠的面板：① 过期提示（服务端只输出骨架，客户端按当前日期算天数，超 `siteConfig.outdatedThreshold` 才显示；隐藏时用 `+` 选择器把分隔线一起收起）② AI 摘要（内容即 frontmatter 的 `description`——参考站也没真的调 AI，模型名是写死的）③ 封面图。底板色是新变量 `--intro-surface-bg`（项目的 `--card-bg` 是 transparent，别复用）。
+
+**文章目录（右侧栏）**：
+
+- 三件套：骨架 `src/components/widget/SidebarTOC.astro`、控制器 `src/utils/article-toc.ts`、样式 `src/styles/features/article-toc-panel.css`。
+- 树由**客户端**扫描 `#post-container .markdown-content` 里的 h1–h3 生成（**不用** Astro 传下来的 `headings` prop），根节点显示 `.post-hero__title`。层级归一化规则：最浅层级视为一级，父节点 = 前面最近的更浅标题。
+- 连接线是 **CSS 伪元素画在每行行盒内部**（不是 SVG），折叠动画（`grid-template-rows` 0fr↔1fr）期间不需要 JS 重画、滚动也没有测量开销。缩进与线位置全部派生自 `--toc-indent`（每级 0.95rem）与 `--toc-row-pad-left`，**调缩进只改这两个变量**。
+- Swup 导航会替换面板 DOM，靠 `astro:page-load` / `swup:content:replaced` 重新 `initArticleToc()`（内部先销毁旧实例，重复调用安全）。
+- ⚠️ **旧的 `TOCManager`（`src/utils/tocUtils.ts`）已不在侧栏使用**，但仍被移动端 dock 的目录抽屉（`UnifiedDock.astro`）复用——要删之前先处理那一处。
+
 ---
 
 ## 6. 配置系统

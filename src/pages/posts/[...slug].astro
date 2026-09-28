@@ -235,30 +235,124 @@ const jsonLd = {
   </div>
 </div>
 
-  <!-- Layer 2: 简介卡（AI 摘要 UI） -->
+  <!-- Layer 2: 信息面板组（过期提示 / AI 摘要 / 封面图）
+       三个面板共用一张卡，用原生 <details> 折叠；样式见 post-hero.css 的「信息面板组」一节。
+       整卡至少有一个面板有内容才渲染。 -->
   {
-    entry.data.description && (
-      <div class="px-3 md:px-6 lg:px-10 mb-2">
-        <div class="post-intro-card">
-          <div class="post-intro-card__header">
-            <div class="post-intro-card__icon-box">
-              {(entry.data as any).descriptionSource !== "manual" ? (
-                <>
-                  <img src="/assets/images/emoji/openai-dark.png" alt="" class="post-intro-card__ai-img post-intro-card__ai-img--light" width="18" height="18" />
-                  <img src="/assets/images/emoji/openai-light.png" alt="" class="post-intro-card__ai-img post-intro-card__ai-img--dark" width="18" height="18" />
-                </>
-              ) : (
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"><path fill="currentColor" d="M5 21q-.825 0-1.412-.587T3 19V5q0-.825.588-1.412T5 3h14q.825 0 1.413.588T21 5v14q0 .825-.587 1.413T19 21H5Zm0-2h14V5H5v14Zm1-2h3v-2H6v2Zm0-4h12V7H6v6Z"/></svg>
-              )}
-            </div>
-            <span class="post-intro-card__label">
-              {(entry.data as any).descriptionSource !== "manual" ? "AI 摘要" : "简介"}
-            </span>
+    (() => {
+      const description = entry.data.description;
+      const coverUrl = posterCoverUrl;
+      const showOutdated = siteConfig.showLastModified;
+      if (!description && !coverUrl && !showOutdated) return null;
+
+      const lastModified = dayjs(entry.data.updated || entry.data.published);
+      const outdatedThreshold = siteConfig.outdatedThreshold ?? 1;
+      const isAiSummary =
+        (entry.data as any).descriptionSource !== "manual";
+
+      return (
+        <div class="px-3 md:px-6 lg:px-10 mb-2">
+          <div class="post-intro-card">
+            {/* ① 过期提示：服务端只输出骨架，客户端按当前日期算天数（避免构建期算死） */}
+            {showOutdated && (
+              <>
+                <div
+                  id="outdated-info"
+                  class="post-intro-card__outdated hidden"
+                  data-date={lastModified.toISOString()}
+                  data-threshold={outdatedThreshold}
+                >
+                  <div class="post-intro-card__row">
+                    <Icon
+                      name="material-symbols:schedule-rounded"
+                      class="post-intro-card__icon"
+                    />
+                    <span class="post-intro-card__text">
+                      {i18n(I18nKey.lastModifiedPrefix)}
+                      {lastModified.format("YYYY-MM-DD")}
+                      <span
+                        id="days-ago-text-intro"
+                        data-template={`，${i18n(I18nKey.lastModifiedDaysAgo)}`}
+                      />
+                      <span id="outdated-warning-intro" class="hidden">
+                        {`，${i18n(I18nKey.lastModifiedOutdated)}`}
+                      </span>
+                    </span>
+                  </div>
+                </div>
+                <div class="post-intro-card__divider" />
+              </>
+            )}
+
+            {/* ② AI 摘要（内容即 frontmatter 的 description） */}
+            {description && (
+              <details class="post-intro-card__details" open>
+                <summary class="post-intro-card__summary">
+                  <span class="post-intro-card__summary-title">
+                    {isAiSummary ? (
+                      <Icon
+                        name="material-symbols:auto-awesome-rounded"
+                        class="post-intro-card__summary-icon"
+                      />
+                    ) : (
+                      <Icon
+                        name="material-symbols:article-outline-rounded"
+                        class="post-intro-card__summary-icon"
+                      />
+                    )}
+                    {isAiSummary ? "AI 摘要" : "简介"}
+                    {isAiSummary && (
+                      <span class="post-intro-card__summary-model">
+                        - DeepSeek
+                      </span>
+                    )}
+                  </span>
+                  <Icon
+                    name="material-symbols:keyboard-arrow-down-rounded"
+                    class="post-intro-card__summary-arrow"
+                  />
+                </summary>
+                <div class="post-intro-card__section--summary">
+                  <p class="post-intro-card__desc">{description}</p>
+                </div>
+              </details>
+            )}
+
+            {/* ③ 封面图 */}
+            {coverUrl && (
+              <>
+                {description && <div class="post-intro-card__divider" />}
+                <details class="post-intro-card__details" open>
+                  <summary class="post-intro-card__summary">
+                    <span class="post-intro-card__summary-title">
+                      <Icon
+                        name="material-symbols:image-outline-rounded"
+                        class="post-intro-card__summary-icon"
+                      />
+                      封面图
+                    </span>
+                    <Icon
+                      name="material-symbols:keyboard-arrow-down-rounded"
+                      class="post-intro-card__summary-arrow"
+                    />
+                  </summary>
+                  <div class="post-intro-card__section--cover">
+                    <div class="post-intro-card__cover">
+                      <img
+                        src={coverUrl}
+                        alt={`${entry.data.title} - 封面图`}
+                        loading="eager"
+                        decoding="async"
+                      />
+                    </div>
+                  </div>
+                </details>
+              </>
+            )}
           </div>
-          <p class="post-intro-card__desc">{entry.data.description}</p>
         </div>
-      </div>
-    )
+      );
+    })()
   }
 
   <!-- 文章正文卡片 -->
@@ -278,55 +372,6 @@ const jsonLd = {
       </Markdown>
     </div>
   </div>
-
-  <!-- 上次编辑时间 -->
-  {
-    siteConfig.showLastModified && (() => {
-      const lastModified = dayjs(
-        entry.data.updated || entry.data.published
-      );
-      const now = dayjs();
-      const daysDiff = now.diff(lastModified, "day");
-      // 使用用户定义的阈值，如果没有定义则默认为1天
-      const outdatedThreshold = siteConfig.outdatedThreshold ?? 1;
-      const shouldShowOutdatedCard = daysDiff >= outdatedThreshold;
-
-      return shouldShowOutdatedCard ? (
-        <div class="card-base p-6 mb-4">
-          <div class="flex items-center gap-2">
-            <div class="transition h-9 w-9 rounded-lg overflow-hidden relative flex items-center justify-center mr-0">
-              <Icon
-                name="material-symbols:history-rounded"
-                class="text-4xl text-(--primary) transition-transform group-hover:translate-x-0.5 bg-(--enter-btn-bg) p-2 rounded-md"
-              />
-            </div>
-
-            {(() => {
-              const dateStr = lastModified.format("YYYY-MM-DD");
-              const isOutdated = daysDiff >= 1;
-
-              return (
-                <div class="flex flex-col gap-0.1">
-                  <div class="text-[1.0rem] leading-tight text-black/75 dark:text-white/75">
-                    {`${i18n(I18nKey.lastModifiedPrefix)}${dateStr}${
-                      isOutdated
-                        ? `，${i18n(I18nKey.lastModifiedDaysAgo).replace("{days}", daysDiff.toString())}`
-                        : ""
-                    }`}
-                  </div>
-                  {isOutdated && (
-                    <p class="text-[0.8rem] leading-tight text-black/75 dark:text-white/75">
-                      {i18n(I18nKey.lastModifiedOutdated)}
-                    </p>
-                  )}
-                </div>
-              );
-            })()}
-          </div>
-        </div>
-      ) : null;
-    })()
-  }
 
   <div
     class="flex flex-col md:flex-row justify-between mb-4 gap-4 overflow-hidden w-full"
@@ -387,3 +432,32 @@ const jsonLd = {
   <!-- 评论 -->
   {entry.data.comment && <Comment post={entry} />}
 </MainGridLayout>
+
+<script>
+  // 过期提示：服务端只输出骨架（含 ISO 日期与阈值），这里按当前日期算天数决定是否显示。
+  // 用原生 Date 而不是 dayjs（省一个依赖）；Swup 导航后 DOM 会替换，靠事件重新执行。
+  function initOutdatedInfo() {
+    const info = document.getElementById("outdated-info");
+    if (!info) return;
+    const dateStr = info.dataset.date;
+    const threshold = Number(info.dataset.threshold) || 1;
+    if (!dateStr) return;
+
+    const daysDiff = Math.floor(
+      (Date.now() - new Date(dateStr).getTime()) / 86_400_000,
+    );
+    if (daysDiff < threshold) return; // 没超阈值：整行保持隐藏，分隔线也一起收起
+
+    info.classList.remove("hidden");
+    const daysEl = document.getElementById("days-ago-text-intro");
+    const warnEl = document.getElementById("outdated-warning-intro");
+    const template = daysEl?.dataset.template;
+    if (daysEl && template) {
+      daysEl.textContent = template.replace("{days}", String(daysDiff));
+    }
+    warnEl?.classList.remove("hidden");
+  }
+
+  initOutdatedInfo();
+  document.addEventListener("swup:content:replaced", initOutdatedInfo);
+</script>

@@ -23,6 +23,9 @@ export const en: Translation = {
 	[Key.recentPosts]: "Recent Posts",
 	[Key.postList]: "Post List",
 	[Key.tableOfContents]: "Table of Contents",
+	[Key.tocExpandAll]: "Expand all",
+	[Key.tocCollapseAll]: "Collapse all",
+	[Key.readingProgress]: "Reading progress",
 	[Key.changelog]: "Changelog",
 	[Key.changelogTitle]: "Changelog",
 	[Key.changelogSubtitle]:

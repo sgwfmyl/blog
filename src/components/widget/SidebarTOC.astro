@@ -1,106 +1,80 @@
 ---
-import type { MarkdownHeading } from "astro";
-import "@/styles/features/toc.css";
-import WidgetLayout from "@/components/common/WidgetLayout.astro";
+import { Icon } from "astro-icon/components";
 import I18nKey from "@/i18n/i18nKey";
 import { i18n } from "@/i18n/translation";
+import "@/styles/features/article-toc-panel.css";
 
 interface Props {
-	headings: MarkdownHeading[];
+	/** 兼容旧接口：目录树由客户端扫描正文生成，这里不再使用 */
+	headings?: unknown[];
 	class?: string;
 	style?: string;
 }
 
-const { headings: _headings = [], class: className, style } = Astro.props;
+const { class: className, style } = Astro.props;
+const outlineLabel = i18n(I18nKey.tableOfContents);
 ---
 
-<WidgetLayout 
-  name={i18n(I18nKey.tableOfContents)} 
-  id="sidebar-toc"
-  class={className}
-  style={style}
-  flat
+<!--
+  文章目录面板（Obsidian 风格）：工具栏（全部展开/收起 + 阅读进度）+ 树。
+  树、折叠、scrollspy、进度都由 src/utils/article-toc.ts 在客户端生成；
+  这里只输出骨架。面板在右侧栏容器内，容器自身 sticky，所以不用 fixed 定位。
+-->
+<aside
+	class:list={["article-toc-panel is-pending", className]}
+	id="article-toc-panel"
+	style={style}
+	aria-label={outlineLabel}
 >
-  <div class="toc-scroll-container custom-scrollbar">
-    <div
-      class="toc-content"
-      id="sidebar-toc-content"
-    >
-      <!-- TOC内容将由JavaScript动态生成 -->
-    </div>
-  </div>
-</WidgetLayout>
+	<div class="article-toc-panel__toolbar">
+		<button
+			type="button"
+			class="article-toc-panel__tool-btn"
+			data-toc-toggle-all-btn
+			aria-pressed="false"
+			data-toc-expand-label={i18n(I18nKey.tocExpandAll)}
+			data-toc-collapse-label={i18n(I18nKey.tocCollapseAll)}
+			aria-label={i18n(I18nKey.tocExpandAll)}
+			title={i18n(I18nKey.tocExpandAll)}
+		>
+			<Icon
+				name="mdi:unfold-more-horizontal"
+				class="article-toc-panel__tool-icon is-expand h-4 w-4"
+			/>
+			<Icon
+				name="mdi:unfold-less-horizontal"
+				class="article-toc-panel__tool-icon is-collapse h-4 w-4"
+			/>
+		</button>
+		<span
+			class="article-toc-panel__progress"
+			role="progressbar"
+			aria-label={i18n(I18nKey.readingProgress)}
+			aria-valuemin="0"
+			aria-valuemax="100"
+			aria-valuenow="0"
+			data-toc-progress
+		>
+			<span class="article-toc-panel__progress-label" data-toc-progress-label
+				>0%</span
+			>
+		</span>
+	</div>
 
-<style>
-/* SidebarTOC 特定样式 */
-.toc-scroll-container {
-  max-height: calc(100vh - 20rem);
-}
-</style>
+	<nav class="article-toc-panel__tree" aria-label={outlineLabel} data-toc-tree
+	></nav>
+</aside>
 
 <script>
-  import { TOCManager } from "@/utils/tocUtils";
+	import { initArticleToc } from "@/utils/article-toc";
 
-  if (typeof window.SidebarTOC === "undefined") {
-    window.SidebarTOC = {
-      manager: null
-    };
-  }
-
-  async function initSidebarTOC() {
-    const tocContent = document.getElementById("sidebar-toc-content");
-    if (!tocContent) return;
-
-
-    try {
-      // 清理旧实例
-      if (window.SidebarTOC.manager) {
-        window.SidebarTOC.manager.cleanup();
-      }
-
-      // 创建新实例
-      window.SidebarTOC.manager = new TOCManager({
-        contentId: "sidebar-toc-content",
-        indicatorId: "sidebar-active-indicator",
-        maxLevel: 3,
-        scrollOffset: 80,
-      });
-
-      // 初始化
-      window.SidebarTOC.manager.init();
-    } catch (error) {
-      console.error("Failed to load TOCManager for SidebarTOC:", error);
-    }
-  }
-
-  // 初始化
-  // 确保 DOM 准备好后再执行
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", initSidebarTOC);
-  } else {
-    initSidebarTOC();
-  }
-
-  // 页面切换时重新初始化
-  document.addEventListener("swup:content:replaced", () => {
-    setTimeout(initSidebarTOC, 100);
-  });
-  
-  // Astro 页面切换事件
-  document.addEventListener("astro:page-load", () => {
-    setTimeout(initSidebarTOC, 100);
-  });
-  
-  // 浏览器导航事件
-  window.addEventListener("popstate", () => {
-    setTimeout(initSidebarTOC, 200);
-  });
-  
-  // 监听 hashchange（但排除 TOC 内部导航）
-  window.addEventListener("hashchange", () => {
-    if (!window.tocInternalNavigation) {
-      setTimeout(initSidebarTOC, 100);
-    }
-    window.tocInternalNavigation = false;
-  });
+	// Swup 导航会替换面板 DOM，所以每条路径都要重新初始化（内部会先销毁旧实例）
+	const boot = () => initArticleToc();
+	if (document.readyState === "loading") {
+		document.addEventListener("DOMContentLoaded", boot);
+	} else {
+		boot();
+	}
+	document.addEventListener("astro:page-load", boot);
+	document.addEventListener("swup:content:replaced", boot);
 </script>

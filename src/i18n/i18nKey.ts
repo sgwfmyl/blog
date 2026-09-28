@@ -46,6 +46,9 @@ enum I18nKey {
 	recentPosts = "recentPosts",
 	postList = "postList",
 	tableOfContents = "tableOfContents",
+	tocExpandAll = "tocExpandAll",
+	tocCollapseAll = "tocCollapseAll",
+	readingProgress = "readingProgress",
 	music = "music",
 
 	// 公告栏
