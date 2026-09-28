@@ -228,7 +228,23 @@ Layout.astro          ← HTML 骨架：<html>, <head>, <body>, 全局组件, �
 - **两种视图的 meta 都必须保持 `flex-direction: column` + 两个 `__meta-row`**（样式在 `src/styles/pages/article-list.css`：`.article-list-card__meta`、`.article-list-pinned-item__meta`）。不要改回单行 `flex-wrap`——分类名长度随机，单行会随机折行，同屏卡片高度就会参差（2026-09-21 站长反馈的问题）。
 - **浏览量**走 Waline 轻量入口 `@waline/client/pageview`（不加载完整评论客户端）：卡片里每个 `.article-views > .waline-pageview-count` 带 `data-path="/posts/<entry.id>"`（格式必须与 `src/pages/posts/[...slug].astro` 的 `data-path` 一致，否则命不中同一份计数）；`pageviewCount()` 自动收集页面上所有该选择器元素**一次性批量查询**。`update: false` 是关键——列表页只读浏览量，不能把列表页访问记成文章浏览。脚本挂在组件 `onMount` 与 `swup:content:replaced`（视图切换/分页后重建 DOM 需重跑）。无评论服务、无 `PUBLIC_WALINE_SERVER` 或请求失败时，`.article-views:has(.waline-pageview-count:empty)` 让整块隐藏不占位。
 
-### 3.8 文章朗读（TTS，2026-09-15 新增）
+### 3.8 侧栏小组件按页面类型显示（2026-09-22 新增）
+
+侧栏小组件支持精确的页面级显隐，写在 `src/config/sidebarConfig.ts` 每个组件条目上：
+
+```ts
+{ type: "postDirectory", enable: true, position: "sticky",
+  showOnPages: ["post", "posts-list"] },  // 白名单：只在这些页面显示
+{ type: "weather", enable: true, position: "top",
+  hideOnPages: ["posts-list"] },          // 黑名单：这些页面不显示
+```
+
+- **页面类型（27 个）** 由 `src/utils/page-type.ts#getSidebarPageType(pathname)` 判定：`home` `posts-list` `post` `categories-list` `category` `archive` `moments` `projects` `friends` `about` `guestbook` `circle` `notebooks-list` `notebook` `places` `album-list` `album` `bills` `schedules` `apps` `books` `movies-games` `bangumi` `search` `changelog` `sponsor` `other`。
+- **两个字段互斥**，同时配以 `showOnPages` 为准；都不写则回落到旧的 `showOnPostPage` / `showOnNonPostPage`。
+- **为什么必须"服务端渲染全部 + 运行期切 class"**：侧栏渲染在 Swup 容器之外（`#left-sidebar-wrapper` / `#right-sidebar-static`），客户端导航时不重新渲染。实现链路：`SideBar.astro` 输出 `data-show-pages` / `data-hide-pages` 并按当前页给出初始 `hidden`（防闪烁）→ `src/utils/sidebar-utils.ts#updateSidebarComponentsVisibility` 在首屏与 `swup:content:replaced` / `page:view` 后重算。**不要改成构建期过滤**——那样导航后侧栏不会更新。
+- **`/posts/` 列表页与 `/posts/<slug>/` 详情页是不同类型**：`isCurrentPagePost()`（`grid-layout-utils.ts`）已修正为严格匹配详情页（旧实现 `includes("/posts/")` 会把列表页误判成文章页）。所以 `showOnPostPage: false` 的组件现在**在文章列表页会显示**（原先被误隐藏）。
+
+### 3.9 文章朗读（TTS，2026-09-15 新增）
 
 文章页提取正文（自动跳过代码块/表格/公式）→ `POST PUBLIC_TTS_SERVER/tts` 流式合成 mp3 → `<audio>` 播放（倍速 0.8x~2x + 7 种音色，选择记忆），服务不可用时降级浏览器 Web Speech 系统语音。服务端代码与部署见 `docs/deploy-edge-tts.md`（`scripts/TTS服务/`，CORS 白名单含 blog.tsh520.cn 与本地 4321）；开关在 `src/config/ttsConfig.ts`。
 

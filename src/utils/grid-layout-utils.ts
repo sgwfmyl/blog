@@ -1,11 +1,13 @@
+import { getSidebarPageType } from "./page-type";
+
 /**
- * Check whether the current page is a post detail page
+ * Check whether the current page is a post **detail** page.
+ *
+ * 严格匹配 `/posts/<slug>/`：`/posts/`（文章列表）与分类页都不算文章页。
+ * 旧实现用 `includes("/posts/")`，会把列表页误判成文章页（侧栏组件显隐因此出错）。
  */
 export function isCurrentPagePost(): boolean {
-	return (
-		window.location.pathname.includes("/posts/") ||
-		window.location.pathname.includes("/post/")
-	);
+	return getSidebarPageType(window.location.pathname) === "post";
 }
 
 /**

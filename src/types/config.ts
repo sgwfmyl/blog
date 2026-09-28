@@ -3,6 +3,7 @@ import type {
 	LIGHT_MODE,
 	SYSTEM_MODE,
 } from "../constants/constants";
+import type { SidebarPageType } from "../utils/page-type";
 
 export type SiteConfig = {
 	title: string;
@@ -597,6 +598,10 @@ export type WidgetComponentConfig = {
 	configId?: string; // 配置ID，用于广告组件指定使用哪个配置
 	showOnPostPage?: boolean; // 是否在文章详情页显示
 	showOnNonPostPage?: boolean; // 是否在非文章详情页显示
+	/** 只在列出的页面类型显示（白名单）；与 hideOnPages 互斥，同时配置时以本字段为准 */
+	showOnPages?: SidebarPageType[];
+	/** 在列出的页面类型不显示（黑名单） */
+	hideOnPages?: SidebarPageType[];
 	responsive?: {
 		hidden?: ("mobile" | "tablet" | "desktop")[]; // 在指定设备上隐藏
 		collapseThreshold?: number; // 折叠阈值
@@ -610,6 +615,10 @@ export type MobileBottomComponentConfig = {
 	configId?: string; // 配置ID，用于广告组件指定使用哪个配置
 	showOnPostPage?: boolean; // 是否在文章详情页显示
 	showOnNonPostPage?: boolean; // 是否在非文章详情页显示
+	/** 只在列出的页面类型显示（白名单）；与 hideOnPages 互斥，同时配置时以本字段为准 */
+	showOnPages?: SidebarPageType[];
+	/** 在列出的页面类型不显示（黑名单） */
+	hideOnPages?: SidebarPageType[];
 	responsive?: {
 		hidden?: ("mobile" | "tablet" | "desktop")[]; // 在指定设备上隐藏
 		collapseThreshold?: number; // 折叠阈值

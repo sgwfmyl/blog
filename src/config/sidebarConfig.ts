@@ -62,12 +62,13 @@ export const sidebarLayoutConfig: SidebarLayoutConfig = {
 			showOnPostPage: false,
 		},
 		{
-			// 组件类型：全站文章目录（只在文章详情页显示）
+			// 组件类型：全站文章目录（文章详情页 + 文章列表页显示，其余页面不显示）
+			// 用新的 showOnPages（页面类型白名单）而不是旧的 showOnPostPage：
+			// 旧字段里的"文章页"现已严格指文章详情页，只写 showOnPostPage 会让列表页不再显示该目录。
 			type: "postDirectory",
 			enable: true,
 			position: "sticky",
-			showOnPostPage: true,
-			showOnNonPostPage: false,
+			showOnPages: ["post", "posts-list"],
 		},
 		{
 			// 组件类型：文章目录（已移至右侧边栏，此处禁用）
