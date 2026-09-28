@@ -1,66 +1,68 @@
 /**
- * 文章目录面板 · 移植自参考博客 my-blog 的 article-toc-panel.css
+ * 文章目录面板 · 复刻参考实现（Obsidian 风格右侧大纲 + 思维导图弹窗）
  *
- * 按「右侧栏内嵌、容器自身 sticky」裁剪：去掉 fixed 定位、≥96rem 显示门槛、
- * 浮层 max-height 与思维导图相关规则。
+ * 适配点：面板位于右侧栏容器内（容器自身 sticky），因此不含上游的
+ * 「≥96rem 才显示 + position: fixed 贴正文右缘」定位，宽度改为填满侧栏；
+ * 其余几何与配色与参考实现逐值一致（灰底卡片、工具栏 0.5/0.75rem、
+ * 行 0.28rem + 每级 0.95rem 缩进、圆点 0.55/0.45/0.38rem、SVG 线 1.5px）。
  *
  * 结构由 src/utils/article-toc.ts 生成：
  *   .article-toc-panel[.is-pending][hidden]
  *     .article-toc-panel__toolbar
- *       .article-toc-panel__tool-btn[data-toc-toggle-all-btn][aria-pressed]
- *         .article-toc-panel__tool-icon.is-expand / .is-collapse
+ *       button[data-toc-auto-btn][aria-pressed]
+ *       button[data-toc-toggle-all-btn][aria-pressed]
+ *       button[data-toc-mindmap-btn]
  *       .article-toc-panel__progress[data-toc-progress]
- *         .article-toc-panel__progress-label[data-toc-progress-label]
- *     .article-toc-panel__tree[data-toc-tree]          <- 内部滚动
- *       .article-toc-panel__row--root[.is-branch]      <- 根节点（文章标题）
+ *     nav.article-toc-panel__tree[data-toc-tree]
+ *       svg.article-toc-panel__lines > path.article-toc-panel__line
+ *       .article-toc-panel__row--root[.is-active-path]
  *       ul.article-toc-panel__list
- *         li.article-toc-panel__item
- *           .article-toc-panel__row[data-toc-level]
- *             [.is-branch][.is-collapsed][.is-active][.is-active-path]
+ *         li.article-toc-panel__item[data-toc-index]
+ *           .article-toc-panel__row[data-toc-level][.is-collapsed][.is-active]
  *             a.article-toc-panel__link[data-toc-navigate]
  *               .article-toc-panel__dot + .article-toc-panel__text
  *             button.article-toc-panel__toggle[data-toc-toggle][aria-expanded]
  *           .article-toc-panel__children > ul.article-toc-panel__list
- *
- * 连接线（竖脊 + 横臂 + 分支下垂段）全部用伪元素画在「本行行盒内部」：
- * 折叠动画（grid-template-rows）期间不需要任何 JS 重画，线段随 overflow: hidden
- * 一起被裁剪；滚动时也没有 SVG 尺寸测量开销。
+ *     dialog.article-toc-mindmap[data-toc-mindmap]
  */
 
 .article-toc-panel {
-	/* ---- 主题色：映射到项目已有变量 ---- */
-	--article-toc-active: var(--primary); /* 活动项 / 根圆点 / 活动路径连线 */
-	--article-toc-text: var(--deep-text); /* 根节点与悬停文字 */
-	--article-toc-muted: var(--content-meta); /* 普通节点文字 */
-	--article-toc-hover: var(--btn-plain-bg-hover); /* 行 / 工具按钮悬停背景 */
-	/* 连接线与圆点边框：--line-divider 对 1px 线偏淡，这里给具体色值 */
-	--article-toc-line: oklch(0 0 0 / 0.28);
-	--article-toc-dot: oklch(0 0 0 / 0.4);
-
-	/* ---- 树几何：连接线坐标全部由前两项派生，调缩进只改 --toc-indent ---- */
-	--toc-indent: 0.95rem; /* 每级缩进 = 嵌套列表 padding-left */
-	--toc-row-pad-left: 0.75rem; /* 行左内边距 = 圆点左缘 */
-	--article-toc-tree-max-height: calc(100vh - 20rem); /* 树内部滚动上限 */
+	--article-toc-active: #0e7490;
+	--article-toc-panel-bg: #dedede;
+	--article-toc-panel-text: #1f1f1f;
+	--article-toc-panel-muted: #4d4d4d;
+	--article-toc-panel-hover: rgb(0 0 0 / 8%);
+	--article-toc-line: rgb(0 0 0 / 28%);
+	--article-toc-dot: rgb(0 0 0 / 40%);
 
 	display: flex;
 	flex-direction: column;
-	min-width: 0;
+	width: 100%;
+	/* 内容不满时贴合内容高度，超限时封顶并由树内部滚动 */
+	max-height: min(40rem, calc(100vh - 10rem));
+	background: var(--article-toc-panel-bg);
+	border-radius: 0.75rem;
 }
 
 :root.dark .article-toc-panel {
-	--article-toc-line: oklch(1 0 0 / 0.22);
-	--article-toc-dot: oklch(1 0 0 / 0.4);
+	--article-toc-active: #67e8f9;
+	--article-toc-panel-bg: #161616;
+	--article-toc-panel-text: #dadada;
+	--article-toc-panel-muted: #9e9e9e;
+	--article-toc-panel-hover: rgb(255 255 255 / 12%);
+	--article-toc-line: rgb(255 255 255 / 22%);
+	--article-toc-dot: rgb(255 255 255 / 40%);
+}
+
+/* 无标题文章：控制器挂 hidden 属性，显式压过本块的 display: flex */
+.article-toc-panel[hidden] {
+	display: none;
 }
 
 /* 初始化前的防闪烁；控制器 init 成功即移除 */
 .article-toc-panel.is-pending {
 	opacity: 0;
 	pointer-events: none;
-}
-
-/* 无正文 / 无标题：控制器挂 hidden，显式压过 display: flex */
-.article-toc-panel[hidden] {
-	display: none;
 }
 
 /* ------------------------------- 工具栏 ------------------------------- */
@@ -70,19 +72,20 @@
 	flex: none;
 	gap: 0.15rem;
 	align-items: center;
-	padding: 0 0 0.35rem;
+	padding: 0.5rem 0.75rem;
 }
 
 .article-toc-panel__tool-btn {
+	position: relative;
 	display: grid;
 	place-items: center;
 	width: 1.7rem;
 	height: 1.7rem;
 	padding: 0;
 	border: 0;
-	border-radius: var(--radius-medium, 0.5rem);
+	border-radius: 0.5rem;
 	background: transparent;
-	color: var(--article-toc-muted);
+	color: var(--article-toc-panel-muted);
 	cursor: pointer;
 	transition:
 		background-color 160ms ease,
@@ -91,8 +94,14 @@
 
 .article-toc-panel__tool-btn:hover,
 .article-toc-panel__tool-btn:focus-visible {
-	color: var(--article-toc-text);
-	background: var(--article-toc-hover);
+	color: var(--article-toc-panel-text);
+	background: var(--article-toc-panel-hover);
+}
+
+/* 按下高亮仅用于自动手风琴开关（aria-pressed = 开启中） */
+.article-toc-panel__tool-btn[data-toc-auto-btn][aria-pressed="true"] {
+	color: var(--article-toc-active);
+	background: var(--article-toc-panel-hover);
 }
 
 /* 合并的展开/收起按钮：随 aria-pressed 切换图标（预告点击后的动作） */
@@ -110,13 +119,44 @@
 	display: block;
 }
 
+/* 工具栏提示：面板在侧栏内，提示向左弹出（同 footer 的 data-tooltip 惯例） */
+.article-toc-panel__tool-btn::after {
+	position: absolute;
+	top: 50%;
+	right: calc(100% + 0.5rem);
+	z-index: 2;
+	padding: 0.25rem 0.5rem;
+	border-radius: 0.25rem;
+	background: var(--article-toc-panel-text);
+	color: var(--article-toc-panel-bg);
+	content: attr(data-tooltip);
+	font-size: 0.72rem;
+	line-height: 1.3;
+	white-space: nowrap;
+	opacity: 0;
+	pointer-events: none;
+	transform: translate(0.25rem, -50%);
+	transition:
+		opacity 160ms ease,
+		transform 160ms ease,
+		visibility 160ms ease;
+	visibility: hidden;
+}
+
+.article-toc-panel__tool-btn:hover::after,
+.article-toc-panel__tool-btn:focus-visible::after {
+	opacity: 1;
+	transform: translate(0, -50%);
+	visibility: visible;
+}
+
 .article-toc-panel__progress {
 	display: flex;
 	align-items: center;
 	margin-left: auto;
-	color: var(--article-toc-muted);
+	padding-right: 0.25rem;
+	color: var(--article-toc-panel-muted);
 	font-size: 0.78rem;
-	font-variant-numeric: tabular-nums;
 }
 
 .article-toc-panel__progress-label {
@@ -127,21 +167,63 @@
 /* ------------------------------- 节点树 ------------------------------- */
 
 .article-toc-panel__tree {
-	/* 活动行居中的 offsetTop 基准，不要删 */
 	position: relative;
 	flex: 1 1 auto;
 	min-height: 0;
-	max-height: var(--article-toc-tree-max-height);
-	padding: 0.25rem 0 0.5rem;
+	padding: 0.5rem 0 0.75rem;
 	overflow-y: auto;
 	overflow-x: hidden;
 	overscroll-behavior-y: contain;
+	/* 不预留滚动条槽位：内容未超高时无滚动条，超过 max-height 才出现 */
 }
+
+.article-toc-panel__lines {
+	position: absolute;
+	top: 0;
+	left: 0;
+	z-index: 0;
+	overflow: visible;
+	pointer-events: none;
+}
+
+.article-toc-panel__line {
+	fill: none;
+	stroke: var(--article-toc-line);
+	stroke-width: 1.5;
+	transition:
+		stroke 160ms ease,
+		opacity 160ms ease;
+}
+
+.article-toc-panel__line.is-hover-trail {
+	stroke: var(--article-toc-active);
+	opacity: 0.55;
+}
+
+.article-toc-panel__line.is-active-trail {
+	stroke: var(--article-toc-active);
+}
+
+/* 行容器承载悬停/活动高亮、内边距与逐级缩进（含一级相对根节点的缩进）；
+   根行不带 --toc-level 变量，走基础内边距 */
+.article-toc-panel__row {
+	position: relative;
+	z-index: 1;
+	display: flex;
+	gap: 0.3rem;
+	align-items: center;
+	min-width: 0;
+	padding: 0.28rem 0.5rem;
+	padding-left: calc(0.75rem + var(--toc-level, 0) * 0.95rem);
+	border-radius: 0.5rem;
+	transition: background-color 160ms ease;
+}
+
+/* ---------- 树结构（嵌套列表 + grid-rows 折叠动画） ---------- */
 
 .article-toc-panel__list {
 	margin: 0;
-	/* 每级缩进：嵌套列表统一左内边距 */
-	padding: 0 0 0 var(--toc-indent);
+	padding: 0;
 	list-style: none;
 }
 
@@ -165,97 +247,6 @@
 	grid-template-rows: 0fr;
 }
 
-/* ------------------------------- 行 / 节点 ------------------------------- */
-
-.article-toc-panel__row {
-	position: relative; /* 连接线伪元素的定位基准 */
-	display: flex;
-	gap: 0.3rem;
-	align-items: center;
-	min-width: 0;
-	padding: 0.28rem 0.5rem;
-	padding-left: var(--toc-row-pad-left);
-	border-radius: var(--radius-medium, 0.5rem);
-	transition: background-color 160ms ease;
-
-	/* ---- 每行的圆点尺寸与连接线派生值 ---- */
-	--toc-dot-size: 0.55rem;
-	--toc-dot-half: 0.275rem; /* 自身圆点半径 */
-	--toc-parent-dot-half: 0.275rem; /* 父级圆点半径（根圆点为 0.55rem） */
-	/* 树脊 x：父级圆点中心相对本行左缘 = 行左内边距 + 父级半径 - 一级缩进 */
-	--toc-trunk-x: calc(
-		var(--toc-row-pad-left) + var(--toc-parent-dot-half) - var(--toc-indent)
-	);
-}
-
-.article-toc-panel__row[data-toc-level="2"] {
-	--toc-dot-size: 0.45rem;
-	--toc-dot-half: 0.225rem;
-}
-
-.article-toc-panel__row[data-toc-level="3"] {
-	--toc-dot-size: 0.38rem;
-	--toc-dot-half: 0.19rem;
-	--toc-parent-dot-half: 0.225rem;
-}
-
-/* 竖脊：非根行各画一段，兄弟段首尾相接 */
-.article-toc-panel__item > .article-toc-panel__row::before {
-	position: absolute;
-	top: 0;
-	bottom: 0;
-	left: var(--toc-trunk-x);
-	width: 1px;
-	background: var(--article-toc-line);
-	content: "";
-	transform: translateX(-50%);
-	pointer-events: none;
-}
-
-/* 每级最后一个兄弟：竖脊止于自己圆点中心（与横臂交汇） */
-.article-toc-panel__item:last-child > .article-toc-panel__row::before {
-	bottom: 50%;
-}
-
-/* 横臂：从树脊拐入本行圆点左缘 */
-.article-toc-panel__item
-	> .article-toc-panel__row
-	> .article-toc-panel__link::before {
-	position: absolute;
-	top: 50%;
-	left: var(--toc-trunk-x);
-	width: calc(var(--toc-row-pad-left) - var(--toc-trunk-x));
-	height: 1px;
-	background: var(--article-toc-line);
-	content: "";
-	transform: translateY(-50%);
-	pointer-events: none;
-}
-
-/* 下垂段：有子级的行，从自己圆点底缘垂到行底，接上子级树脊 */
-.article-toc-panel__row.is-branch::after {
-	position: absolute;
-	top: calc(50% + var(--toc-dot-half));
-	bottom: 0;
-	left: calc(var(--toc-row-pad-left) + var(--toc-dot-half));
-	width: 1px;
-	background: var(--article-toc-line);
-	content: "";
-	transform: translateX(-50%);
-	pointer-events: none;
-}
-
-/* 活动路径（根 → 活动标题）整条链的连接线染色 */
-.article-toc-panel__item > .article-toc-panel__row.is-active-path::before,
-.article-toc-panel__item
-	> .article-toc-panel__row.is-active-path
-	> .article-toc-panel__link::before,
-.article-toc-panel__row.is-active-path::after {
-	background: var(--article-toc-active);
-}
-
-/* ------------------------------- 链接与文字 ------------------------------- */
-
 /* 链接不撑满整行，折叠箭头得以紧跟标题文字 */
 .article-toc-panel__link {
 	display: inline-flex;
@@ -263,7 +254,7 @@
 	gap: 0.5rem;
 	align-items: center;
 	min-width: 0;
-	color: var(--article-toc-muted);
+	color: var(--article-toc-panel-muted);
 	font-size: 0.82rem;
 	line-height: 1.5;
 	text-decoration: none;
@@ -271,18 +262,18 @@
 }
 
 .article-toc-panel__row--root .article-toc-panel__link {
-	color: var(--article-toc-text);
+	color: var(--article-toc-panel-text);
 	font-weight: 700;
 }
 
 .article-toc-panel__row:hover,
 .article-toc-panel__row:focus-within {
-	background: var(--article-toc-hover);
+	background: var(--article-toc-panel-hover);
 }
 
 .article-toc-panel__row:hover .article-toc-panel__link,
 .article-toc-panel__row:focus-within .article-toc-panel__link {
-	color: var(--article-toc-text);
+	color: var(--article-toc-panel-text);
 }
 
 .article-toc-panel__row.is-active .article-toc-panel__link {
@@ -302,18 +293,24 @@
 	white-space: nowrap;
 }
 
-/* ------------------------------- 圆点 ------------------------------- */
-
 .article-toc-panel__dot {
 	flex: none;
 	box-sizing: border-box;
-	width: var(--toc-dot-size);
-	height: var(--toc-dot-size);
+	width: 0.55rem;
+	height: 0.55rem;
 	border: 1.5px solid var(--article-toc-dot);
 	border-radius: 999px;
-	/* 透明填充：连接线端点停在圆点边缘，不依赖面板背景色 */
-	background: transparent;
-	transition: border-color 160ms ease;
+	background: var(--article-toc-panel-bg);
+}
+
+.article-toc-panel__row[data-toc-level="2"] .article-toc-panel__dot {
+	width: 0.45rem;
+	height: 0.45rem;
+}
+
+.article-toc-panel__row[data-toc-level="3"] .article-toc-panel__dot {
+	width: 0.38rem;
+	height: 0.38rem;
 }
 
 .article-toc-panel__row--root .article-toc-panel__dot {
@@ -321,12 +318,11 @@
 	background: var(--article-toc-active);
 }
 
-.article-toc-panel__row.is-active .article-toc-panel__dot {
+.article-toc-panel__row.is-active > .article-toc-panel__link .article-toc-panel__dot {
 	border-color: var(--article-toc-active);
 }
 
-/* ------------------------------- 折叠箭头 ------------------------------- */
-
+/* 折叠箭头：展开朝下，收起朝右 */
 .article-toc-panel__toggle {
 	display: grid;
 	flex: none;
@@ -335,9 +331,9 @@
 	height: 1.35rem;
 	padding: 0;
 	border: 0;
-	border-radius: var(--radius-medium, 0.5rem);
+	border-radius: 0.5rem;
 	background: transparent;
-	color: var(--article-toc-muted);
+	color: var(--article-toc-panel-muted);
 	cursor: pointer;
 	transition:
 		color 160ms ease,
@@ -346,11 +342,10 @@
 
 .article-toc-panel__toggle:hover,
 .article-toc-panel__toggle:focus-visible {
-	color: var(--article-toc-text);
-	background: var(--article-toc-hover);
+	color: var(--article-toc-panel-text);
+	background: var(--article-toc-panel-hover);
 }
 
-/* 展开朝下，收起朝右 */
 .article-toc-panel__toggle::before {
 	width: 0.32rem;
 	height: 0.32rem;
@@ -365,16 +360,266 @@
 	transform: rotate(-45deg) translate(-10%, -10%);
 }
 
+/* --------------------------- 思维导图弹窗 ---------------------------
+   原生 dialog 在顶层渲染，配色自成一套（不依赖面板在侧栏里的变量，
+   避免打开时窗口缩窄导致变量失效）。 */
+
+.article-toc-mindmap {
+	--article-toc-mindmap-bg: #dedede;
+	--article-toc-mindmap-text: #1f1f1f;
+	--article-toc-mindmap-muted: #4d4d4d;
+	--article-toc-mindmap-hover: rgb(0 0 0 / 8%);
+	--article-toc-mindmap-line: rgb(0 0 0 / 28%);
+	--article-toc-mindmap-active: #0e7490;
+
+	position: fixed;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+	max-width: none;
+	max-height: none;
+	padding: 0;
+	border: 0;
+	background: transparent;
+}
+
+:root.dark .article-toc-mindmap {
+	--article-toc-mindmap-bg: #161616;
+	--article-toc-mindmap-text: #dadada;
+	--article-toc-mindmap-muted: #9e9e9e;
+	--article-toc-mindmap-hover: rgb(255 255 255 / 12%);
+	--article-toc-mindmap-line: rgb(255 255 255 / 22%);
+	--article-toc-mindmap-active: #67e8f9;
+}
+
+.article-toc-mindmap__overlay {
+	position: absolute;
+	inset: 0;
+	background: rgb(0 0 0 / 45%);
+}
+
+.article-toc-mindmap__panel {
+	position: absolute;
+	inset: 0;
+	display: flex;
+	flex-direction: column;
+	margin: auto;
+	width: min(90vw, 72rem);
+	height: min(85vh, 48rem);
+	background: var(--article-toc-mindmap-bg);
+	border: 1px solid var(--article-toc-mindmap-line);
+	border-radius: 0.75rem;
+	overflow: hidden;
+	/* 缩放改的是树容器的 font-size，会把整棵子树标脏；contain 把重排/重绘
+	   圈在这块面板内，不让它扩散到正文（本项目页面元素多，全局重排很贵） */
+	contain: layout paint style;
+}
+
+.article-toc-mindmap__header {
+	display: flex;
+	flex: none;
+	align-items: center;
+	justify-content: space-between;
+	padding: 0.5rem 0.75rem 0.5rem 1rem;
+	border-bottom: 1px solid var(--article-toc-mindmap-line);
+}
+
+.article-toc-mindmap__heading {
+	color: var(--article-toc-mindmap-text);
+	font-size: 0.9rem;
+	font-weight: 700;
+}
+
+.article-toc-mindmap__tools {
+	display: flex;
+	gap: 0.15rem;
+	align-items: center;
+}
+
+.article-toc-mindmap__tool-btn {
+	display: grid;
+	place-items: center;
+	width: 1.8rem;
+	height: 1.8rem;
+	padding: 0;
+	border: 0;
+	border-radius: 0.5rem;
+	background: transparent;
+	color: var(--article-toc-mindmap-muted);
+	cursor: pointer;
+	transition:
+		background-color 160ms ease,
+		color 160ms ease;
+}
+
+.article-toc-mindmap__tool-btn:hover,
+.article-toc-mindmap__tool-btn:focus-visible {
+	color: var(--article-toc-mindmap-text);
+	background: var(--article-toc-mindmap-hover);
+}
+
+/* 全屏状态：面板铺满、图标切换为退出全屏 */
+.article-toc-mindmap__panel:fullscreen {
+	width: 100vw;
+	height: 100vh;
+	border: 0;
+	border-radius: 0;
+}
+
+.article-toc-mindmap__panel:fullscreen
+	.article-toc-mindmap__fs-icon.is-enter {
+	display: none;
+}
+
+.article-toc-mindmap__tool-btn .article-toc-mindmap__fs-icon.is-exit {
+	display: none;
+}
+
+.article-toc-mindmap__panel:fullscreen
+	.article-toc-mindmap__fs-icon.is-exit {
+	display: block;
+}
+
+/* 画布：滚轮缩放 + 拖拽平移，光标与拖拽态反馈 */
+.article-toc-mindmap__canvas {
+	position: relative;
+	flex: 1 1 auto;
+	min-height: 0;
+	overflow: auto;
+	cursor: grab;
+	touch-action: none;
+	user-select: none;
+}
+
+.article-toc-mindmap__canvas.is-panning {
+	cursor: grabbing;
+}
+
+.article-toc-mindmap__lines {
+	position: absolute;
+	top: 0;
+	left: 0;
+	overflow: visible;
+	pointer-events: none;
+}
+
+.article-toc-mindmap__line {
+	fill: none;
+	stroke: var(--article-toc-mindmap-line);
+	stroke-width: 1.5;
+}
+
+/* 挂载点：不参与布局（display: contents），仅承载 JS 注入的 --mindmap-zoom
+   并让它继承进内层树——内层若自己声明该变量会覆盖继承值，导致缩放失效 */
+.article-toc-mindmap__mount {
+	display: contents;
+}
+
+/* 嵌套递归布局：父节点与其子树子列垂直居中对齐；间距全用 em，
+   缩放通过树容器 font-size（--mindmap-zoom）整体生效，滚动区随之正确 */
+.article-toc-mindmap__tree {
+	position: relative;
+	z-index: 1;
+	display: flex;
+	gap: 3em;
+	align-items: center;
+	min-width: max-content;
+	min-height: 100%;
+	padding: 2em 2.5em;
+	font-size: calc(0.82rem * var(--mindmap-zoom, 1));
+}
+
+.article-toc-mindmap__branch {
+	display: flex;
+	gap: 3em;
+	align-items: center;
+}
+
+.article-toc-mindmap__children {
+	display: flex;
+	flex-direction: column;
+	gap: 1.5em;
+}
+
+/* 根节点的子级组之间留大间距、组内小间距，分组呼吸感与参考图一致 */
+.article-toc-mindmap__tree > .article-toc-mindmap__children {
+	gap: 4.5em;
+}
+
+.article-toc-mindmap__node {
+	display: inline-flex;
+	flex: none;
+	gap: 0.5em;
+	align-items: center;
+	max-width: 19em;
+	padding: 0.35em 0.9em;
+	border: 1px solid var(--article-toc-mindmap-line);
+	border-radius: 999px;
+	background: var(--article-toc-mindmap-bg);
+	color: var(--article-toc-mindmap-muted);
+	font-size: 1em;
+	line-height: 1.5;
+	text-align: left;
+	cursor: pointer;
+	transition:
+		color 160ms ease,
+		border-color 160ms ease;
+}
+
+.article-toc-mindmap__node:hover,
+.article-toc-mindmap__node:focus-visible {
+	color: var(--article-toc-mindmap-active);
+	border-color: var(--article-toc-mindmap-active);
+}
+
+/* 悬停链高亮：根到悬停节点的整条链，连线、边框、文字、圆点全部转青色 */
+.article-toc-mindmap__node.is-trail {
+	color: var(--article-toc-mindmap-active);
+	border-color: var(--article-toc-mindmap-active);
+}
+
+.article-toc-mindmap__node.is-trail .article-toc-mindmap__node-dot {
+	border-color: var(--article-toc-mindmap-active);
+}
+
+.article-toc-mindmap__line.is-active {
+	stroke: var(--article-toc-mindmap-active);
+}
+
+.article-toc-mindmap__node--root {
+	color: var(--article-toc-mindmap-text);
+	font-weight: 700;
+}
+
+.article-toc-mindmap__node-dot {
+	flex: none;
+	box-sizing: border-box;
+	width: 0.6em;
+	height: 0.6em;
+	border: 1.5px solid var(--article-toc-mindmap-line);
+	border-radius: 999px;
+	background: var(--article-toc-mindmap-bg);
+}
+
+.article-toc-mindmap__node-text {
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
 /* ------------------------------- 动效降级 ------------------------------- */
 
 @media (prefers-reduced-motion: reduce) {
 	.article-toc-panel__tool-btn,
-	.article-toc-panel__row,
+	.article-toc-panel__tool-btn::after,
+	.article-toc-panel__line,
 	.article-toc-panel__link,
-	.article-toc-panel__dot,
 	.article-toc-panel__toggle,
 	.article-toc-panel__toggle::before,
-	.article-toc-panel__children {
+	.article-toc-panel__children,
+	.article-toc-mindmap__tool-btn,
+	.article-toc-mindmap__node {
 		transition-duration: 1ms;
 		transition-delay: 0ms;
 	}

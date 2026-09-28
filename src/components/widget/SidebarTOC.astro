@@ -13,12 +13,23 @@ interface Props {
 
 const { class: className, style } = Astro.props;
 const outlineLabel = i18n(I18nKey.tableOfContents);
+const readingProgressLabel = i18n(I18nKey.readingProgress);
+const accordionAutoLabel = i18n(I18nKey.tocAccordionAuto);
+const expandAllLabel = i18n(I18nKey.tocExpandAll);
+const collapseAllLabel = i18n(I18nKey.tocCollapseAll);
+const mindMapLabel = i18n(I18nKey.tocMindMap);
+const mindMapZoomInLabel = i18n(I18nKey.tocMindMapZoomIn);
+const mindMapZoomOutLabel = i18n(I18nKey.tocMindMapZoomOut);
+const mindMapResetLabel = i18n(I18nKey.tocMindMapReset);
+const mindMapFullscreenLabel = i18n(I18nKey.tocMindMapFullscreen);
+const closeLabel = i18n(I18nKey.close);
 ---
 
 <!--
-  文章目录面板（Obsidian 风格）：工具栏（全部展开/收起 + 阅读进度）+ 树。
-  树、折叠、scrollspy、进度都由 src/utils/article-toc.ts 在客户端生成；
-  这里只输出骨架。面板在右侧栏容器内，容器自身 sticky，所以不用 fixed 定位。
+  文章目录面板（Obsidian 风格）：工具栏（自动手风琴 + 展开/收起全部 + 思维导图
+  + 阅读进度）+ 节点树 + 思维导图弹窗。
+  树、连接线、折叠、scrollspy、进度都由 src/utils/article-toc.ts 在客户端生成，
+  这里只输出骨架。面板位于右侧栏容器内（容器自身 sticky），所以不用 fixed 定位。
 -->
 <aside
 	class:list={["article-toc-panel is-pending", className]}
@@ -30,12 +41,22 @@ const outlineLabel = i18n(I18nKey.tableOfContents);
 		<button
 			type="button"
 			class="article-toc-panel__tool-btn"
+			data-toc-auto-btn
+			aria-pressed="true"
+			data-tooltip={accordionAutoLabel}
+			aria-label={accordionAutoLabel}
+		>
+			<Icon name="mingcute:list-collapse-line" class="h-4 w-4" />
+		</button>
+		<button
+			type="button"
+			class="article-toc-panel__tool-btn"
 			data-toc-toggle-all-btn
 			aria-pressed="false"
-			data-toc-expand-label={i18n(I18nKey.tocExpandAll)}
-			data-toc-collapse-label={i18n(I18nKey.tocCollapseAll)}
-			aria-label={i18n(I18nKey.tocExpandAll)}
-			title={i18n(I18nKey.tocExpandAll)}
+			data-tooltip={expandAllLabel}
+			aria-label={expandAllLabel}
+			data-toc-expand-label={expandAllLabel}
+			data-toc-collapse-label={collapseAllLabel}
 		>
 			<Icon
 				name="mdi:unfold-more-horizontal"
@@ -46,10 +67,19 @@ const outlineLabel = i18n(I18nKey.tableOfContents);
 				class="article-toc-panel__tool-icon is-collapse h-4 w-4"
 			/>
 		</button>
+		<button
+			type="button"
+			class="article-toc-panel__tool-btn"
+			data-toc-mindmap-btn
+			data-tooltip={mindMapLabel}
+			aria-label={mindMapLabel}
+		>
+			<Icon name="ri:node-tree" class="h-4 w-4" />
+		</button>
 		<span
 			class="article-toc-panel__progress"
 			role="progressbar"
-			aria-label={i18n(I18nKey.readingProgress)}
+			aria-label={readingProgressLabel}
 			aria-valuemin="0"
 			aria-valuemax="100"
 			aria-valuenow="0"
@@ -61,8 +91,87 @@ const outlineLabel = i18n(I18nKey.tableOfContents);
 		</span>
 	</div>
 
-	<nav class="article-toc-panel__tree" aria-label={outlineLabel} data-toc-tree
-	></nav>
+	<nav class="article-toc-panel__tree" aria-label={outlineLabel} data-toc-tree>
+		<svg
+			class="article-toc-panel__lines"
+			data-toc-lines
+			aria-hidden="true"
+			focusable="false"></svg>
+	</nav>
+
+	<dialog
+		class="article-toc-mindmap"
+		data-toc-mindmap
+		aria-label={mindMapLabel}
+	>
+		<div class="article-toc-mindmap__overlay" data-toc-mindmap-close></div>
+		<div class="article-toc-mindmap__panel">
+			<header class="article-toc-mindmap__header">
+				<span class="article-toc-mindmap__heading">{mindMapLabel}</span>
+				<div class="article-toc-mindmap__tools">
+					<button
+						type="button"
+						class="article-toc-mindmap__tool-btn"
+						data-toc-mindmap-zoom-out
+						data-tooltip={mindMapZoomOutLabel}
+						aria-label={mindMapZoomOutLabel}
+					>
+						<Icon name="mdi:zoom-out" class="h-4 w-4" />
+					</button>
+					<button
+						type="button"
+						class="article-toc-mindmap__tool-btn"
+						data-toc-mindmap-zoom-in
+						data-tooltip={mindMapZoomInLabel}
+						aria-label={mindMapZoomInLabel}
+					>
+						<Icon name="mdi:zoom-in" class="h-4 w-4" />
+					</button>
+					<button
+						type="button"
+						class="article-toc-mindmap__tool-btn"
+						data-toc-mindmap-reset
+						data-tooltip={mindMapResetLabel}
+						aria-label={mindMapResetLabel}
+					>
+						<Icon name="mdi:restore" class="h-4 w-4" />
+					</button>
+					<button
+						type="button"
+						class="article-toc-mindmap__tool-btn"
+						data-toc-mindmap-fullscreen
+						data-tooltip={mindMapFullscreenLabel}
+						aria-label={mindMapFullscreenLabel}
+					>
+						<Icon
+							name="mdi:fullscreen"
+							class="article-toc-mindmap__fs-icon is-enter h-4 w-4"
+						/>
+						<Icon
+							name="mdi:fullscreen-exit"
+							class="article-toc-mindmap__fs-icon is-exit h-4 w-4"
+						/>
+					</button>
+					<button
+						type="button"
+						class="article-toc-mindmap__tool-btn"
+						data-toc-mindmap-close
+						aria-label={closeLabel}
+					>
+						<Icon name="material-symbols:close-rounded" class="h-4 w-4" />
+					</button>
+				</div>
+			</header>
+			<div class="article-toc-mindmap__canvas" data-toc-mindmap-canvas>
+				<svg
+					class="article-toc-mindmap__lines"
+					data-toc-mindmap-lines
+					aria-hidden="true"
+					focusable="false"></svg>
+				<div class="article-toc-mindmap__mount" data-toc-mindmap-tree></div>
+			</div>
+		</div>
+	</dialog>
 </aside>
 
 <script>

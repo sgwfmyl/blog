@@ -1,72 +1,44 @@
 /**
- * 文章目录面板（Obsidian 风格）· 移植版（单文件、零依赖）
+ * 文章目录面板（Obsidian 风格）控制器。
  *
- * 移植自参考博客 my-blog 的 article-toc-panel-controller.ts + article-toc-tree.ts，
- * 按「右侧栏内嵌、容器自身 sticky」场景裁剪，不使用其框架包装。
+ * 结构：工具栏（自动手风琴 + 展开/收起全部 + 思维导图 + 进度%）/ 节点树
+ * （圆点 + SVG 肘形连接线）/ 思维导图弹窗。树与连接线全部由本控制器在客户端渲染。
  *
- * 保留：
- *   1. 正文 h1–h3 采集 + 层级归一化（最浅层级视为一级；父节点 = 前面最近的更浅标题）
- *   2. 圆点 + 连接线 + 按层级缩进的树渲染（根节点显示文章标题）
- *   3. 分组折叠（行尾箭头）+「全部展开 / 全部收起」
- *   4. scrollspy：文档坐标缓存 + ResizeObserver 重测 + scrollY+80 二分查找
- *      + 活动项自动滚入面板可视区（防抖 + smooth）
- *   5. 阅读进度百分比（NN% + aria-valuenow）
- *   6. 点击标题平滑滚动（偏移 80px）并写 hash（标题无 id 时不写 hash）
+ * 与上游参考实现的差异：面板位于右侧栏容器内（容器自身 sticky），因此不含
+ * 「面板底边触到正文卡底后随文档滚走」的停靠钳制逻辑。
  *
- * 裁剪：fixed 停靠逻辑、思维导图弹窗、自动收缩手风琴。
- *
- * 用法（Swup 下每条路径调用一次即可，内部会先销毁旧实例）：
- *   import { initArticleToc } from "@/utils/article-toc";
- *   const boot = () => initArticleToc();
- *   document.addEventListener("astro:page-load", boot);
- *   document.addEventListener("swup:content:replaced", boot);
+ * 坑位备忘：
+ * - 面板是 max-height 封顶 + 树内部滚动；
+ * - 连接线坐标取圆点中心相对树容器的位置（含 scrollTop），SVG 作为树的
+ *   第一个子节点随内容一起滚，滚动树不需要重画；
+ * - 折叠动画用 grid-template-rows 1fr→0fr 过渡（无需 JS 测量高度），动画期间
+ *   由 startLineAnimation 逐帧重画连接线，让线跟着行一起动；
+ * - 手风琴的展开/收起状态挂在行容器的 is-collapsed 类上，子树隐藏交给
+ *   CSS 结构（嵌套列表 + 0fr 裁剪），不逐行打 is-hidden。
  */
 
-/** 阅读判定偏移：scrollY + 80 处找活动标题，跳转落点同样偏移 80 */
+import {
+	collectTocTree,
+	resolveArticle,
+	type TocNode,
+	type TocTree,
+} from "@/utils/article-toc-tree";
+
+/** 阅读位置判定偏移：视口顶部往下这段距离内的最近标题即活动标题 */
 const READING_OFFSET = 80;
-/** 活动行滚入可视区的防抖间隔（ms） */
-const ACTIVE_SCROLL_DEBOUNCE = 120;
-/** 关注的标题层级上限 */
-const HEADING_SELECTOR = "h1, h2, h3";
-
-/**
- * 正文容器兜底链。必须逐个 querySelector 探测，不能合并成逗号选择器：
- * 逗号选择器返回「文档中最靠前」的匹配，而不是「列表中优先级最高」的匹配。
- */
-const CONTENT_SELECTORS = [
-	"#post-container .markdown-content",
-	".markdown-content",
-	".custom-md",
-	".prose",
-] as const;
-
-const PANEL_SELECTOR = "#article-toc-panel, [data-toc-panel]";
-const TITLE_SELECTOR = ".post-hero__title";
-
-interface TocNode {
-	index: number;
-	/** 归一化层级：根的直接子级为 1 */
-	level: number;
-	/** 原始标题层级（h1=1 … h3=3），建栈时使用 */
-	depth: number;
-	text: string;
-	id: string | null;
-	element: HTMLElement;
-	parent: number;
-	children: number[];
-}
-
-interface TocTree {
-	title: string;
-	titleElement: HTMLElement | null;
-	nodes: TocNode[];
-}
-
-interface TocRowRef {
-	row: HTMLElement;
-	link: HTMLAnchorElement;
-	toggle: HTMLButtonElement | null;
-}
+const ACTIVE_SCROLL_THROTTLE = 120;
+/** 连接线端点与圆点边缘的留隙（px） */
+const LINE_DOT_GAP = 3;
+/** 连接线拐角处的圆弧半径（px） */
+const LINE_CORNER_RADIUS = 5;
+/** 导图缩放边界与步进 */
+const MINDMAP_ZOOM_MIN = 0.5;
+const MINDMAP_ZOOM_MAX = 2.5;
+const MINDMAP_ZOOM_STEP = 0.2;
+/** 滚轮缩放的单档倍率与拖拽平移的触发阈值（px） */
+const MINDMAP_WHEEL_FACTOR = 1.1;
+const MINDMAP_PAN_THRESHOLD = 4;
+const SVG_NAMESPACE = "http://www.w3.org/2000/svg";
 
 function clamp(value: number, minimum: number, maximum: number): number {
 	return Math.min(Math.max(value, minimum), maximum);
@@ -76,124 +48,139 @@ function prefersReducedMotion(): boolean {
 	return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 }
 
-/** 标题纯文本：剔除锚点图标 / 脚本等渲染噪声 */
-function getHeadingText(heading: HTMLElement): string {
-	const clone = heading.cloneNode(true) as HTMLElement;
-	clone
-		.querySelectorAll(
-			"script, style, .anchor, .anchor-icon, [data-pagefind-ignore]",
-		)
-		.forEach((element) => element.remove());
-
-	const text = clone.textContent?.replace(/#+\s*$/, "").trim();
-	return text || heading.getAttribute("aria-label") || heading.id || "Heading";
-}
-
-function resolveArticle(): HTMLElement | null {
-	for (const selector of CONTENT_SELECTORS) {
-		const element = document.querySelector<HTMLElement>(selector);
-		if (element) return element;
-	}
-	return null;
-}
-
-/**
- * 归一化规则：维护一条「各层级最近未闭合节点」的祖先栈，遇到新标题时弹出所有
- * depth 不小于自己的节点，栈顶即父节点；level = 栈深 + 1。
- */
-function collectTocTree(article: HTMLElement): TocTree | null {
-	const elements = Array.from(
-		article.querySelectorAll<HTMLElement>(HEADING_SELECTOR),
-	);
-	if (elements.length === 0) return null;
-
-	const titleElement = document.querySelector<HTMLElement>(TITLE_SELECTOR);
-	const title = titleElement?.textContent?.trim() || document.title.trim();
-
-	const nodes: TocNode[] = [];
-	const stack: number[] = [];
-
-	for (const element of elements) {
-		const depth = Number.parseInt(element.tagName.slice(1), 10);
-		while (stack.length > 0 && nodes[stack[stack.length - 1]].depth >= depth) {
-			stack.pop();
-		}
-		const parent = stack.length > 0 ? stack[stack.length - 1] : -1;
-		const node: TocNode = {
-			index: nodes.length,
-			level: stack.length + 1,
-			depth,
-			text: getHeadingText(element),
-			id: element.id || null,
-			element,
-			parent,
-			children: [],
-		};
-		if (parent >= 0) nodes[parent].children.push(node.index);
-		nodes.push(node);
-		stack.push(node.index);
-	}
-
-	return { title, titleElement, nodes };
-}
-
 class ArticleTocController {
 	private readonly root: HTMLElement;
 	private readonly abortController = new AbortController();
 	private readonly treeNav: HTMLElement | null;
+	private readonly linesSvg: SVGSVGElement | null;
+	private readonly autoButton: HTMLButtonElement | null;
 	private readonly toggleAllButton: HTMLButtonElement | null;
+	private readonly mindmapButton: HTMLButtonElement | null;
 	private readonly progressRegion: HTMLElement | null;
 	private readonly progressLabel: HTMLElement | null;
+	private readonly mindmapDialog: HTMLDialogElement | null;
+	private readonly mindmapCanvas: HTMLElement | null;
+	private readonly mindmapTree: HTMLElement | null;
+	private readonly mindmapLinesSvg: SVGSVGElement | null;
+	private readonly mindmapZoomOutButton: HTMLButtonElement | null;
+	private readonly mindmapZoomInButton: HTMLButtonElement | null;
+	private readonly mindmapResetButton: HTMLButtonElement | null;
+	private readonly mindmapFullscreenButton: HTMLButtonElement | null;
 
 	private tree: TocTree | null = null;
 	private article: HTMLElement | null = null;
-	/** 各标题的文档绝对纵坐标，下标对齐 tree.nodes */
-	private headingTops: number[] = [];
 	private articleStart = 0;
 	private articleEnd = 0;
-
-	private rows: TocRowRef[] = [];
-	private rootRow: HTMLElement | null = null;
+	/** 各标题的文档绝对纵坐标，下标对齐 tree.nodes */
+	private headingTops: number[] = [];
+	/** 自动手风琴（自动收拢）开关；展开跟随不受此开关影响 */
+	private autoEnabled = true;
+	/** 自动手风琴的手动覆盖：下标 → 期望展开状态（仅开关开启时生效） */
+	private manualState = new Map<number, boolean>();
 	private activeIndex = -1;
+	private activeChain = new Set<number>();
 	private lastProgressPercent = -1;
-
-	private updateFrame: number | null = null;
+	/** 行 DOM 引用，下标对齐 tree.nodes；根行不在此列 */
+	private rows: {
+		row: HTMLElement;
+		link: HTMLAnchorElement;
+		dot: HTMLElement;
+		toggle: HTMLButtonElement | null;
+	}[] = [];
+	private rootDot: HTMLElement | null = null;
+	/** 连接线 path，下标对齐 tree.nodes；仅活动/悬停链上的节点持有可见 path */
+	private linePaths: (SVGPathElement | null)[] = [];
+	/** 悬停中的节点下标，-1 表示无悬停 */
+	private hoverIndex = -1;
+	private animationFrame: number | null = null;
 	private measureFrame: number | null = null;
+	private linesFrame: number | null = null;
+	/** 折叠动画期间逐帧重画连接线用的帧句柄与截止时刻 */
+	private lineAnimFrame: number | null = null;
+	private lineAnimUntil = 0;
 	private activeScrollTimer: ReturnType<typeof setTimeout> | null = null;
 	private resizeObserver: ResizeObserver | null = null;
+	private mindmapNodePills: (HTMLElement | null)[] = [];
+	private mindmapRootPill: HTMLElement | null = null;
+	/** 导图连接线 path，下标对齐 tree.nodes，供悬停链高亮 */
+	private mindmapPaths: (SVGPathElement | null)[] = [];
+	/** 导图缩放倍率，通过树容器的 font-size（em 体系）生效 */
+	private mindmapZoom = 1;
+	/** 画布拖拽平移的进行中状态；null 表示未在拖拽 */
+	private panState: {
+		pointerId: number;
+		startX: number;
+		startY: number;
+		scrollLeft: number;
+		scrollTop: number;
+	} | null = null;
+	/** 刚完成一次拖拽时吞掉随之而来的 click，避免拖拽结束误触节点跳转 */
+	private mindmapPanDragged = false;
+	/** 滚轮缩放的按帧合并槽：frame 非空表示本帧已排队 */
+	private readonly wheelZoom = {
+		target: null as number | null,
+		anchorX: 0,
+		anchorY: 0,
+		frame: null as number | null,
+	};
 
 	constructor(root: HTMLElement) {
 		this.root = root;
 		this.treeNav = root.querySelector("[data-toc-tree]");
+		this.linesSvg = root.querySelector("[data-toc-lines]");
+		this.autoButton = root.querySelector("[data-toc-auto-btn]");
 		this.toggleAllButton = root.querySelector("[data-toc-toggle-all-btn]");
+		this.mindmapButton = root.querySelector("[data-toc-mindmap-btn]");
 		this.progressRegion = root.querySelector("[data-toc-progress]");
 		this.progressLabel = root.querySelector("[data-toc-progress-label]");
+		this.mindmapDialog = root.querySelector("[data-toc-mindmap]");
+		this.mindmapCanvas = root.querySelector("[data-toc-mindmap-canvas]");
+		this.mindmapTree = root.querySelector("[data-toc-mindmap-tree]");
+		this.mindmapLinesSvg = root.querySelector("[data-toc-mindmap-lines]");
+		this.mindmapZoomOutButton = root.querySelector(
+			"[data-toc-mindmap-zoom-out]",
+		);
+		this.mindmapZoomInButton = root.querySelector("[data-toc-mindmap-zoom-in]");
+		this.mindmapResetButton = root.querySelector("[data-toc-mindmap-reset]");
+		this.mindmapFullscreenButton = root.querySelector(
+			"[data-toc-mindmap-fullscreen]",
+		);
 	}
 
 	public init(): boolean {
-		const article = resolveArticle();
-		const tree = article ? collectTocTree(article) : null;
-		if (!article || !tree || !this.treeNav) {
-			// 没有正文容器或没有标题：整个面板隐藏
+		this.article = resolveArticle();
+		if (!this.article || !this.treeNav || !this.linesSvg) {
 			this.root.hidden = true;
 			return false;
 		}
-		this.article = article;
-		this.tree = tree;
+		this.tree = collectTocTree(this.article);
+		if (!this.tree) {
+			this.root.hidden = true;
+			return false;
+		}
 
 		this.root.hidden = false;
-		this.render();
+		this.cachePositions();
+		this.renderRows();
 		this.bindInteractions();
-		this.measure(); // 必须在 render 之后：面板注入可能改变页面布局
-
-		// 标题坐标会因字体加载、图片、上方卡片展开而漂移
 		this.resizeObserver = new ResizeObserver(() => this.scheduleMeasure());
-		this.resizeObserver.observe(article);
-		if (document.body) this.resizeObserver.observe(document.body);
-		void document.fonts?.ready.then(() => this.scheduleMeasure());
+		this.resizeObserver.observe(this.article);
+		// 字体换字、信息卡折叠等会推移标题坐标，一并监听以重算
+		const hero = document.querySelector(".post-hero");
+		if (hero) this.resizeObserver.observe(hero);
+		window.addEventListener("scroll", () => this.scheduleUpdate(), {
+			passive: true,
+			signal: this.abortController.signal,
+		});
+		window.addEventListener("resize", () => this.scheduleMeasure(), {
+			passive: true,
+			signal: this.abortController.signal,
+		});
 
 		this.root.classList.remove("is-pending");
+		this.applyAutoAccordion();
 		this.syncToggleAllButton();
+		this.scheduleLines();
 		this.update();
 		return true;
 	}
@@ -202,68 +189,89 @@ class ArticleTocController {
 		this.abortController.abort();
 		this.resizeObserver?.disconnect();
 		this.resizeObserver = null;
-		if (this.updateFrame !== null) cancelAnimationFrame(this.updateFrame);
+		if (this.animationFrame !== null) cancelAnimationFrame(this.animationFrame);
 		if (this.measureFrame !== null) cancelAnimationFrame(this.measureFrame);
-		if (this.activeScrollTimer !== null) clearTimeout(this.activeScrollTimer);
-		this.updateFrame = null;
+		if (this.linesFrame !== null) cancelAnimationFrame(this.linesFrame);
+		if (this.lineAnimFrame !== null) cancelAnimationFrame(this.lineAnimFrame);
+		if (this.wheelZoom.frame !== null)
+			cancelAnimationFrame(this.wheelZoom.frame);
+		if (this.activeScrollTimer) clearTimeout(this.activeScrollTimer);
+		this.animationFrame = null;
 		this.measureFrame = null;
+		this.linesFrame = null;
+		this.lineAnimFrame = null;
+		this.wheelZoom.frame = null;
 		this.activeScrollTimer = null;
-		this.tree = null;
-		this.article = null;
+		/* 弹窗还开着时导航走人：显式关掉，避免顶层 layer 残留焦点陷阱 */
+		if (this.mindmapDialog?.open) this.mindmapDialog.close();
 	}
 
-	/* ------------------------------ 渲染 ------------------------------ */
+	/* ---------- 渲染 ---------- */
 
-	private render(): void {
+	private renderRows(): void {
 		const tree = this.tree;
+		const svg = this.linesSvg;
 		const nav = this.treeNav;
-		if (!tree || !nav) return;
+		if (!tree || !nav || !svg) return;
 
 		const fragment = document.createDocumentFragment();
 		this.rows = [];
-		this.activeIndex = -1;
-		this.lastProgressPercent = -1;
+		this.linePaths = tree.nodes.map(() => null);
 
-		// 根节点：文章标题
 		const rootRow = document.createElement("div");
-		rootRow.className =
-			"article-toc-panel__row article-toc-panel__row--root is-branch";
+		rootRow.className = "article-toc-panel__row article-toc-panel__row--root";
+		rootRow.dataset.tocIndex = "-1";
 		const rootLink = document.createElement("a");
 		rootLink.className = "article-toc-panel__link";
 		rootLink.href = "#";
 		rootLink.dataset.tocNavigate = "-1";
 		rootLink.title = tree.title;
-		rootLink.append(this.createDot(), this.createText(tree.title));
+		const rootDot = document.createElement("span");
+		rootDot.className = "article-toc-panel__dot";
+		const rootText = document.createElement("span");
+		rootText.className = "article-toc-panel__text";
+		rootText.textContent = tree.title;
+		rootLink.append(rootDot, rootText);
 		rootRow.appendChild(rootLink);
 		fragment.appendChild(rootRow);
-		this.rootRow = rootRow;
+		this.rootDot = rootDot;
 
+		/* 嵌套列表：子级挂在父级的 children 容器里，折叠动画由 CSS 结构完成 */
 		const rootList = document.createElement("ul");
 		rootList.className = "article-toc-panel__list";
 		tree.nodes
 			.filter((node) => node.parent < 0)
-			.forEach((node) => this.buildItem(tree, node, rootList));
+			.forEach((node) => {
+				this.buildItem(node, rootList);
+			});
 		fragment.appendChild(rootList);
 
-		nav.replaceChildren(fragment); // 幂等：重复 init 不会叠两份树
+		nav.replaceChildren(svg, fragment);
 	}
 
-	private buildItem(tree: TocTree, node: TocNode, list: HTMLElement): void {
+	/** 递归构建列表项；children 顺序即文档序，rows 引用也按此顺序入栈 */
+	private buildItem(node: TocNode, list: HTMLElement): void {
 		const item = document.createElement("li");
 		item.className = "article-toc-panel__item";
+		item.dataset.tocIndex = String(node.index);
 
 		const row = document.createElement("div");
 		row.className = "article-toc-panel__row";
 		row.dataset.tocLevel = String(node.level);
 		row.style.setProperty("--toc-level", String(node.level));
-		if (node.children.length > 0) row.classList.add("is-branch");
 
 		const link = document.createElement("a");
 		link.className = "article-toc-panel__link";
 		link.href = node.id ? `#${encodeURIComponent(node.id)}` : "#";
 		link.dataset.tocNavigate = String(node.index);
 		link.title = node.text;
-		link.append(this.createDot(), this.createText(node.text));
+
+		const dot = document.createElement("span");
+		dot.className = "article-toc-panel__dot";
+		const text = document.createElement("span");
+		text.className = "article-toc-panel__text";
+		text.textContent = node.text;
+		link.append(dot, text);
 		row.appendChild(link);
 
 		let toggle: HTMLButtonElement | null = null;
@@ -273,12 +281,12 @@ class ArticleTocController {
 			toggle.className = "article-toc-panel__toggle";
 			toggle.dataset.tocToggle = String(node.index);
 			toggle.setAttribute("aria-expanded", "true");
-			toggle.setAttribute("aria-label", node.text);
 			row.appendChild(toggle);
 		}
-
 		item.appendChild(row);
-		this.rows[node.index] = { row, link, toggle };
+
+		/* rows 必须按文档序（先序）入栈，下标才与 node.index 对齐 */
+		this.rows.push({ row, link, dot, toggle });
 
 		if (node.children.length > 0) {
 			const wrap = document.createElement("div");
@@ -286,59 +294,49 @@ class ArticleTocController {
 			const childList = document.createElement("ul");
 			childList.className = "article-toc-panel__list";
 			node.children.forEach((childIndex) => {
-				const child = tree.nodes[childIndex];
-				if (child) this.buildItem(tree, child, childList);
+				const child = this.tree?.nodes[childIndex];
+				if (child) this.buildItem(child, childList);
 			});
 			wrap.appendChild(childList);
-			item.appendChild(wrap); // 必须是 row 的紧邻兄弟：CSS 用 `+` 选择器
+			item.appendChild(wrap);
 		}
 
 		list.appendChild(item);
 	}
 
-	private createDot(): HTMLElement {
-		const dot = document.createElement("span");
-		dot.className = "article-toc-panel__dot";
-		return dot;
-	}
+	/* ---------- 手风琴 ---------- */
 
-	private createText(text: string): HTMLElement {
-		const span = document.createElement("span");
-		span.className = "article-toc-panel__text";
-		span.textContent = text;
-		return span;
-	}
+	/** 自动手风琴开关：只控制「自动收拢」；展开跟随不受影响。
+	    开启时立即按当前阅读位置收拢一次，关闭则非活动分支保持现状 */
+	private setAutoEnabled(enabled: boolean): void {
+		this.autoEnabled = enabled;
+		this.manualState.clear();
+		this.autoButton?.setAttribute("aria-pressed", String(enabled));
+		if (!enabled) return;
 
-	/* ------------------------------ 折叠 ------------------------------ */
-
-	private toggleCollapse(index: number): void {
-		const ref = this.rows[index];
-		if (!ref?.toggle) return;
-
-		const willExpand = ref.row.classList.contains("is-collapsed");
-		ref.row.classList.toggle("is-collapsed", !willExpand);
-		ref.toggle.setAttribute("aria-expanded", String(willExpand));
+		if (this.applyAutoAccordion()) this.startLineAnimation();
+		this.scheduleLines();
 		this.syncToggleAllButton();
 	}
 
+	/**
+	 * 一键展开/收起（一次性动作，与自动开关解耦）：根据当前树状态决定方向，
+	 * aria-pressed 表示「当前是否全展开」，图标与 tooltip 预告点击后的动作。
+	 */
 	private toggleAll(): void {
-		const expand = !this.isAllExpanded();
-		this.applyExpandAll(expand);
+		this.applyExpandAll(!this.isAllExpanded());
+		this.startLineAnimation();
+		this.scheduleLines();
 		this.syncToggleAllButton();
-	}
-
-	private applyExpandAll(expand: boolean): void {
-		this.rows.forEach((ref) => {
-			if (!ref.toggle) return;
-			ref.row.classList.toggle("is-collapsed", !expand);
-			ref.toggle.setAttribute("aria-expanded", String(expand));
-		});
 	}
 
 	private isAllExpanded(): boolean {
-		return this.rows.every(
-			(ref) =>
-				!ref.toggle || ref.toggle.getAttribute("aria-expanded") === "true",
+		const tree = this.tree;
+		if (!tree) return false;
+		return tree.nodes.every(
+			(node) =>
+				node.children.length === 0 ||
+				!this.rows[node.index]?.row.classList.contains("is-collapsed"),
 		);
 	}
 
@@ -348,35 +346,280 @@ class ArticleTocController {
 
 		const expanded = this.isAllExpanded();
 		button.setAttribute("aria-pressed", String(expanded));
-		// 图标由 CSS 依据 aria-pressed 切换（is-expand / is-collapse）
 		const label = expanded
 			? (button.dataset.tocCollapseLabel ?? "")
 			: (button.dataset.tocExpandLabel ?? "");
 		if (!label) return;
 		button.setAttribute("aria-label", label);
-		button.title = label;
+		button.dataset.tooltip = label;
 	}
 
-	/** 点击标题时顺带展开该节点（收起只通过行尾箭头） */
-	private expandNode(index: number): void {
+	/** 当前活动节点的祖先链（含自身） */
+	private rebuildActiveChain(): void {
+		this.activeChain = new Set<number>();
+		const tree = this.tree;
+		if (!tree) return;
+		let cursor = this.activeIndex;
+		while (cursor >= 0) {
+			this.activeChain.add(cursor);
+			cursor = tree.nodes[cursor].parent;
+		}
+	}
+
+	/**
+	 * 展开跟随 + 自动手风琴：
+	 * - 展开跟随始终生效——阅读位置进入哪个分支，该分支（活动链）自动展开；
+	 * - 开关只控制「自动收拢」这一半：开启时非活动链分支收拢成手风琴，
+	 *   关闭时非活动分支保持现状，只展不收；
+	 * - 手动覆盖（行尾箭头）优先，阅读位置滚出其子树区间后解除。
+	 * 返回本次是否有折叠状态变化（用于决定是否播放动画）。
+	 */
+	private applyAutoAccordion(): boolean {
+		const tree = this.tree;
+		if (!tree) return false;
+
+		let changed = false;
+		this.manualState.forEach((_, index) => {
+			const node = tree.nodes[index];
+			const inside =
+				this.activeIndex >= node.subtreeStart &&
+				this.activeIndex <= node.subtreeEnd;
+			if (!inside) this.manualState.delete(index);
+		});
+
+		tree.nodes.forEach((node) => {
+			const ref = this.rows[node.index];
+			if (!ref?.toggle) return;
+
+			const isCollapsedNow = ref.row.classList.contains("is-collapsed");
+			let expanded: boolean;
+			if (this.manualState.has(node.index)) {
+				expanded = this.manualState.get(node.index) === true;
+			} else if (this.activeChain.has(node.index)) {
+				expanded = true;
+			} else if (!this.autoEnabled) {
+				expanded = !isCollapsedNow;
+			} else {
+				expanded = false;
+			}
+
+			const willCollapse = !expanded;
+			if (isCollapsedNow !== willCollapse) changed = true;
+			ref.row.classList.toggle("is-collapsed", willCollapse);
+			ref.toggle.setAttribute("aria-expanded", String(expanded));
+		});
+		return changed;
+	}
+
+	/** 一键全展开 / 全收起，直接作用于树，不看活动链也不改自动开关 */
+	private applyExpandAll(expand: boolean): void {
+		const tree = this.tree;
+		if (!tree) return;
+
+		tree.nodes.forEach((node) => {
+			const ref = this.rows[node.index];
+			if (!ref?.toggle) return;
+			ref.row.classList.toggle("is-collapsed", !expand);
+			ref.toggle.setAttribute("aria-expanded", String(expand));
+		});
+	}
+
+	private toggleCollapse(index: number): void {
 		const ref = this.rows[index];
-		if (!ref?.toggle || !ref.row.classList.contains("is-collapsed")) return;
-		ref.row.classList.remove("is-collapsed");
-		ref.toggle.setAttribute("aria-expanded", "true");
+		if (!ref?.toggle) return;
+
+		const nextExpanded = ref.row.classList.contains("is-collapsed");
+		if (this.autoEnabled) this.manualState.set(index, nextExpanded);
+		ref.row.classList.toggle("is-collapsed", !nextExpanded);
+		ref.toggle.setAttribute("aria-expanded", String(nextExpanded));
+		this.startLineAnimation();
 		this.syncToggleAllButton();
 	}
 
-	/* ---------------------------- 滚动同步 ---------------------------- */
+	/** 点击标题：跳转的同时展开该节点（收起只通过行尾箭头） */
+	private expandNode(index: number): void {
+		const ref = this.rows[index];
+		if (!ref?.toggle) return;
+		if (!ref.row.classList.contains("is-collapsed")) return;
 
-	private measure(): void {
+		this.manualState.set(index, true);
+		ref.row.classList.remove("is-collapsed");
+		ref.toggle.setAttribute("aria-expanded", "true");
+		this.startLineAnimation();
+		this.syncToggleAllButton();
+	}
+
+	/* ---------- 连接线 ---------- */
+
+	private scheduleLines(): void {
+		if (this.linesFrame !== null) return;
+		this.linesFrame = requestAnimationFrame(() => {
+			this.linesFrame = null;
+			this.drawLines();
+			if (this.mindmapDialog?.open) this.drawMindmapLines();
+		});
+	}
+
+	/** 折叠动画期间逐帧重画连接线，让线跟着行的展开/收起一起动 */
+	private startLineAnimation(durationMs = 280): void {
+		if (prefersReducedMotion()) {
+			this.scheduleLines();
+			return;
+		}
+		this.lineAnimUntil = Math.max(
+			this.lineAnimUntil,
+			performance.now() + durationMs,
+		);
+		if (this.lineAnimFrame !== null) return;
+
+		const tick = () => {
+			this.drawLines();
+			if (performance.now() < this.lineAnimUntil) {
+				this.lineAnimFrame = requestAnimationFrame(tick);
+				return;
+			}
+			this.lineAnimFrame = null;
+			this.lineAnimUntil = 0;
+			this.drawLines();
+		};
+		this.lineAnimFrame = requestAnimationFrame(tick);
+	}
+
+	/** 树容器的局部坐标：视口坐标 → 容器内容坐标（含滚动） */
+	private toTreeLocal(rect: DOMRect): { x: number; y: number } {
+		const nav = this.treeNav;
+		if (!nav) return { x: 0, y: 0 };
+		const navRect = nav.getBoundingClientRect();
+		return {
+			x: rect.left - navRect.left + nav.scrollLeft,
+			y: rect.top - navRect.top + nav.scrollTop,
+		};
+	}
+
+	/**
+	 * 连接线只在「根 → 目标节点」的路径上描绘（Obsidian 同款）：默认只有圆点，
+	 * 悬停或阅读位置变化时才画；路径从父级圆点垂下，以圆角肘形弯入子级圆点。
+	 */
+	private drawLines(): void {
 		const tree = this.tree;
-		const article = this.article;
-		if (!tree || !article) return;
+		const svg = this.linesSvg;
+		const nav = this.treeNav;
+		if (!tree || !svg || !nav) return;
+
+		/* 先归零再测量：svg 的旧高度是绝对定位溢出，会污染 scrollHeight
+		   （只涨不缩的棘轮），在树里残留大片可滚动的空白 */
+		svg.setAttribute("width", "0");
+		svg.setAttribute("height", "0");
+
+		const targets = new Map<number, "active" | "hover">();
+		this.getTrailIndexes(this.hoverIndex).forEach((index) => {
+			targets.set(index, "hover");
+		});
+		this.getTrailIndexes(this.activeIndex).forEach((index) => {
+			targets.set(index, "active");
+		});
+
+		const dotCenter = (dot: HTMLElement | null) => {
+			if (!dot) return null;
+			const rect = dot.getBoundingClientRect();
+			if (rect.width === 0 && rect.height === 0) return null;
+			const local = this.toTreeLocal(rect);
+			return {
+				x: local.x + rect.width / 2,
+				y: local.y + rect.height / 2,
+				radius: rect.width / 2,
+			};
+		};
+
+		/** 行是否可见：任一祖先收起即被 0fr 裁剪（offsetParent 探测不到） */
+		const isVisible = (index: number): boolean => {
+			let cursor = tree.nodes[index].parent;
+			while (cursor >= 0) {
+				if (this.rows[cursor]?.row.classList.contains("is-collapsed")) {
+					return false;
+				}
+				cursor = tree.nodes[cursor].parent;
+			}
+			return true;
+		};
+
+		/* 读写分离：坐标先一次读完，再批量写 path。边读边写会让每次
+		   getBoundingClientRect 都触发一轮完整的同步布局。 */
+		const rootCenter = dotCenter(this.rootDot);
+		const centers = this.rows.map((ref) => dotCenter(ref.dot));
+		const svgWidth = nav.clientWidth;
+		const svgHeight = Math.max(nav.scrollHeight, nav.clientHeight);
+		svg.setAttribute("width", String(svgWidth));
+		svg.setAttribute("height", String(svgHeight));
+
+		const keptPaths = new Set<SVGPathElement>();
+		targets.forEach((kind, index) => {
+			const node = tree.nodes[index];
+			const start = node.parent >= 0 ? centers[node.parent] : rootCenter;
+			const end = centers[index];
+			if (!start || !end || !isVisible(index)) return;
+
+			let path = this.linePaths[index];
+			if (!path) {
+				path = document.createElementNS(SVG_NAMESPACE, "path");
+				this.linePaths[index] = path;
+				svg.appendChild(path);
+			}
+			keptPaths.add(path);
+			path.setAttribute(
+				"class",
+				`article-toc-panel__line${
+					kind === "active" ? " is-active-trail" : " is-hover-trail"
+				}`,
+			);
+
+			const corner = clamp(
+				LINE_CORNER_RADIUS,
+				0,
+				Math.max(0, end.y - start.y) / 2,
+			);
+			const hookEnd = Math.max(
+				end.x - end.radius - LINE_DOT_GAP,
+				start.x + corner,
+			);
+			path.setAttribute(
+				"d",
+				`M ${start.x} ${start.y} V ${end.y - corner} Q ${start.x} ${end.y} ${start.x + corner} ${end.y} H ${hookEnd}`,
+			);
+		});
+
+		this.linePaths.forEach((path, index) => {
+			if (path && !keptPaths.has(path)) {
+				path.remove();
+				this.linePaths[index] = null;
+			}
+		});
+	}
+
+	/** 根到目标节点路径上的节点下标（每个节点一条入线） */
+	private getTrailIndexes(index: number): number[] {
+		const tree = this.tree;
+		if (!tree || index < 0 || index >= tree.nodes.length) return [];
+
+		const indexes: number[] = [];
+		let cursor = index;
+		while (cursor >= 0) {
+			indexes.push(cursor);
+			cursor = tree.nodes[cursor].parent;
+		}
+		return indexes;
+	}
+
+	/* ---------- 滚动同步 ---------- */
+
+	private cachePositions(): void {
+		const tree = this.tree;
+		if (!tree || !this.article) return;
 
 		const scrollY = window.scrollY;
-		const rect = article.getBoundingClientRect();
-		this.articleStart = rect.top + scrollY;
-		this.articleEnd = rect.bottom + scrollY;
+		const articleRect = this.article.getBoundingClientRect();
+		this.articleStart = articleRect.top + scrollY;
+		this.articleEnd = articleRect.bottom + scrollY;
 		this.headingTops = tree.nodes.map(
 			(node) => node.element.getBoundingClientRect().top + scrollY,
 		);
@@ -385,7 +628,6 @@ class ArticleTocController {
 	private getProgress(): number {
 		const end = this.articleEnd - window.innerHeight + READING_OFFSET;
 		if (end <= this.articleStart) {
-			// 正文短到一屏放得下：读过正文起点即 100%
 			return window.scrollY + READING_OFFSET >= this.articleStart ? 1 : 0;
 		}
 		return clamp(
@@ -395,18 +637,16 @@ class ArticleTocController {
 		);
 	}
 
-	/** 活动项 = 不大于 scrollY + 80 的最后一个标题（对缓存坐标二分） */
 	private getActiveIndex(): number {
-		const tops = this.headingTops;
-		if (tops.length === 0) return -1;
-
+		const tree = this.tree;
+		if (!tree || this.headingTops.length === 0) return -1;
 		const readingPosition = window.scrollY + READING_OFFSET;
 		let lower = 0;
-		let upper = tops.length - 1;
+		let upper = this.headingTops.length - 1;
 		let result = 0;
 		while (lower <= upper) {
 			const middle = Math.floor((lower + upper) / 2);
-			if (tops[middle] <= readingPosition) {
+			if (this.headingTops[middle] <= readingPosition) {
 				result = middle;
 				lower = middle + 1;
 			} else {
@@ -417,9 +657,9 @@ class ArticleTocController {
 	}
 
 	private scheduleUpdate(): void {
-		if (this.updateFrame !== null) return;
-		this.updateFrame = requestAnimationFrame(() => {
-			this.updateFrame = null;
+		if (this.animationFrame !== null) return;
+		this.animationFrame = requestAnimationFrame(() => {
+			this.animationFrame = null;
 			this.update();
 		});
 	}
@@ -429,7 +669,9 @@ class ArticleTocController {
 		this.measureFrame = requestAnimationFrame(() => {
 			this.measureFrame = null;
 			if (!this.tree) return;
-			this.measure();
+			this.cachePositions();
+			this.scheduleLines();
+			this.activeIndex = -1;
 			this.update();
 		});
 	}
@@ -437,11 +679,15 @@ class ArticleTocController {
 	private update(): void {
 		if (!this.tree) return;
 
-		const percent = Math.round(this.getProgress() * 100);
-		if (percent !== this.lastProgressPercent) {
-			this.lastProgressPercent = percent;
-			this.progressRegion?.setAttribute("aria-valuenow", String(percent));
-			if (this.progressLabel) this.progressLabel.textContent = `${percent}%`;
+		const progressPercent = Math.round(this.getProgress() * 100);
+		if (progressPercent !== this.lastProgressPercent) {
+			this.lastProgressPercent = progressPercent;
+			this.progressRegion?.setAttribute(
+				"aria-valuenow",
+				String(progressPercent),
+			);
+			if (this.progressLabel)
+				this.progressLabel.textContent = `${progressPercent}%`;
 		}
 
 		const nextActiveIndex = this.getActiveIndex();
@@ -454,158 +700,537 @@ class ArticleTocController {
 		const tree = this.tree;
 		if (!tree) return;
 
-		// 活动链（自身 + 祖先）：CSS 用它给整条路径的连接线染色
-		const chain = new Set<number>();
-		for (
-			let cursor = this.activeIndex;
-			cursor >= 0;
-			cursor = tree.nodes[cursor].parent
-		) {
-			chain.add(cursor);
-		}
-
 		this.rows.forEach((ref, index) => {
 			const isActive = index === this.activeIndex;
 			ref.row.classList.toggle("is-active", isActive);
-			ref.row.classList.toggle("is-active-path", chain.has(index));
 			if (isActive) ref.link.setAttribute("aria-current", "location");
 			else ref.link.removeAttribute("aria-current");
 		});
-		this.rootRow?.classList.toggle("is-active-path", chain.size > 0);
 
+		this.rebuildActiveChain();
+		if (this.applyAutoAccordion()) this.startLineAnimation();
+		this.syncToggleAllButton();
+
+		this.scheduleLines();
 		this.scheduleActiveRowScroll();
 	}
 
-	/** 活动行不在面板可视区时，居中滚入（防抖，避免连续滚动时抖动） */
 	private scheduleActiveRowScroll(): void {
-		if (this.activeScrollTimer !== null) clearTimeout(this.activeScrollTimer);
+		if (this.activeScrollTimer) clearTimeout(this.activeScrollTimer);
 		this.activeScrollTimer = setTimeout(() => {
 			this.activeScrollTimer = null;
 			const nav = this.treeNav;
 			const ref = this.rows[this.activeIndex];
 			if (!nav || !ref) return;
-
 			const navRect = nav.getBoundingClientRect();
 			const rowRect = ref.row.getBoundingClientRect();
 			const isVisible =
 				rowRect.top >= navRect.top && rowRect.bottom <= navRect.bottom;
 			if (isVisible) return;
-
-			// 依赖 CSS 给 .article-toc-panel__tree 的 position: relative
+			const targetScroll =
+				ref.row.offsetTop - nav.clientHeight / 2 + ref.row.clientHeight / 2;
 			nav.scrollTo({
-				top: Math.max(
-					0,
-					ref.row.offsetTop - nav.clientHeight / 2 + ref.row.clientHeight / 2,
-				),
+				top: Math.max(0, targetScroll),
 				behavior: prefersReducedMotion() ? "auto" : "smooth",
 			});
-		}, ACTIVE_SCROLL_DEBOUNCE);
+		}, ACTIVE_SCROLL_THROTTLE);
 	}
 
-	/* ------------------------------ 导航 ------------------------------ */
+	/* ---------- 导航 ---------- */
 
 	private navigateTo(index: number): void {
 		const tree = this.tree;
 		if (!tree) return;
 
+		window.tocInternalNavigation = true;
 		let targetTop: number;
-
+		let hashId: string | null = null;
 		if (index < 0) {
-			// 根节点：回文章标题（无标题元素则回页顶）
-			const titleElement = tree.titleElement;
-			targetTop = titleElement
-				? titleElement.getBoundingClientRect().top +
+			targetTop = tree.titleElement
+				? tree.titleElement.getBoundingClientRect().top +
 					window.scrollY -
 					READING_OFFSET
 				: 0;
 		} else {
 			const node = tree.nodes[index];
-			const cached = this.headingTops[index];
-			const headingTop = Number.isFinite(cached)
-				? cached
-				: node.element.getBoundingClientRect().top + window.scrollY;
-			targetTop = headingTop - READING_OFFSET;
-
-			// 有 id 才写 hash；没 id 时只滚动，避免写入一条失效锚点
-			if (node.id) {
-				const url = new URL(window.location.href);
-				url.hash = node.id;
-				// replaceState 不触发 hashchange，Swup 不会把它当成一次页面导航
-				window.history.replaceState(null, "", url);
-			}
+			targetTop = this.headingTops[index] - READING_OFFSET;
+			hashId = node.id;
 		}
 
+		if (hashId) {
+			const destination = new URL(window.location.href);
+			destination.hash = hashId;
+			window.history.pushState(null, "", destination);
+		}
 		window.scrollTo({
 			top: Math.max(0, targetTop),
 			behavior: prefersReducedMotion() ? "auto" : "smooth",
 		});
 	}
 
-	/* ---------------------------- 事件绑定 ---------------------------- */
+	/* ---------- 思维导图弹窗 ---------- */
+
+	private openMindmap(): void {
+		const tree = this.tree;
+		const dialog = this.mindmapDialog;
+		if (!tree || !dialog || !this.mindmapTree) return;
+
+		/* 每次打开回到 1:1，缩放只在当次浏览里持续 */
+		this.mindmapZoom = 1;
+		this.applyMindmapZoom();
+		this.panState = null;
+		this.mindmapPanDragged = false;
+		this.renderMindmap();
+		dialog.showModal();
+		requestAnimationFrame(() => this.drawMindmapLines());
+	}
+
+	/**
+	 * 嵌套递归布局（markmap 同款观感）：父节点所在行与其子树子列垂直居中对齐，
+	 * 组内小间距、组间大间距——间距全部用 em 表达，缩放只改树容器 font-size。
+	 */
+	private renderMindmap(): void {
+		const tree = this.tree;
+		if (!tree || !this.mindmapTree) return;
+
+		this.mindmapNodePills = [];
+		this.mindmapRootPill = null;
+		this.mindmapPaths = [];
+
+		const treeEl = document.createElement("div");
+		treeEl.className = "article-toc-mindmap__tree";
+
+		const rootPill = this.buildMindmapPill(-1, tree.title, true);
+		treeEl.appendChild(rootPill);
+		this.mindmapRootPill = rootPill;
+
+		const roots = tree.nodes.filter((node) => node.parent < 0);
+		if (roots.length > 0) {
+			const children = document.createElement("div");
+			children.className = "article-toc-mindmap__children";
+			roots.forEach((node) => {
+				this.buildMindmapBranch(node, children);
+			});
+			treeEl.appendChild(children);
+		}
+
+		if (this.mindmapLinesSvg) {
+			this.mindmapTree.replaceChildren(this.mindmapLinesSvg, treeEl);
+		} else {
+			this.mindmapTree.replaceChildren(treeEl);
+		}
+	}
+
+	/** 一棵子树 = 「节点胶囊 + 子级竖列」的水平组合 */
+	private buildMindmapBranch(node: TocNode, parent: HTMLElement): void {
+		const branch = document.createElement("div");
+		branch.className = "article-toc-mindmap__branch";
+		branch.appendChild(this.buildMindmapPill(node.index, node.text, false));
+
+		if (node.children.length > 0) {
+			const children = document.createElement("div");
+			children.className = "article-toc-mindmap__children";
+			node.children.forEach((childIndex) => {
+				const child = this.tree?.nodes[childIndex];
+				if (child) this.buildMindmapBranch(child, children);
+			});
+			branch.appendChild(children);
+		}
+		parent.appendChild(branch);
+	}
+
+	private buildMindmapPill(
+		index: number,
+		text: string,
+		isRoot: boolean,
+	): HTMLButtonElement {
+		const pill = document.createElement("button");
+		pill.type = "button";
+		pill.className = isRoot
+			? "article-toc-mindmap__node article-toc-mindmap__node--root"
+			: "article-toc-mindmap__node";
+		if (index >= 0) pill.dataset.tocMindmapIndex = String(index);
+		pill.title = text;
+		const dot = document.createElement("span");
+		if (!isRoot) dot.className = "article-toc-mindmap__node-dot";
+		const textEl = document.createElement("span");
+		textEl.className = "article-toc-mindmap__node-text";
+		textEl.textContent = text;
+		pill.append(dot, textEl);
+		if (index >= 0) this.mindmapNodePills[index] = pill;
+		return pill;
+	}
+
+	/** 缩放改树容器 font-size：em 体系整体缩放，布局尺寸随之变化，滚动区自然正确 */
+	private applyMindmapZoom(): void {
+		this.mindmapTree?.style.setProperty(
+			"--mindmap-zoom",
+			String(this.mindmapZoom),
+		);
+	}
+
+	private setMindmapZoom(zoom: number): void {
+		this.mindmapZoom = clamp(zoom, MINDMAP_ZOOM_MIN, MINDMAP_ZOOM_MAX);
+		this.applyMindmapZoom();
+		/* 走 rAF 合并：滚轮连发时每帧最多重画一次连线 */
+		this.scheduleLines();
+	}
+
+	/** 画布式缩放：以光标为锚点，缩放前后光标下的内容点保持不动。
+	    滚轮连发时按帧合并——缩放要重排整棵树（em 体系），一帧内做多次纯属浪费。 */
+	private zoomMindmapAt(
+		factor: number,
+		clientX: number,
+		clientY: number,
+	): void {
+		const slot = this.wheelZoom;
+		slot.target = clamp(
+			(slot.target ?? this.mindmapZoom) * factor,
+			MINDMAP_ZOOM_MIN,
+			MINDMAP_ZOOM_MAX,
+		);
+		slot.anchorX = clientX;
+		slot.anchorY = clientY;
+		if (slot.frame !== null) return;
+		slot.frame = requestAnimationFrame(() => {
+			slot.frame = null;
+			const target = slot.target;
+			slot.target = null;
+			if (target === null) return;
+			this.applyMindmapZoomAt(target, slot.anchorX, slot.anchorY);
+		});
+	}
+
+	/** 把缩放应用到指定倍率，并保持光标下的内容点不动 */
+	private applyMindmapZoomAt(
+		newZoom: number,
+		clientX: number,
+		clientY: number,
+	): void {
+		const canvas = this.mindmapCanvas;
+		if (!canvas) return;
+		const oldZoom = this.mindmapZoom;
+		if (newZoom === oldZoom) return;
+
+		const rect = canvas.getBoundingClientRect();
+		const contentX = clientX - rect.left + canvas.scrollLeft;
+		const contentY = clientY - rect.top + canvas.scrollTop;
+
+		this.mindmapZoom = newZoom;
+		this.applyMindmapZoom();
+
+		/* em 体系下布局尺寸随 font-size 等比缩放，内容点坐标同比例放大 */
+		const ratio = newZoom / oldZoom;
+		canvas.scrollLeft = contentX * ratio - (clientX - rect.left);
+		canvas.scrollTop = contentY * ratio - (clientY - rect.top);
+		this.scheduleLines();
+	}
+
+	private toggleMindmapFullscreen(): void {
+		const panel = this.mindmapDialog?.querySelector<HTMLElement>(
+			".article-toc-mindmap__panel",
+		);
+		if (!panel) return;
+		if (document.fullscreenElement) {
+			void document.exitFullscreen();
+		} else {
+			void panel.requestFullscreen();
+		}
+	}
+
+	private drawMindmapLines(): void {
+		const tree = this.tree;
+		const svg = this.mindmapLinesSvg;
+		const canvas = this.mindmapCanvas;
+		if (!tree || !svg || !canvas) return;
+
+		/* 同 drawLines：先归零排除自身（与旧 path）对滚动尺寸的污染。
+		   读写分离：胶囊坐标一次读完再批量建 path——边读边写会让每个
+		   getBoundingClientRect 都触发一轮同步布局（实测 24 节点就要 400ms+）。 */
+		svg.setAttribute("width", "0");
+		svg.setAttribute("height", "0");
+
+		const canvasRect = canvas.getBoundingClientRect();
+		const pillCenter = (pill: HTMLElement | null) => {
+			if (!pill) return null;
+			const rect = pill.getBoundingClientRect();
+			if (rect.width === 0 && rect.height === 0) return null;
+			return {
+				left: rect.left - canvasRect.left + canvas.scrollLeft,
+				right: rect.right - canvasRect.left + canvas.scrollLeft,
+				y: rect.top - canvasRect.top + canvas.scrollTop + rect.height / 2,
+			};
+		};
+
+		/* 读阶段 */
+		const rootBox = pillCenter(this.mindmapRootPill);
+		const boxes = this.mindmapNodePills.map((pill) => pillCenter(pill));
+		const svgWidth = canvas.scrollWidth;
+		const svgHeight = canvas.scrollHeight;
+
+		/* 写阶段 */
+		svg.setAttribute("width", String(svgWidth));
+		svg.setAttribute("height", String(svgHeight));
+		svg.replaceChildren();
+		this.mindmapPaths = [];
+		tree.nodes.forEach((node) => {
+			const start = node.parent >= 0 ? boxes[node.parent] : rootBox;
+			const end = boxes[node.index];
+			if (!start || !end) return;
+
+			const path = document.createElementNS(SVG_NAMESPACE, "path");
+			path.classList.add("article-toc-mindmap__line");
+			/* markmap 同款共享主干：水平出父节点 → 中点处垂直转弯 → 水平入子节点，
+			   各兄弟路径的公共段重叠，视觉上是一根主干分出多条分支 */
+			const branchX = (start.right + end.left) / 2;
+			const corner = Math.min(
+				LINE_CORNER_RADIUS,
+				Math.abs(end.y - start.y) / 2,
+				Math.max(0, end.left - branchX),
+			);
+			const turn =
+				corner < 0.5
+					? [`M ${start.right} ${start.y}`, `H ${end.left}`]
+					: end.y > start.y
+						? [
+								`M ${start.right} ${start.y}`,
+								`H ${branchX - corner}`,
+								`Q ${branchX} ${start.y} ${branchX} ${start.y + corner}`,
+								`V ${end.y - corner}`,
+								`Q ${branchX} ${end.y} ${branchX + corner} ${end.y}`,
+								`H ${end.left}`,
+							]
+						: [
+								`M ${start.right} ${start.y}`,
+								`H ${branchX - corner}`,
+								`Q ${branchX} ${start.y} ${branchX} ${start.y - corner}`,
+								`V ${end.y + corner}`,
+								`Q ${branchX} ${end.y} ${branchX + corner} ${end.y}`,
+								`H ${end.left}`,
+							];
+			path.setAttribute("d", turn.join(" "));
+			svg.appendChild(path);
+			this.mindmapPaths[node.index] = path;
+		});
+	}
+
+	/** 导图悬停高亮：根到悬停节点整条链的连线、节点边框与文字（Obsidian 路径语义） */
+	private setMindmapTrail(index: number): void {
+		this.clearMindmapTrail();
+		const tree = this.tree;
+		if (!tree || index < 0) return;
+
+		let cursor = index;
+		while (cursor >= 0) {
+			this.mindmapNodePills[cursor]?.classList.add("is-trail");
+			this.mindmapPaths[cursor]?.classList.add("is-active");
+			cursor = tree.nodes[cursor].parent;
+		}
+	}
+
+	private clearMindmapTrail(): void {
+		this.mindmapNodePills.forEach((pill) => {
+			pill?.classList.remove("is-trail");
+		});
+		this.mindmapPaths.forEach((path) => {
+			path?.classList.remove("is-active");
+		});
+	}
+
+	/* ---------- 事件绑定 ---------- */
 
 	private bindInteractions(): void {
 		const { signal } = this.abortController;
 
+		this.autoButton?.addEventListener(
+			"click",
+			() => this.setAutoEnabled(!this.autoEnabled),
+			{ signal },
+		);
 		this.toggleAllButton?.addEventListener("click", () => this.toggleAll(), {
 			signal,
 		});
+		this.mindmapButton?.addEventListener("click", () => this.openMindmap(), {
+			signal,
+		});
+		this.mindmapZoomOutButton?.addEventListener(
+			"click",
+			() => this.setMindmapZoom(this.mindmapZoom - MINDMAP_ZOOM_STEP),
+			{ signal },
+		);
+		this.mindmapZoomInButton?.addEventListener(
+			"click",
+			() => this.setMindmapZoom(this.mindmapZoom + MINDMAP_ZOOM_STEP),
+			{ signal },
+		);
+		this.mindmapResetButton?.addEventListener(
+			"click",
+			() => this.setMindmapZoom(1),
+			{ signal },
+		);
+		this.mindmapFullscreenButton?.addEventListener(
+			"click",
+			() => this.toggleMindmapFullscreen(),
+			{ signal },
+		);
 
 		this.treeNav?.addEventListener(
 			"click",
 			(event) => {
 				const target = event.target as HTMLElement | null;
-
 				const toggle = target?.closest<HTMLElement>("[data-toc-toggle]");
 				if (toggle) {
 					event.preventDefault();
 					this.toggleCollapse(Number(toggle.dataset.tocToggle));
 					return;
 				}
-
 				const link = target?.closest<HTMLElement>("[data-toc-navigate]");
-				if (!link) return;
-				event.preventDefault();
-				const index = Number(link.dataset.tocNavigate);
-				this.navigateTo(index);
-				if (index >= 0) this.expandNode(index);
+				if (link) {
+					event.preventDefault();
+					const index = Number(link.dataset.tocNavigate);
+					this.navigateTo(index);
+					this.expandNode(index);
+				}
 			},
 			{ signal },
 		);
 
-		window.addEventListener("scroll", () => this.scheduleUpdate(), {
-			passive: true,
-			signal,
-		});
-		window.addEventListener("resize", () => this.scheduleMeasure(), {
-			passive: true,
-			signal,
-		});
+		this.treeNav?.addEventListener(
+			"mouseover",
+			(event) => {
+				const row = (event.target as HTMLElement | null)?.closest<HTMLElement>(
+					"[data-toc-index]",
+				);
+				const index = row ? Number(row.dataset.tocIndex) : -1;
+				if (index === this.hoverIndex) return;
+				this.hoverIndex = index;
+				this.scheduleLines();
+			},
+			{ signal },
+		);
+		this.treeNav?.addEventListener(
+			"mouseleave",
+			() => {
+				if (this.hoverIndex === -1) return;
+				this.hoverIndex = -1;
+				this.scheduleLines();
+			},
+			{ signal },
+		);
+
+		this.mindmapCanvas?.addEventListener(
+			"wheel",
+			(event) => {
+				event.preventDefault();
+				const factor =
+					event.deltaY < 0 ? MINDMAP_WHEEL_FACTOR : 1 / MINDMAP_WHEEL_FACTOR;
+				this.zoomMindmapAt(factor, event.clientX, event.clientY);
+			},
+			{ passive: false, signal },
+		);
+
+		/* 画布拖拽平移：按下先只记录起点（不接管指针，保证胶囊正常点击），
+		   移动超过阈值才 setPointerCapture 进入平移，随后到来的 click 被吞掉 */
+		const canvas = this.mindmapCanvas;
+		if (canvas) {
+			canvas.addEventListener(
+				"pointerdown",
+				(event) => {
+					if (event.button !== 0) return;
+					this.panState = {
+						pointerId: event.pointerId,
+						startX: event.clientX,
+						startY: event.clientY,
+						scrollLeft: canvas.scrollLeft,
+						scrollTop: canvas.scrollTop,
+					};
+					this.mindmapPanDragged = false;
+				},
+				{ signal },
+			);
+			canvas.addEventListener(
+				"pointermove",
+				(event) => {
+					const state = this.panState;
+					if (!state || event.pointerId !== state.pointerId) return;
+					const dx = event.clientX - state.startX;
+					const dy = event.clientY - state.startY;
+					if (!this.mindmapPanDragged) {
+						if (Math.hypot(dx, dy) <= MINDMAP_PAN_THRESHOLD) return;
+						this.mindmapPanDragged = true;
+						canvas.setPointerCapture(event.pointerId);
+						canvas.classList.add("is-panning");
+					}
+					canvas.scrollLeft = state.scrollLeft - dx;
+					canvas.scrollTop = state.scrollTop - dy;
+				},
+				{ signal },
+			);
+			const endPan = (event: PointerEvent) => {
+				if (!this.panState || event.pointerId !== this.panState.pointerId) {
+					return;
+				}
+				this.panState = null;
+				canvas.classList.remove("is-panning");
+			};
+			canvas.addEventListener("pointerup", endPan, { signal });
+			canvas.addEventListener("pointercancel", endPan, { signal });
+		}
+
+		this.mindmapDialog?.addEventListener(
+			"click",
+			(event) => {
+				if (this.mindmapPanDragged) {
+					this.mindmapPanDragged = false;
+					return;
+				}
+				const target = event.target as HTMLElement | null;
+				if (target?.closest("[data-toc-mindmap-close]")) {
+					this.mindmapDialog?.close();
+					return;
+				}
+				const pill = target?.closest<HTMLElement>("[data-toc-mindmap-index]");
+				if (pill) {
+					this.navigateTo(Number(pill.dataset.tocMindmapIndex));
+					this.mindmapDialog?.close();
+				}
+			},
+			{ signal },
+		);
+
+		this.mindmapCanvas?.addEventListener(
+			"mouseover",
+			(event) => {
+				const pill = (event.target as HTMLElement | null)?.closest<HTMLElement>(
+					"[data-toc-mindmap-index]",
+				);
+				if (!pill) return;
+				this.setMindmapTrail(Number(pill.dataset.tocMindmapIndex));
+			},
+			{ signal },
+		);
+		this.mindmapCanvas?.addEventListener(
+			"mouseleave",
+			() => this.clearMindmapTrail(),
+			{ signal },
+		);
 	}
 }
 
-/* ================================ 入口 ================================ */
-
-let disposeCurrent: (() => void) | null = null;
+let current: ArticleTocController | null = null;
 
 /**
- * 初始化面板，返回 dispose 函数。
- * 重复调用会先销毁旧实例（Swup 导航后二次挂载的安全网）；
- * 面板不存在或没有可用标题时返回 no-op。
+ * 初始化当前页的文章目录面板；重复调用先销毁上一个实例。
+ * Swup 每次导航都会替换面板 DOM，因此 DOMContentLoaded / astro:page-load /
+ * swup:content:replaced 都要重新跑一遍（见组件里的 boot）。
  */
-export function initArticleToc(): () => void {
-	disposeCurrent?.();
-	disposeCurrent = null;
+export function initArticleToc(): void {
+	current?.destroy();
+	current = null;
 
-	const root = document.querySelector<HTMLElement>(PANEL_SELECTOR);
-	if (!root) return () => {};
+	const root = document.getElementById("article-toc-panel");
+	if (!root) return;
 
 	const controller = new ArticleTocController(root);
-	if (!controller.init()) return () => {};
-
-	const dispose = () => {
-		if (disposeCurrent === dispose) disposeCurrent = null;
-		controller.destroy();
-	};
-	disposeCurrent = dispose;
-	return dispose;
+	if (controller.init()) current = controller;
 }

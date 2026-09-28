@@ -373,11 +373,17 @@ Layout.astro          ← HTML 骨架：<html>, <head>, <body>, 全局组件, �
 
 **文章目录（右侧栏）**：
 
-- 三件套：骨架 `src/components/widget/SidebarTOC.astro`、控制器 `src/utils/article-toc.ts`、样式 `src/styles/features/article-toc-panel.css`。
+- 四件套：骨架 `src/components/widget/SidebarTOC.astro`、标题采集 `src/utils/article-toc-tree.ts`、控制器 `src/utils/article-toc.ts`、样式 `src/styles/features/article-toc-panel.css`。
 - 树由**客户端**扫描 `#post-container .markdown-content` 里的 h1–h3 生成（**不用** Astro 传下来的 `headings` prop），根节点显示 `.post-hero__title`。层级归一化规则：最浅层级视为一级，父节点 = 前面最近的更浅标题。
-- 连接线是 **CSS 伪元素画在每行行盒内部**（不是 SVG），折叠动画（`grid-template-rows` 0fr↔1fr）期间不需要 JS 重画、滚动也没有测量开销。缩进与线位置全部派生自 `--toc-indent`（每级 0.95rem）与 `--toc-row-pad-left`，**调缩进只改这两个变量**。
+- 几何与配色**逐值照搬参考实现**（要改样式先对照上游，别自由发挥）：灰底卡片 `#dedede` / `#161616`（圆角 0.75rem、`max-height: min(40rem, calc(100vh - 10rem))`）、工具栏 `0.5rem 0.75rem`、工具按钮 1.7rem、节点字号 0.82rem、行 `0.28rem 0.5rem` + 每级 0.95rem 缩进、圆点 0.55/0.45/0.38rem、进度 0.78rem。
+- 连接线是 **SVG**（`data-toc-lines`）：只为「根→活动节点」「根→悬停节点」两条链创建 path；折叠动画期间用 `startLineAnimation` 逐帧重画，让线跟着行一起动。
+- 功能：分组折叠（行尾箭头）、**自动收缩手风琴**（开关 + 手动覆盖）、全部展开/收起、阅读进度、scrollspy（活动项 + 活动链连线染色）、思维导图弹窗（滚轮以光标为锚点缩放 / 拖拽平移 / 重置 / 全屏，markmap 同款共享主干连线）。
+- ⚠️ **连线绘制必须「先把坐标一次读完，再批量写 path」**：`getBoundingClientRect()` 与 `appendChild` 交替会让每次读都触发一轮完整同步布局（本项目约 1.3 万 DOM，24 个节点实测吃掉 446ms，打开导图 1.2 秒）。`drawLines` / `drawMindmapLines` 都按这个顺序写，改的时候别把读写交叉回去；滚轮缩放同理走 `scheduleLines()` 按帧合并。
+- 图标沿用参考站：`mingcute:list-collapse-line`（手风琴）、`mdi:unfold-more/less-horizontal`（展开收起）、`ri:node-tree`（思维导图）——前两个图标集为此新增依赖 `@iconify-json/mingcute` 与 `@iconify-json/ri`，**新增图标前先确认图标集已安装**，否则 astro-icon 会整页报错。
 - Swup 导航会替换面板 DOM，靠 `astro:page-load` / `swup:content:replaced` 重新 `initArticleToc()`（内部先销毁旧实例，重复调用安全）。
+- 面板在右侧栏内（容器自身 sticky），**不含**参考实现「fixed 贴正文右缘 + 底边触正文卡底后随文档滚走」的停靠逻辑，宽度填满侧栏而不是固定 18rem。
 - ⚠️ **旧的 `TOCManager`（`src/utils/tocUtils.ts`）已不在侧栏使用**，但仍被移动端 dock 的目录抽屉（`UnifiedDock.astro`）复用——要删之前先处理那一处。
+- 左侧栏「全部文章」（`type: "postDirectory"` → `PostDirectory.astro`）已按站长要求全站关闭（`sidebarConfig.ts` 里 `enable: false`，配置保留便于恢复）。
 
 ---
 

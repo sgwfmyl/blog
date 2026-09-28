@@ -62,11 +62,10 @@ export const sidebarLayoutConfig: SidebarLayoutConfig = {
 			showOnPostPage: false,
 		},
 		{
-			// 组件类型：全站文章目录（文章详情页 + 文章列表页显示，其余页面不显示）
-			// 用新的 showOnPages（页面类型白名单）而不是旧的 showOnPostPage：
-			// 旧字段里的"文章页"现已严格指文章详情页，只写 showOnPostPage 会让列表页不再显示该目录。
+			// 组件类型：全站文章目录（左侧栏「全部文章」）
+			// 已按站长要求全站关闭（2026-09-28），配置保留便于日后恢复
 			type: "postDirectory",
-			enable: true,
+			enable: false,
 			position: "sticky",
 			showOnPages: ["post", "posts-list"],
 		},
