@@ -1,9 +1,9 @@
 ---
 import { getCollection } from "astro:content";
 import { Lunar } from "lunar-javascript";
+import PageTitle from "@/components/common/PageTitle.astro";
 import SchedulesView from "@/components/schedules/SchedulesView.svelte";
 import MainGridLayout from "@/layouts/MainGridLayout.astro";
-import PageTitle from "@/components/common/PageTitle.astro";
 
 const raw = await getCollection("schedules");
 // 服务端预换算农历→当年阳历，消首屏闪烁：isLunar 无 date 的生日在此算好 solar

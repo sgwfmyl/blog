@@ -4,9 +4,9 @@ import * as path from "node:path";
 import type { ImageMetadata } from "astro";
 import { Icon } from "astro-icon/components";
 import NotebookCommentModal from "@/components/comment/NotebookCommentModal.svelte";
+import PageTitle from "@/components/common/PageTitle.astro";
 import { profileConfig } from "@/config";
 import MainGridLayout from "@/layouts/MainGridLayout.astro";
-import PageTitle from "@/components/common/PageTitle.astro";
 
 const noteAvatar = profileConfig.avatar || "/assets/ziyuan/tx.webp";
 

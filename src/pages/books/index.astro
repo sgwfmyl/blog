@@ -2,12 +2,12 @@
 import { getCollection } from "astro:content";
 import Comment from "@components/comment/index.astro";
 import { Icon } from "astro-icon/components";
+import PageTitle from "@/components/common/PageTitle.astro";
 import Bookshelf from "@/components/pages/books/Bookshelf.astro";
 import { siteConfig } from "@/config";
 import I18nKey from "@/i18n/i18nKey";
 import { i18n } from "@/i18n/translation";
 import MainGridLayout from "@/layouts/MainGridLayout.astro";
-import PageTitle from "@/components/common/PageTitle.astro";
 import { formatDateI18nWithTime } from "@/utils/date-utils";
 import { removeFileExtension } from "@/utils/url-utils";
 
