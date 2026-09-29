@@ -249,6 +249,7 @@ mybatis:
 ## 相关
 
 - [上一篇：MyBatis-XML映射配置](/posts/编程学习/javaweb学习笔记/55-mybatis-xml映射配置/)
+- [下一篇：Tlias项目准备与开发规范](/posts/编程学习/javaweb学习笔记/57-tlias项目准备与开发规范/)
 
 ## 练习题
 
