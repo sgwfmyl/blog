@@ -406,6 +406,16 @@ Layout.astro          ← HTML 骨架：<html>, <head>, <body>, 全局组件, �
   - **点热力图格子看当月文章**：格子是 `<button>`，构建期把「今年的文章」按月份存成 JSON 内联在组件上（标题 + 链接 + 日期），点格子切到 `posts` 态渲染；返回按钮回 default。右栏三态（default / site / posts）都用 `data-view` + `.nav-profile__view--*` 切换，卡片高度始终锚在左栏、切换不跳动。
   - 仍未移植：参考站的节假日 / 文章元数据 API（本项目不需要，热力图与文章列表都在构建期算好了）。
 
+### 5.8 动态页左栏筛选（2026-09-30）
+
+`/moments/` 是两栏：左栏 240px（搜索 / 日历 / 标签，`position: sticky`），右侧是原来的时间线。结构 + 内联脚本在 `src/pages/moments.astro`，样式在 `src/styles/pages/moments-filter.css`。
+
+- **筛选是纯前端的**：全部动态本来就渲染在页面里、靠 `.wx-feed-hidden` 分批揭示，筛选只切显隐、不发请求。
+- ⚠️ **要与两份懒加载共存**：分批揭示有两份实现 —— 本页内联脚本那份，以及 `swup-lifecycle-controller.ts` 里那份（受保护、不许改）。所以筛选**激活时接管**（显示全部命中项 + 隐藏「加载更多」与顶部置顶块），**清空后交还**；并 **Swup 导航后重置筛选**，不依赖两者的执行先后。
+- ⚠️ **CSS 里三者的顺序决定胜负**（特异性相同）：`.wx-feed-pinned-copy`（置顶副本默认隐藏）→ `.is-filter-hide` → `.is-filter-match`（**必须放最后**）。顺序一改，置顶副本就会从筛选结果里消失（踩过一次）。
+- 置顶那 2 条**也渲染进 feed**（排最后、默认隐藏），筛选时作为普通项被匹配；无筛选时仍由顶部置顶块展示，不重复。
+- 卡片 wrapper 的筛选属性：`data-tags` / `data-date` / `data-month` / `data-search`（正文去 Markdown + 标签 + 位置的小写串）；日历数据（每天/每月条数）由构建期内联。
+
 ---
 
 ## 6. 配置系统

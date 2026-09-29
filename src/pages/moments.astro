@@ -72,74 +72,282 @@ const pinnedData = pinnedMoments.map((m) => ({
 	body: m.body || "",
 	date: m.data.published,
 }));
+
+/* ---------------------------------------------------------------------------
+   筛选用数据（左栏：搜索 / 日历 / 标签）
+   全部动态都在页面上（靠 wx-feed-hidden 分批揭示），筛选纯前端完成。
+   置顶那两条也放进 feed，但它们排在**最后**、默认隐藏：这样懒加载的「前 5 条」
+   依旧是普通动态，而筛选激活时它们能作为普通项参与匹配。
+   --------------------------------------------------------------------------- */
+
+const allMoments = [...sortedMoments, ...pinnedMoments];
+
+/** 正文转纯文本（去 Markdown 标记），供搜索匹配 */
+const toPlainText = (body: string): string =>
+	body
+		.replace(/```[\s\S]*?```/g, " ")
+		.replace(/!\[[^\]]*\]\([^)]*\)/g, " ")
+		.replace(/\[([^\]]*)\]\([^)]*\)/g, "$1")
+		.replace(/[#>*_`~|]/g, " ")
+		.replace(/\s+/g, " ")
+		.trim()
+		.toLowerCase();
+
+const pad = (n: number): string => String(n).padStart(2, "0");
+
+/** 每条动态的筛选索引（与 allMoments 下标一一对应） */
+const filterIndex = allMoments.map((m) => {
+	const d = m.data.published;
+	const date = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+	const tags = (m.data.tags ?? []).map((t) => t.trim()).filter(Boolean);
+	return {
+		tags,
+		date,
+		month: date.slice(0, 7),
+		search: [toPlainText(m.body ?? ""), tags.join(" "), m.data.location ?? ""]
+			.join(" ")
+			.toLowerCase(),
+	};
+});
+
+/** 日历用：每天 / 每月的动态条数 */
+const countByDate: Record<string, number> = {};
+const countByMonth: Record<string, number> = {};
+for (const item of filterIndex) {
+	countByDate[item.date] = (countByDate[item.date] ?? 0) + 1;
+	countByMonth[item.month] = (countByMonth[item.month] ?? 0) + 1;
+}
+
+/** 标签统计（按条数降序，同数量按名称） */
+const tagStats = (() => {
+	const map = new Map<string, number>();
+	for (const item of filterIndex) {
+		for (const tag of item.tags) map.set(tag, (map.get(tag) ?? 0) + 1);
+	}
+	return [...map.entries()]
+		.map(([name, count]) => ({ name, count }))
+		.sort((a, b) => b.count - a.count || a.name.localeCompare(b.name, "zh-CN"));
+})();
+
+const now = new Date();
+const filterMeta = {
+	countByDate,
+	countByMonth,
+	currentMonth: `${now.getFullYear()}-${pad(now.getMonth() + 1)}`,
+};
 ---
 
 <MainGridLayout title="动态" description="记录生活中的点点滴滴">
-    <div class="mb-6">
-  	<PageTitle
-  		title="动态"
-  		eyebrow="Moments"
-  		description="记录生活中的点点滴滴"
-  	/>
-  </div>
-  
-<!-- 微信朋友圈风格封面 -->
-  <MomentsCover />
-
-  <!-- 置顶说说（始终渲染容器，JS 可动态追加外部置顶） -->
-  <a href="/moments/pinned/" class="wx-pinned" id="pinned-block" style={pinnedData.length === 0 ? 'display:none' : ''}>
-    <div class="wx-pinned-tag">
-      <span>置顶</span>
-    </div>
-    <div class="wx-pinned-items" id="pinned-items">
-      {pinnedData.map((item) => (
-        <div class="wx-pinned-preview">
-          {item.images.length > 0 ? (
-            <div class={`wx-pimgs wx-pimgs-${Math.min(item.images.length, 9)}`}>
-              {item.images.slice(0, 9).map((img) => (
-                typeof img === "string" ? (
-                  <img src={img} alt="" class="wx-pinned-img" loading="lazy" />
-                ) : (
-                  <Image src={img} alt="" class="wx-pinned-img" loading="lazy" />
-                )
-              ))}
-            </div>
-          ) : (
-            <p class="wx-ptxt">{item.body.slice(0, 60)}{item.body.length > 60 ? '...' : ''}</p>
-          )}
-        </div>
-      ))}
-    </div>
-  </a>
-
-  <!-- 说说列表（本地 + 外部合并，按时间排序） -->
-  <div class="wx-feed" id="moments-feed">
-    {sortedMoments.length > 0 ? (
-      sortedMoments.map((moment, index) => (
-        <div
-          class={`wx-feed-item ${index >= 5 ? 'wx-feed-hidden' : ''}`}
-          data-published={moment.data.published.toISOString()}
-          data-index={index}
-        >
-          <MomentCard moment={moment} />
-        </div>
-      ))
-    ) : (
-      <div class="wx-empty" id="moments-empty">
-        <div class="wx-empty-icon">
-          <Icon name="material-symbols:sentiment-neutral-outline" />
-        </div>
-        <h3>还没有发布任何说说</h3>
-        <p>快去记录你的生活点滴吧</p>
+  <div class="wx-layout">
+    <!-- 左栏：搜索 / 日历 / 标签（点日历与标签即时筛选右侧时间线） -->
+    <aside class="wx-filter" data-moments-filter>
+      <div class="wx-filter__block">
+        <label class="wx-filter__search">
+          <Icon name="material-symbols:search-rounded" class="text-[1.05rem]" />
+          <input
+            type="search"
+            class="wx-filter__input"
+            placeholder="搜索动态…"
+            aria-label="搜索动态"
+            data-moments-search
+          />
+          <button
+            type="button"
+            class="wx-filter__search-clear"
+            data-moments-search-clear
+            hidden
+            aria-label="清空搜索"
+          >
+            <Icon name="material-symbols:close-rounded" class="text-[1rem]" />
+          </button>
+        </label>
       </div>
-    )}
-  </div>
 
-  <!-- 加载更多指示器 -->
-  <div id="load-more-sentinel" class="load-more-sentinel">
-    <div class="load-more-spinner">
-      <div class="spinner"></div>
-      <span>加载中...</span>
+      <details class="wx-filter__block wx-filter__details" open>
+        <summary class="wx-filter__summary">
+          <Icon
+            name="material-symbols:calendar-month-outline"
+            class="text-[1.05rem]"
+          />
+          <span>日历</span>
+        </summary>
+        <div class="wx-cal" data-moments-cal>
+          <div class="wx-cal__head">
+            <button
+              type="button"
+              class="wx-cal__nav"
+              data-moments-cal-prev
+              aria-label="上个月"
+            >
+              <Icon name="material-symbols:chevron-left-rounded" />
+            </button>
+            <button
+              type="button"
+              class="wx-cal__title"
+              data-moments-cal-title
+              title="点击筛选整月"
+            >
+            </button>
+            <button
+              type="button"
+              class="wx-cal__nav"
+              data-moments-cal-next
+              aria-label="下个月"
+            >
+              <Icon name="material-symbols:chevron-right-rounded" />
+            </button>
+          </div>
+          <div class="wx-cal__week">
+            <span>日</span><span>一</span><span>二</span><span>三</span><span>四</span
+            ><span>五</span><span>六</span>
+          </div>
+          <div class="wx-cal__grid" data-moments-cal-grid></div>
+          <div class="wx-cal__foot">
+            <button
+              type="button"
+              class="wx-cal__today"
+              data-moments-cal-today
+            >
+              回到本月
+            </button>
+          </div>
+        </div>
+      </details>
+
+      <details class="wx-filter__block wx-filter__details" open>
+        <summary class="wx-filter__summary">
+          <Icon name="material-symbols:tag-outline" class="text-[1.05rem]" />
+          <span>标签</span>
+        </summary>
+        <div class="wx-tags" data-moments-tags>
+          {
+            tagStats.map((tag, i) => (
+              <button
+                type="button"
+                class:list={["wx-tag", i >= 10 && "wx-tag--extra"]}
+                data-moments-tag={tag.name}
+                hidden={i >= 10}
+              >
+                <span class="wx-tag__name">{tag.name}</span>
+                <span class="wx-tag__count">{tag.count}</span>
+              </button>
+            ))
+          }
+        </div>
+        {
+          tagStats.length > 10 && (
+            <button
+              type="button"
+              class="wx-tags__more"
+              data-moments-tags-more
+            >
+              展开全部（{tagStats.length}）
+            </button>
+          )
+        }
+      </details>
+    </aside>
+
+    <!-- 右侧：标题 / 封面 / 置顶 / 时间线 -->
+    <div class="wx-main">
+      <div class="mb-6">
+        <PageTitle
+          title="动态"
+          eyebrow="Moments"
+          description="记录生活中的点点滴滴"
+        />
+      </div>
+
+      <!-- 微信朋友圈风格封面 -->
+      <MomentsCover />
+
+      <!-- 筛选状态条（无筛选时隐藏） -->
+      <div class="wx-filter-bar" data-moments-filter-bar hidden>
+        <span class="wx-filter-bar__label">筛选</span>
+        <span class="wx-filter-bar__chips" data-moments-chips></span>
+        <span class="wx-filter-bar__count" data-moments-count></span>
+        <button type="button" class="wx-filter-bar__clear" data-moments-clear>
+          清空
+        </button>
+      </div>
+
+      <!-- 置顶说说（无筛选时显示在最上面；筛选激活后隐藏，置顶内容已作为普通项参与筛选） -->
+      <a href="/moments/pinned/" class="wx-pinned" id="pinned-block" style={pinnedData.length === 0 ? 'display:none' : ''}>
+        <div class="wx-pinned-tag">
+          <span>置顶</span>
+        </div>
+        <div class="wx-pinned-items" id="pinned-items">
+          {pinnedData.map((item) => (
+            <div class="wx-pinned-preview">
+              {item.images.length > 0 ? (
+                <div class={`wx-pimgs wx-pimgs-${Math.min(item.images.length, 9)}`}>
+                  {item.images.slice(0, 9).map((img) => (
+                    typeof img === "string" ? (
+                      <img src={img} alt="" class="wx-pinned-img" loading="lazy" />
+                    ) : (
+                      <Image src={img} alt="" class="wx-pinned-img" loading="lazy" />
+                    )
+                  ))}
+                </div>
+              ) : (
+                <p class="wx-ptxt">{item.body.slice(0, 60)}{item.body.length > 60 ? '...' : ''}</p>
+              )}
+            </div>
+          ))}
+        </div>
+      </a>
+
+      <!-- 说说列表（含置顶副本：默认隐藏、仅筛选时参与匹配） -->
+      <div class="wx-feed" id="moments-feed">
+        {allMoments.length > 0 ? (
+          allMoments.map((moment, index) => {
+            const meta = filterIndex[index];
+            const isPinned = Boolean(moment.data.pinned);
+            return (
+              <div
+                class:list={[
+                  "wx-feed-item",
+                  index >= 5 && "wx-feed-hidden",
+                  isPinned && "wx-feed-pinned-copy",
+                ]}
+                data-published={moment.data.published.toISOString()}
+                data-index={index}
+                data-tags={meta.tags.join(",")}
+                data-date={meta.date}
+                data-month={meta.month}
+                data-search={meta.search}
+              >
+                <MomentCard moment={moment} />
+              </div>
+            );
+          })
+        ) : (
+          <div class="wx-empty" id="moments-empty">
+            <div class="wx-empty-icon">
+              <Icon name="material-symbols:sentiment-neutral-outline" />
+            </div>
+            <h3>还没有发布任何说说</h3>
+            <p>快去记录你的生活点滴吧</p>
+          </div>
+        )}
+      </div>
+
+      <!-- 筛选无结果时的空态 -->
+      <div class="wx-filter-empty" data-moments-empty-filter hidden>
+        <Icon name="material-symbols:search-off-rounded" class="text-[2rem]" />
+        <p>没有符合条件的动态</p>
+        <button type="button" class="wx-filter-empty__clear" data-moments-clear>
+          清空筛选
+        </button>
+      </div>
+
+      <!-- 加载更多指示器 -->
+      <div id="load-more-sentinel" class="load-more-sentinel">
+        <div class="load-more-spinner">
+          <div class="spinner"></div>
+          <span>加载中...</span>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -308,6 +516,247 @@ const pinnedData = pinnedMoments.map((m) => ({
     document.addEventListener("astro:page-load", reinit);
   })();
   </script>
+  <!-- 左栏筛选：搜索 / 日历 / 标签（纯前端，筛选激活时接管懒加载） -->
+  <script is:inline define:vars={{ filterMeta }}>
+  (function () {
+    var META = filterMeta;
+    var state = { q: "", tag: "", date: "", month: "" };
+    var calCursor = META.currentMonth;
+    var searchTimer = null;
+
+    function items() {
+      var feed = document.getElementById("moments-feed");
+      return feed ? Array.prototype.slice.call(feed.querySelectorAll(".wx-feed-item")) : [];
+    }
+    function filtering() { return !!(state.q || state.tag || state.date || state.month); }
+
+    function matches(el) {
+      if (state.tag && (el.getAttribute("data-tags") || "").split(",").indexOf(state.tag) < 0) return false;
+      if (state.date && el.getAttribute("data-date") !== state.date) return false;
+      if (state.month && el.getAttribute("data-month") !== state.month) return false;
+      if (state.q && (el.getAttribute("data-search") || "").indexOf(state.q) < 0) return false;
+      return true;
+    }
+
+    /* ---------- 应用 / 清除筛选 ---------- */
+    function apply() {
+      var list = items();
+      var bar = document.querySelector("[data-moments-filter-bar]");
+      var chips = document.querySelector("[data-moments-chips]");
+      var countEl = document.querySelector("[data-moments-count]");
+      var empty = document.querySelector("[data-moments-empty-filter]");
+      var sentinel = document.getElementById("load-more-sentinel");
+      var pinned = document.getElementById("pinned-block");
+
+      if (!filtering()) {
+        /* 交还给懒加载：清掉筛选类，恢复它自己的分批揭示与无限滚动 */
+        list.forEach(function (el) { el.classList.remove("is-filter-match", "is-filter-hide"); });
+        if (bar) bar.hidden = true;
+        if (empty) empty.hidden = true;
+        if (sentinel) sentinel.hidden = false;
+        if (pinned) pinned.style.display = "";
+        return;
+      }
+
+      var shown = 0;
+      list.forEach(function (el) {
+        var ok = matches(el);
+        el.classList.toggle("is-filter-match", ok);
+        el.classList.toggle("is-filter-hide", !ok);
+        if (ok) shown++;
+      });
+
+      if (bar && chips && countEl) {
+        chips.replaceChildren();
+        var parts = [];
+        if (state.q) {
+          parts.push({ label: "搜索：" + state.q, reset: function () {
+            state.q = "";
+            var input = document.querySelector("[data-moments-search]");
+            if (input) input.value = "";
+            syncSearchClear();
+          } });
+        }
+        if (state.tag) parts.push({ label: state.tag, reset: function () { state.tag = ""; syncTagActive(); } });
+        if (state.date) parts.push({ label: state.date, reset: function () { state.date = ""; } });
+        if (state.month) parts.push({ label: state.month, reset: function () { state.month = ""; } });
+        parts.forEach(function (part) {
+          var chip = document.createElement("button");
+          chip.type = "button";
+          chip.className = "wx-filter-chip";
+          chip.textContent = part.label + " ×";
+          chip.addEventListener("click", function () { part.reset(); apply(); renderCalendar(); });
+          chips.appendChild(chip);
+        });
+        countEl.textContent = shown + " 条";
+        bar.hidden = false;
+      }
+      if (empty) empty.hidden = shown > 0;
+      /* 筛选期间停用懒加载（否则「加载更多」会按总数继续揭示） */
+      if (sentinel) sentinel.hidden = true;
+      /* 顶部置顶块让位：置顶内容已作为普通项参与筛选 */
+      if (pinned) pinned.style.display = "none";
+    }
+
+    /* ---------- 搜索 ---------- */
+    var searchInput = document.querySelector("[data-moments-search]");
+    var searchClear = document.querySelector("[data-moments-search-clear]");
+    function syncSearchClear() {
+      if (searchClear && searchInput) searchClear.hidden = !searchInput.value;
+    }
+    if (searchInput) {
+      searchInput.addEventListener("input", function () {
+        syncSearchClear();
+        if (searchTimer) clearTimeout(searchTimer);
+        searchTimer = setTimeout(function () {
+          state.q = searchInput.value.trim().toLowerCase();
+          apply();
+        }, 150);
+      });
+    }
+    if (searchClear) {
+      searchClear.addEventListener("click", function () {
+        if (!searchInput) return;
+        searchInput.value = "";
+        state.q = "";
+        syncSearchClear();
+        apply();
+      });
+    }
+
+    /* ---------- 日历 ---------- */
+    var calTitle = document.querySelector("[data-moments-cal-title]");
+    var calGrid = document.querySelector("[data-moments-cal-grid]");
+    function shiftMonth(key, delta) {
+      var y = parseInt(key.slice(0, 4), 10);
+      var m = parseInt(key.slice(5, 7), 10) - 1 + delta;
+      var d = new Date(y, m, 1);
+      return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0");
+    }
+    function renderCalendar() {
+      if (!calGrid || !calTitle) return;
+      var y = parseInt(calCursor.slice(0, 4), 10);
+      var m = parseInt(calCursor.slice(5, 7), 10);
+      calTitle.textContent = y + " 年 " + m + " 月";
+      calTitle.classList.toggle("is-active", state.month === calCursor);
+
+      var startDow = new Date(y, m - 1, 1).getDay();
+      var daysInMonth = new Date(y, m, 0).getDate();
+      var today = new Date();
+      var todayKey =
+        today.getFullYear() + "-" +
+        String(today.getMonth() + 1).padStart(2, "0") + "-" +
+        String(today.getDate()).padStart(2, "0");
+
+      calGrid.replaceChildren();
+      for (var i = 0; i < startDow; i++) {
+        var pad = document.createElement("span");
+        pad.className = "wx-cal__cell is-empty";
+        calGrid.appendChild(pad);
+      }
+      for (var day = 1; day <= daysInMonth; day++) {
+        var key = calCursor + "-" + String(day).padStart(2, "0");
+        var cnt = META.countByDate[key] || 0;
+        var cell = document.createElement("button");
+        cell.type = "button";
+        cell.className = "wx-cal__cell";
+        cell.textContent = String(day);
+        if (cnt > 0) {
+          cell.classList.add("has-moments");
+          cell.title = key + " · " + cnt + " 条";
+          cell.addEventListener("click", function (k) {
+            return function () {
+              state.date = state.date === k ? "" : k;
+              apply();
+              renderCalendar();
+            };
+          }(key));
+        }
+        if (key === todayKey) cell.classList.add("is-today");
+        if (key === state.date) cell.classList.add("is-active");
+        calGrid.appendChild(cell);
+      }
+    }
+    var calPrev = document.querySelector("[data-moments-cal-prev]");
+    var calNext = document.querySelector("[data-moments-cal-next]");
+    var calToday = document.querySelector("[data-moments-cal-today]");
+    if (calPrev) calPrev.addEventListener("click", function () { calCursor = shiftMonth(calCursor, -1); renderCalendar(); });
+    if (calNext) calNext.addEventListener("click", function () { calCursor = shiftMonth(calCursor, 1); renderCalendar(); });
+    if (calToday) calToday.addEventListener("click", function () { calCursor = META.currentMonth; renderCalendar(); });
+    if (calTitle) {
+      calTitle.addEventListener("click", function () {
+        /* 点月份标题 → 筛整月（再点一次取消） */
+        state.month = state.month === calCursor ? "" : calCursor;
+        state.date = "";
+        apply();
+        renderCalendar();
+      });
+    }
+
+    /* ---------- 标签 ---------- */
+    var tagsWrap = document.querySelector("[data-moments-tags]");
+    function syncTagActive() {
+      if (!tagsWrap) return;
+      Array.prototype.forEach.call(tagsWrap.querySelectorAll("[data-moments-tag]"), function (btn) {
+        btn.classList.toggle("is-active", btn.getAttribute("data-moments-tag") === state.tag);
+      });
+    }
+    if (tagsWrap) {
+      tagsWrap.addEventListener("click", function (e) {
+        var btn = e.target.closest("[data-moments-tag]");
+        if (!btn) return;
+        var tag = btn.getAttribute("data-moments-tag");
+        state.tag = state.tag === tag ? "" : tag;
+        syncTagActive();
+        apply();
+      });
+    }
+    var tagsMore = document.querySelector("[data-moments-tags-more]");
+    if (tagsMore) {
+      tagsMore.addEventListener("click", function () {
+        Array.prototype.forEach.call(document.querySelectorAll(".wx-tag--extra"), function (btn) { btn.hidden = false; });
+        tagsMore.hidden = true;
+      });
+    }
+
+    /* ---------- 清空 ---------- */
+    function clearAll() {
+      state = { q: "", tag: "", date: "", month: "" };
+      if (searchInput) searchInput.value = "";
+      syncSearchClear();
+      syncTagActive();
+      calCursor = META.currentMonth;
+      renderCalendar();
+      apply();
+    }
+    Array.prototype.forEach.call(document.querySelectorAll("[data-moments-clear]"), function (btn) {
+      btn.addEventListener("click", clearAll);
+    });
+
+    /* ---------- 初始化（Swup 导航后回到默认视图）---------- */
+    function init() {
+      state = { q: "", tag: "", date: "", month: "" };
+      calCursor = META.currentMonth;
+      if (searchInput) searchInput.value = "";
+      syncSearchClear();
+      syncTagActive();
+      renderCalendar();
+      items().forEach(function (el) { el.classList.remove("is-filter-match", "is-filter-hide"); });
+      var bar = document.querySelector("[data-moments-filter-bar]");
+      if (bar) bar.hidden = true;
+      var empty = document.querySelector("[data-moments-empty-filter]");
+      if (empty) empty.hidden = true;
+      var sentinel = document.getElementById("load-more-sentinel");
+      if (sentinel) sentinel.hidden = false;
+      var pinned = document.getElementById("pinned-block");
+      if (pinned) pinned.style.display = "";
+    }
+    init();
+    document.addEventListener("swup:content:replaced", init);
+    document.addEventListener("astro:page-load", init);
+  })();
+  </script>
+
 </MainGridLayout>
 
 

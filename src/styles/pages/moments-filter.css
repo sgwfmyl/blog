@@ -1,0 +1,428 @@
+/**
+ * 动态页（/moments/）左栏筛选：搜索 + 日历 + 标签
+ *
+ * 布局：`.wx-layout` 两栏（左栏 240px 粘住 + 右侧内容自适应），窄屏堆叠。
+ *
+ * ⚠️ 文件底部「筛选显隐」那组选择器是本功能的关键：筛选显示的优先级要压过
+ * `.wx-feed-hidden`（懒加载的分批揭示）与 `.wx-feed-pinned-copy`（置顶副本默认隐藏），
+ * 三者才不会互相打架 —— 调整时别把优先级降下去。
+ */
+
+/* ------------------------------- 布局 ------------------------------- */
+
+.wx-layout {
+	display: grid;
+	grid-template-columns: 240px minmax(0, 1fr);
+	gap: 1.25rem;
+	align-items: start;
+}
+
+@media (max-width: 1023px) {
+	.wx-layout {
+		grid-template-columns: minmax(0, 1fr);
+		gap: 0.875rem;
+	}
+}
+
+.wx-main {
+	min-width: 0;
+}
+
+/* ------------------------------- 左栏 ------------------------------- */
+
+.wx-filter {
+	position: sticky;
+	top: 5.5rem;
+	display: flex;
+	flex-direction: column;
+	gap: 0.75rem;
+	max-height: calc(100vh - 7rem);
+	overflow-y: auto;
+	overscroll-behavior: contain;
+	padding-right: 0.125rem;
+}
+
+@media (max-width: 1023px) {
+	.wx-filter {
+		position: static;
+		max-height: none;
+		overflow: visible;
+	}
+}
+
+.wx-filter__block {
+	padding: 0.75rem;
+	border: 1px solid var(--line-divider);
+	border-radius: 0.75rem;
+	background: var(--card-bg, transparent);
+}
+
+.wx-filter__details > summary {
+	cursor: pointer;
+	list-style: none;
+}
+
+.wx-filter__details > summary::-webkit-details-marker {
+	display: none;
+}
+
+.wx-filter__summary {
+	display: flex;
+	align-items: center;
+	gap: 0.4rem;
+	color: var(--deep-text);
+	font-size: 0.82rem;
+	font-weight: 700;
+}
+
+.wx-filter__details[open] .wx-filter__summary {
+	margin-bottom: 0.6rem;
+}
+
+/* 搜索 */
+.wx-filter__search {
+	display: flex;
+	align-items: center;
+	gap: 0.4rem;
+	padding: 0.35rem 0.55rem;
+	border: 1px solid var(--line-divider);
+	border-radius: 0.5rem;
+	color: var(--content-meta);
+	transition: border-color 150ms ease;
+}
+
+.wx-filter__search:focus-within {
+	border-color: var(--deep-text);
+}
+
+.wx-filter__input {
+	flex: 1;
+	min-width: 0;
+	border: none;
+	background: transparent;
+	color: var(--deep-text);
+	font-size: 0.82rem;
+	outline: none;
+}
+
+.wx-filter__search-clear {
+	display: grid;
+	place-items: center;
+	width: 1.25rem;
+	height: 1.25rem;
+	padding: 0;
+	border: none;
+	border-radius: 9999px;
+	background: transparent;
+	color: var(--content-meta);
+	cursor: pointer;
+}
+
+.wx-filter__search-clear:hover {
+	background: var(--btn-plain-bg-hover);
+	color: var(--deep-text);
+}
+
+/* 日历 */
+.wx-cal__head {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 0.25rem;
+	margin-bottom: 0.4rem;
+}
+
+.wx-cal__nav {
+	display: grid;
+	place-items: center;
+	width: 1.5rem;
+	height: 1.5rem;
+	padding: 0;
+	border: none;
+	border-radius: 0.375rem;
+	background: transparent;
+	color: var(--content-meta);
+	cursor: pointer;
+}
+
+.wx-cal__nav:hover {
+	background: var(--btn-plain-bg-hover);
+	color: var(--deep-text);
+}
+
+.wx-cal__title {
+	flex: 1;
+	padding: 0.15rem 0.25rem;
+	border: none;
+	border-radius: 0.375rem;
+	background: transparent;
+	color: var(--deep-text);
+	font-size: 0.8rem;
+	font-weight: 700;
+	cursor: pointer;
+}
+
+.wx-cal__title:hover {
+	background: var(--btn-plain-bg-hover);
+}
+
+.wx-cal__title.is-active {
+	background: var(--deep-text);
+	color: var(--float-panel-bg);
+}
+
+.wx-cal__week,
+.wx-cal__grid {
+	display: grid;
+	grid-template-columns: repeat(7, minmax(0, 1fr));
+	gap: 0.15rem;
+}
+
+.wx-cal__week {
+	margin-bottom: 0.2rem;
+	color: var(--content-meta);
+	font-size: 0.6rem;
+	text-align: center;
+}
+
+.wx-cal__cell {
+	position: relative;
+	aspect-ratio: 1;
+	padding: 0;
+	border: none;
+	border-radius: 0.375rem;
+	background: transparent;
+	color: var(--content-meta);
+	font-size: 0.68rem;
+	font-variant-numeric: tabular-nums;
+	cursor: default;
+}
+
+.wx-cal__cell.is-empty {
+	visibility: hidden;
+}
+
+.wx-cal__cell.is-today {
+	box-shadow: inset 0 0 0 1px var(--line-divider);
+}
+
+/* 有动态的日期：可点，下方一个小点示意 */
+.wx-cal__cell.has-moments {
+	color: var(--deep-text);
+	font-weight: 600;
+	cursor: pointer;
+}
+
+.wx-cal__cell.has-moments::after {
+	position: absolute;
+	left: 50%;
+	bottom: 0.1rem;
+	width: 0.2rem;
+	height: 0.2rem;
+	border-radius: 9999px;
+	background: var(--primary);
+	content: "";
+	transform: translateX(-50%);
+}
+
+.wx-cal__cell.has-moments:hover {
+	background: var(--btn-plain-bg-hover);
+}
+
+.wx-cal__cell.is-active {
+	background: var(--deep-text);
+	color: var(--float-panel-bg);
+}
+
+.wx-cal__cell.is-active::after {
+	background: var(--float-panel-bg);
+}
+
+.wx-cal__foot {
+	margin-top: 0.4rem;
+	text-align: center;
+}
+
+.wx-cal__today {
+	padding: 0.15rem 0.5rem;
+	border: none;
+	border-radius: 9999px;
+	background: transparent;
+	color: var(--content-meta);
+	font-size: 0.68rem;
+	cursor: pointer;
+}
+
+.wx-cal__today:hover {
+	background: var(--btn-plain-bg-hover);
+	color: var(--deep-text);
+}
+
+/* 标签 */
+.wx-tags {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.3rem;
+}
+
+.wx-tag {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.25rem;
+	padding: 0.15rem 0.45rem;
+	border: 1px solid var(--line-divider);
+	border-radius: 9999px;
+	background: transparent;
+	color: var(--content-meta);
+	font-size: 0.7rem;
+	cursor: pointer;
+	transition:
+		background-color 140ms ease,
+		color 140ms ease,
+		border-color 140ms ease;
+}
+
+.wx-tag:hover {
+	border-color: var(--deep-text);
+	color: var(--deep-text);
+}
+
+.wx-tag.is-active {
+	border-color: var(--deep-text);
+	background: var(--deep-text);
+	color: var(--float-panel-bg);
+}
+
+.wx-tag__count {
+	opacity: 0.6;
+	font-variant-numeric: tabular-nums;
+}
+
+.wx-tags__more {
+	margin-top: 0.4rem;
+	padding: 0;
+	border: none;
+	background: transparent;
+	color: var(--content-meta);
+	font-size: 0.7rem;
+	text-decoration: underline;
+	cursor: pointer;
+}
+
+.wx-tags__more:hover {
+	color: var(--deep-text);
+}
+
+/* --------------------------- 筛选状态条 --------------------------- */
+
+.wx-filter-bar {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 0.4rem;
+	margin-bottom: 0.75rem;
+	padding: 0.4rem 0.6rem;
+	border: 1px solid var(--line-divider);
+	border-radius: 0.75rem;
+	font-size: 0.75rem;
+}
+
+.wx-filter-bar__label {
+	color: var(--content-meta);
+}
+
+.wx-filter-bar__chips {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.3rem;
+}
+
+.wx-filter-chip {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.2rem;
+	padding: 0.1rem 0.4rem;
+	border: none;
+	border-radius: 9999px;
+	background: var(--btn-plain-bg-hover);
+	color: var(--deep-text);
+	font-size: 0.72rem;
+	cursor: pointer;
+}
+
+.wx-filter-chip:hover {
+	opacity: 0.8;
+}
+
+.wx-filter-bar__count {
+	margin-left: auto;
+	color: var(--content-meta);
+}
+
+.wx-filter-bar__clear {
+	padding: 0.1rem 0.45rem;
+	border: none;
+	border-radius: 9999px;
+	background: transparent;
+	color: var(--content-meta);
+	font-size: 0.72rem;
+	cursor: pointer;
+}
+
+.wx-filter-bar__clear:hover {
+	background: var(--btn-plain-bg-hover);
+	color: var(--deep-text);
+}
+
+/* ------------------------------- 筛选显隐 -------------------------------
+   ⚠️ 这里的**顺序**是本功能的关键（三者特异性相同，靠先后决定胜负）：
+
+     1. .wx-feed-pinned-copy —— 置顶副本的默认隐藏（内容已在顶部置顶块展示过）
+     2. .is-filter-hide      —— 筛选未命中的项
+     3. .is-filter-match     —— 筛选命中的项（放最后，才能压过上面两条出现）
+
+   也就是说筛选命中时置顶副本也能显示；清空筛选后由懒加载的
+   `.wx-feed-hidden` 与第 1 条重新接管。调整顺序会让置顶副本在筛选结果里消失。 */
+
+#moments-feed .wx-feed-item.wx-feed-pinned-copy {
+	display: none;
+}
+
+#moments-feed .wx-feed-item.is-filter-hide {
+	display: none;
+}
+
+#moments-feed .wx-feed-item.is-filter-match {
+	display: block;
+}
+
+/* 带 hidden 属性的浮层（display 是 flex，需要显式压回 none） */
+.wx-filter-bar[hidden],
+.wx-filter-empty[hidden] {
+	display: none;
+}
+
+/* 筛选无结果空态 */
+.wx-filter-empty {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 0.5rem;
+	padding: 3rem 1rem;
+	color: var(--content-meta);
+	font-size: 0.85rem;
+}
+
+.wx-filter-empty__clear {
+	padding: 0.25rem 0.75rem;
+	border: 1px solid var(--line-divider);
+	border-radius: 9999px;
+	background: transparent;
+	color: var(--deep-text);
+	font-size: 0.75rem;
+	cursor: pointer;
+}
+
+.wx-filter-empty__clear:hover {
+	background: var(--btn-plain-bg-hover);
+}

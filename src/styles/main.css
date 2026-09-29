@@ -75,6 +75,7 @@
 @import './pages/notebooks.css';
 @import './features/tts-player.css';
 @import './pages/categories.css';
+@import './pages/moments-filter.css';
 @import './components/about-profile-card.css';
 @import './components/about-chat-bubble.css';
 @import './components/about-social-links.css';
