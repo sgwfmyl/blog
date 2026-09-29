@@ -1,0 +1,173 @@
+---
+/**
+ * 导航栏个人资料面板（复刻参考博客的圆形按钮弹层）
+ *
+ * 触发按钮就在本组件内（渲染在导航栏右段），面板是 fixed 浮层，由脚本按
+ * 按钮位置定位；样式见 src/styles/components/navbar-profile-card.css。
+ *
+ * 与参考实现的差异：参考站的面板还有「文章热力图 / 按月的文章列表 / 节假日」
+ * 三块，依赖它的 /api/holidays.json 与 /api/allPostMeta.json；本项目没有这些
+ * 数据源，所以只保留身份卡、社交链接与三个倒计时（倒计时是纯前端算的）。
+ */
+import { Icon } from "astro-icon/components";
+import { profileConfig } from "@/config";
+import I18nKey from "@/i18n/i18nKey";
+import { i18n } from "@/i18n/translation";
+import { url } from "@/utils/url-utils";
+import "@/styles/components/navbar-profile-card.css";
+
+const { avatar, name, occupation, links } = profileConfig;
+const avatarSrc = avatar ? (avatar.startsWith("/") ? url(avatar) : avatar) : "";
+const socialLinks = (links ?? []).filter((link) => link.icon && link.url);
+---
+
+<div class="nav-profile" data-nav-profile>
+	<!-- 触发按钮由 Navbar 提供（左段的站点名按钮带 data-nav-profile-trigger） -->
+	<div class="nav-profile__mask" data-nav-profile-mask aria-hidden="true"></div>
+
+	<div
+		class="nav-profile__card"
+		data-nav-profile-card
+		data-day-suffix={i18n(I18nKey.dayShort)}
+		role="dialog"
+		aria-label={name}
+	>
+		<span class="nav-profile__triangle" aria-hidden="true"></span>
+
+		<div class="nav-profile__identity">
+			<span class="nav-profile__avatar">
+				{
+					avatarSrc ? (
+						<img src={avatarSrc} alt="" loading="lazy" decoding="async" />
+					) : (
+						<span>{name.slice(0, 1)}</span>
+					)
+				}
+			</span>
+			<span class="nav-profile__text">
+				<strong class="nav-profile__name">{name}</strong>
+				{occupation && <span class="nav-profile__occupation">{occupation}</span>}
+			</span>
+		</div>
+
+		{
+			socialLinks.length > 0 && (
+				<div class="nav-profile__socials">
+					{socialLinks.map((link) => {
+						const external = link.url.startsWith("http");
+						return (
+							<a
+								class="nav-profile__social-btn"
+								href={link.url}
+								target={external ? "_blank" : undefined}
+								rel={external ? "noopener noreferrer" : undefined}
+								aria-label={link.name}
+								title={link.name}
+							>
+								<Icon name={link.icon} class="h-4 w-4" />
+							</a>
+						);
+					})}
+				</div>
+			)
+		}
+
+		<div class="nav-profile__countdowns">
+			<div class="nav-profile__countdown">
+				<span>{i18n(I18nKey.profileCountdownWeek)}</span>
+				<strong data-nav-profile-days="week">--</strong>
+			</div>
+			<div class="nav-profile__countdown">
+				<span>{i18n(I18nKey.profileCountdownMonth)}</span>
+				<strong data-nav-profile-days="month">--</strong>
+			</div>
+			<div class="nav-profile__countdown">
+				<span>{i18n(I18nKey.profileCountdownYear)}</span>
+				<strong data-nav-profile-days="year">--</strong>
+			</div>
+		</div>
+	</div>
+</div>
+
+<script>
+	const DAY_MS = 86_400_000;
+	const root = document.querySelector<HTMLElement>("[data-nav-profile]");
+	/** 触发器是 Navbar 左段的站点名按钮，不在本组件内部 */
+	const trigger = document.querySelector<HTMLElement>(
+		"[data-nav-profile-trigger]",
+	);
+	const card = root?.querySelector<HTMLElement>("[data-nav-profile-card]");
+	const mask = root?.querySelector<HTMLElement>("[data-nav-profile-mask]");
+	/** 「天」的单位文案由服务端按当前语言输出 */
+	const DAY_SUFFIX = card?.dataset.daySuffix ?? "";
+
+	/** 距周末（下一个周五）、距月底、距年底的整天数 */
+	function computeCountdowns(): { week: number; month: number; year: number } {
+		const now = new Date();
+		const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+		const weekday = today.getDay(); // 0 = 周日
+		const toFriday = (5 - weekday + 7) % 7 || 7;
+		const monthEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+		const yearEnd = new Date(today.getFullYear(), 11, 31);
+		const days = (target: Date) =>
+			Math.round((target.getTime() - today.getTime()) / DAY_MS);
+		return { week: toFriday, month: days(monthEnd), year: days(yearEnd) };
+	}
+
+	function renderCountdowns(): void {
+		const values = computeCountdowns();
+		for (const key of ["week", "month", "year"] as const) {
+			const el = card?.querySelector<HTMLElement>(
+				`[data-nav-profile-days="${key}"]`,
+			);
+			if (el) el.textContent = `${values[key]}${DAY_SUFFIX}`;
+		}
+	}
+
+	function positionCard(): void {
+		if (!trigger || !card) return;
+		const rect = trigger.getBoundingClientRect();
+		const width = card.offsetWidth || 272;
+		card.style.top = `${rect.bottom + 10}px`;
+		// 面板比站点名宽：左缘对齐站点名，但不许顶出屏幕右缘
+		const left = Math.min(rect.left, window.innerWidth - width - 12);
+		card.style.left = `${Math.max(12, left)}px`;
+		card.style.right = "auto";
+	}
+
+	function openCard(): void {
+		if (!trigger || !card) return;
+		renderCountdowns();
+		positionCard();
+		trigger.setAttribute("aria-expanded", "true");
+		root?.classList.add("is-open");
+	}
+
+	function closeCard(): void {
+		if (!trigger) return;
+		trigger.setAttribute("aria-expanded", "false");
+		root?.classList.remove("is-open");
+	}
+
+	if (root && trigger && card) {
+		trigger.addEventListener("click", (event) => {
+			event.stopPropagation();
+			if (root.classList.contains("is-open")) closeCard();
+			else openCard();
+		});
+		mask?.addEventListener("click", closeCard);
+		document.addEventListener("keydown", (event) => {
+			if (event.key === "Escape") closeCard();
+		});
+		document.addEventListener("click", (event) => {
+			if (!root.classList.contains("is-open")) return;
+			const target = event.target as HTMLElement | null;
+			if (target && !target.closest("[data-nav-profile-card]")) closeCard();
+		});
+		// Swup 导航后收起，避免面板跨页残留
+		document.addEventListener("swup:content:replaced", closeCard);
+		window.addEventListener("resize", () => {
+			if (root.classList.contains("is-open")) positionCard();
+		});
+	}
+</script>

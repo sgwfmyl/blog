@@ -46,6 +46,11 @@
 
   --float-panel-bg: oklch(1 0 0);
 
+  /* 导航栏：胶囊底 + 滑动高亮块（当前项与悬停项共用一块，反色显示） */
+  --navbar-bg: oklch(0.925 0 0);
+  --navbar-highlight-bg: oklch(0 0 0);
+  --navbar-highlight-text: oklch(1 0 0);
+
   --scrollbar-bg-light: rgba(0, 0, 0, 0.4);
   --scrollbar-bg-hover-light: rgba(0, 0, 0, 0.5);
   --scrollbar-bg-active-light: rgba(0, 0, 0, 0.6);
@@ -144,6 +149,11 @@
   --link-active: oklch(0.80 0 0);
 
   --float-panel-bg: oklch(0.10 0 0);
+
+  /* 导航栏（暗色）：胶囊换深灰，高亮块反成白底黑字 */
+  --navbar-bg: oklch(0.19 0 0);
+  --navbar-highlight-bg: oklch(1 0 0);
+  --navbar-highlight-text: oklch(0 0 0);
 
   --scrollbar-bg: var(--scrollbar-bg-dark);
   --scrollbar-bg-hover: var(--scrollbar-bg-hover-dark);

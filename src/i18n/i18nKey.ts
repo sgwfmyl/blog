@@ -55,6 +55,10 @@ enum I18nKey {
 	tocMindMapReset = "tocMindMapReset",
 	tocMindMapFullscreen = "tocMindMapFullscreen",
 	readingProgress = "readingProgress",
+	profileCountdownWeek = "profileCountdownWeek",
+	profileCountdownMonth = "profileCountdownMonth",
+	profileCountdownYear = "profileCountdownYear",
+	dayShort = "dayShort",
 	music = "music",
 
 	// 公告栏

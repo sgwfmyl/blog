@@ -32,6 +32,10 @@ export const en: Translation = {
 	[Key.tocMindMapReset]: "Reset zoom",
 	[Key.tocMindMapFullscreen]: "Fullscreen",
 	[Key.readingProgress]: "Reading progress",
+	[Key.profileCountdownWeek]: "To weekend",
+	[Key.profileCountdownMonth]: "To month end",
+	[Key.profileCountdownYear]: "To year end",
+	[Key.dayShort]: "d",
 	[Key.changelog]: "Changelog",
 	[Key.changelogTitle]: "Changelog",
 	[Key.changelogSubtitle]:

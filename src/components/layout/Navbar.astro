@@ -9,6 +9,7 @@ import { LinkPreset, type NavBarLink } from "@/types/config";
 import { getFallbackFormat, getImageFormats } from "@/utils/image-utils";
 import { url } from "@/utils/url-utils";
 import DropdownMenu from "./DropdownMenu.astro";
+import NavbarProfileCard from "./NavbarProfileCard.astro";
 
 const navbarTitle = siteConfig.navbar.title || siteConfig.title;
 const navbarWidthFull = siteConfig.navbar.widthFull ?? false;
@@ -45,6 +46,8 @@ if (isLocalSrcLogo) {
 ---
 
 <div id="navbar" class="z-50" data-full-width={String(navbarWidthFull)} style="margin-top: 10px;">
+	<NavbarProfileCard />
+
 	<div class="navbar-segments">
 		<!-- 左段：logo + 标题（滚动收缩成球） -->
 		<div class="navbar-seg navbar-seg--left">
@@ -73,9 +76,18 @@ if (isLocalSrcLogo) {
 				) : (
 					<Icon name="material-symbols:home-pin-outline" is:inline class="text-[1.35rem] flex-shrink-0" />
 				)}
-				<span class="navbar-logo-text font-mono uppercase tracking-[0.12em] text-xs font-semibold ml-2">{navbarTitle}</span>
-			</a>
-		</div>
+				</a>
+				<button
+					type="button"
+					class="navbar-logo-text font-mono uppercase tracking-[0.12em] text-xs font-semibold ml-2"
+					data-nav-profile-trigger
+					aria-expanded="false"
+					aria-haspopup="dialog"
+					title={navbarTitle}
+				>
+					{navbarTitle}
+				</button>
+			</div>
 
 		<!-- 中段：紧凑导航椭圆（滚动不变） -->
 		<div class="navbar-seg navbar-seg--center" data-navbar-nav>
