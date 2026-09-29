@@ -35,8 +35,8 @@
 
 @media (min-width: 768px) {
   .post-hero__title {
-    font-size: 2.25rem;
-    line-height: 2.75rem;
+    font-size: 1.875rem;
+    line-height: 1.3;
   }
 }
 

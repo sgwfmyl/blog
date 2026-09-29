@@ -318,11 +318,11 @@ const jsonLd = {
               </details>
             )}
 
-            {/* ③ 封面图 */}
+            {/* ③ 封面图（默认收起，只有 AI 摘要默认展开） */}
             {coverUrl && (
               <>
                 {description && <div class="post-intro-card__divider" />}
-                <details class="post-intro-card__details" open>
+                <details class="post-intro-card__details">
                   <summary class="post-intro-card__summary">
                     <span class="post-intro-card__summary-title">
                       <Icon
