@@ -17,13 +17,15 @@ const categories = await getCategoryList();
 const categoryLabel = category || i18n(I18nKey.uncategorized);
 
 interface DropdownOption {
-	label: string;
+	name: string;
+	count: number;
 	value: string;
 	href: string;
 }
 
 const dropdownOptions: DropdownOption[] = categories.map((c) => ({
-	label: `${c.name.trim()} (${c.count})`,
+	name: c.name.trim(),
+	count: c.count,
 	value: c.name.trim(),
 	href: c.url,
 }));
@@ -34,6 +36,10 @@ const currentDropdownValue = category
 const currentDropdownOption =
 	dropdownOptions.find((o) => o.value === currentDropdownValue) ??
 	dropdownOptions[0];
+/** 触发器文字保留「名称 (计数)」形式；菜单里名称与计数分列两栏 */
+const currentDropdownLabel = currentDropdownOption
+	? `${currentDropdownOption.name} (${currentDropdownOption.count})`
+	: categoryLabel;
 ---
 
 <nav class="cb" id="breadcrumb-nav" aria-label="Breadcrumb">
@@ -64,31 +70,30 @@ const currentDropdownOption =
           data-breadcrumb-dropdown-trigger
         >
           <span class="cb__dropdown-label" data-breadcrumb-dropdown-label>
-            {currentDropdownOption?.label ?? categoryLabel}
+            {currentDropdownLabel}
           </span>
           <span class="cb__dropdown-arrow" aria-hidden="true">
             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"><path fill="currentColor" d="M12 14.975q-.2 0-.375-.062T11.3 14.7l-4.6-4.6q-.275-.275-.275-.7t.275-.7q.275-.275.7-.275t.7.275L12 12.55l4.125-4.125q.275-.275.7-.275t.7.275q.275.275.275.7t-.275.7l-4.6 4.6q-.15.15-.325.213T12 14.975Z"/></svg>
           </span>
         </button>
-        <span
-          class="cb__dropdown-menu"
-          role="menu"
-          data-breadcrumb-dropdown-menu
-        >
-          {dropdownOptions.map((option) => (
-            <a
-              href={option.href}
-              class:list={[
-                "cb__dropdown-item",
-                option.value === currentDropdownValue && "is-active",
-              ]}
-              role="menuitem"
-              data-breadcrumb-dropdown-item
-              data-value={option.value}
-            >
-              <span>{option.label}</span>
-            </a>
-          ))}
+        <span class="cb__dropdown-menu" data-breadcrumb-dropdown-menu>
+          <span class="cb__dropdown-scroll" role="menu">
+            {dropdownOptions.map((option) => (
+              <a
+                href={option.href}
+                class:list={[
+                  "cb__dropdown-item",
+                  option.value === currentDropdownValue && "is-active",
+                ]}
+                role="menuitem"
+                data-breadcrumb-dropdown-item
+                data-value={option.value}
+              >
+                <span class="cb__dropdown-item-label">{option.name}</span>
+                <span class="cb__dropdown-item-count">{option.count}</span>
+              </a>
+            ))}
+          </span>
         </span>
       </span>
     </li>
@@ -120,10 +125,10 @@ const currentDropdownOption =
     var trigger = dd.querySelector("[data-breadcrumb-dropdown-trigger]");
     var menu = dd.querySelector("[data-breadcrumb-dropdown-menu]");
     if (trigger) trigger.setAttribute("aria-expanded", "true");
-    // 定位 fixed 下拉菜单
+    // 菜单是 fixed：定位在触发器下方 0.6rem 处，左侧与触发器对齐（小角也靠这个对齐）
     if (menu && trigger) {
       var rect = trigger.getBoundingClientRect();
-      menu.style.top = (rect.bottom + 6) + "px";
+      menu.style.top = rect.bottom + 10 + "px";
       menu.style.left = rect.left + "px";
     }
     dd.classList.add("is-open");
