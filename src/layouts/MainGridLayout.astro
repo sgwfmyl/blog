@@ -8,6 +8,7 @@ import Navbar from "@components/layout/Navbar.astro";
 import NavMenuPanel from "@components/layout/NavMenuPanel.astro";
 import SideBar from "@components/layout/SideBar.astro";
 import UnifiedDock from "@components/layout/UnifiedDock.astro";
+import SidebarTOC from "@components/widget/SidebarTOC.astro";
 import type { MarkdownHeading } from "astro";
 import MobileMenuSheet from "@/components/layout/MobileMenuSheet.astro";
 import {
@@ -64,11 +65,16 @@ const isHomePageCheck = isHomePage(Astro.url.pathname);
 // 检查是否在文章详情页
 const isPostPage = !!postSlug;
 
-// 不显示左右侧栏、并把中间内容区放宽的页面（2026-09-22 站长指定）。
+// 不显示左右侧栏的页面：
+// - 站长指定的「内容区放宽」页面（2026-09-22）：文章列表 /posts/、导航站 /projects/、
+//   归档 /archive/、说说 /moments/、留言板 /guestbook/、更新日志 /changelog/、友链 /friends/
+// - 文章详情页（2026-09-29）：右侧栏的位置要留给固定在正文右侧的文章目录浮层
+//   （对齐参考博客的布局），所以文章页不再渲染左右侧栏组件。
 // 判定复用统一的页面类型分类器（与侧栏组件的 showOnPages / hideOnPages 同一套规则）。
 // 标记写到 #content-wrapper 上（它在 Swup 容器内，导航时会随内容替换），
 // 这样纯 CSS 的 :has() 就能跟着页面切换自动生效，不需要 JS 参与。
 const NO_SIDEBAR_PAGE_TYPES: SidebarPageType[] = [
+	"post",
 	"posts-list",
 	"projects",
 	"archive",
@@ -228,6 +234,9 @@ const navLinks = navBarConfig.links.map((item: NavBarLink | LinkPreset) => {
                 <div id="grid-class-carrier" data-grid-class={gridCols} class="hidden"></div>
                 {/* 备用 h1 标题 - 提供隐藏的主标题，满足 Swup A11y 和无 h1 页面的可访问性 */}
                 <h1 class="sr-only">{title || siteConfig.title}</h1>
+                {/* 文章目录浮层：与参考博客一致，fixed 挂在正文右侧（不在侧栏里），
+                    顶部跟随信息面板组；控制器见 src/utils/article-toc.ts */}
+                {isPostPage && <SidebarTOC />}
                 <div id="content-wrapper" class="onload-animation transition-leaving" data-no-sidebar={noSidebarPageType}>
                     <slot></slot>
 

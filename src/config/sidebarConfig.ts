@@ -205,9 +205,11 @@ export const sidebarLayoutConfig: SidebarLayoutConfig = {
 			showOnPostPage: false,
 		},
 		{
-			// 组件类型：文章目录（仅在文章详情页显示）
+			// 组件类型：文章目录
+			// 已改为在 MainGridLayout 里直接渲染成正文右侧的固定浮层（对齐参考博客），
+			// 不再作为侧栏组件输出，配置保留便于回退。
 			type: "sidebarToc",
-			enable: true,
+			enable: false,
 			position: "sticky",
 			showOnPostPage: true,
 			showOnNonPostPage: false,

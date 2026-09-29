@@ -381,7 +381,10 @@ Layout.astro          ← HTML 骨架：<html>, <head>, <body>, 全局组件, �
 - ⚠️ **连线绘制必须「先把坐标一次读完，再批量写 path」**：`getBoundingClientRect()` 与 `appendChild` 交替会让每次读都触发一轮完整同步布局（本项目约 1.3 万 DOM，24 个节点实测吃掉 446ms，打开导图 1.2 秒）。`drawLines` / `drawMindmapLines` 都按这个顺序写，改的时候别把读写交叉回去；滚轮缩放同理走 `scheduleLines()` 按帧合并。
 - 图标沿用参考站：`mingcute:list-collapse-line`（手风琴）、`mdi:unfold-more/less-horizontal`（展开收起）、`ri:node-tree`（思维导图）——前两个图标集为此新增依赖 `@iconify-json/mingcute` 与 `@iconify-json/ri`，**新增图标前先确认图标集已安装**，否则 astro-icon 会整页报错。
 - Swup 导航会替换面板 DOM，靠 `astro:page-load` / `swup:content:replaced` 重新 `initArticleToc()`（内部先销毁旧实例，重复调用安全）。
-- 面板在右侧栏内（容器自身 sticky），**不含**参考实现「fixed 贴正文右缘 + 底边触正文卡底后随文档滚走」的停靠逻辑，宽度填满侧栏而不是固定 18rem。
+- 面板是**正文右侧的固定浮层**（对齐参考博客，2026-09-29 从侧栏搬出来）：`position: fixed; top: 8rem; left: calc(50% + 31.5rem + 1rem); width: 18rem`，仅在 `min-width: 101rem` + `hover:hover` + `pointer:fine` 下显示（门槛按「正文半宽 + 1rem + 面板 18rem 不溢出视口」反算，正文卡宽 63rem）。
+- 垂直位置由控制器的 `syncDock()` 管：滚动 0 时面板顶与 `.post-intro-card` 顶对齐；信息卡上移越过 8rem 停靠线后钳制在 8rem 跟随；面板底边触到 `#post-container` 底后随文档滚走，不悬浮在评论区上。
+- 为了给浮层让位，**文章页隐藏左右侧栏**（`MainGridLayout` 的 `NO_SIDEBAR_PAGE_TYPES` 已含 `"post"`），正文宽度在 `no-sidebar-pages.css` 里锁回 1008px —— 这个值原本由网格列算出，改成单列后会撑满整行、把浮层的位置挤没。侧栏组件配置仍在，只是文章页不渲染。
+- 组件改由 `MainGridLayout` 在 `#swup-container` 内直接渲染（`{isPostPage && <SidebarTOC />}`，与参考实现的挂载位置一致）；`sidebarConfig` 里的 `sidebarToc` 已 `enable: false` 避免重复渲染，**要改回侧栏形式这两处必须一起改**。
 - ⚠️ **旧的 `TOCManager`（`src/utils/tocUtils.ts`）已不在侧栏使用**，但仍被移动端 dock 的目录抽屉（`UnifiedDock.astro`）复用——要删之前先处理那一处。
 - 左侧栏「全部文章」（`type: "postDirectory"` → `PostDirectory.astro`）已按站长要求全站关闭（`sidebarConfig.ts` 里 `enable: false`，配置保留便于恢复）。
 

@@ -38,6 +38,9 @@ const MINDMAP_ZOOM_STEP = 0.2;
 /** 滚轮缩放的单档倍率与拖拽平移的触发阈值（px） */
 const MINDMAP_WHEEL_FACTOR = 1.1;
 const MINDMAP_PAN_THRESHOLD = 4;
+/* 滚动钳制：面板底边最多到正文卡（含 License/相关文章/上下篇）底部再往上这段
+   距离，越过后随文档滚走，不悬浮在评论区上 */
+const RAIL_BOTTOM_GAP = 24;
 const SVG_NAMESPACE = "http://www.w3.org/2000/svg";
 
 function clamp(value: number, minimum: number, maximum: number): number {
@@ -123,6 +126,12 @@ class ArticleTocController {
 		anchorY: 0,
 		frame: null as number | null,
 	};
+	/* 停靠钳制状态：面板底边触到正文卡底后随文档滚走（top 逐渐变负） */
+	private railBaseTop = 0;
+	private railHeight = 0;
+	private appliedRailTop: number | null = null;
+	/** 顶部跟随锚点（过期提示/AI 摘要/封面图信息卡）：初始与卡顶对齐，不存在则恒停靠 */
+	private introAnchor: HTMLElement | null = null;
 
 	constructor(root: HTMLElement) {
 		this.root = root;
@@ -160,14 +169,19 @@ class ArticleTocController {
 		}
 
 		this.root.hidden = false;
+		const rootTop = Number.parseFloat(getComputedStyle(this.root).top);
+		this.railBaseTop = Number.isNaN(rootTop) ? 0 : rootTop;
+		// 信息卡缺省（无摘要/过期/封面）时为 null，syncDock 退化为恒停靠在 railBaseTop
+		this.introAnchor = document.querySelector(".post-intro-card");
 		this.cachePositions();
 		this.renderRows();
 		this.bindInteractions();
 		this.resizeObserver = new ResizeObserver(() => this.scheduleMeasure());
 		this.resizeObserver.observe(this.article);
-		// 字体换字、信息卡折叠等会推移标题坐标，一并监听以重算
+		// 字体换字、信息卡折叠等会推移标题与信息卡顶，一并监听以重算
 		const hero = document.querySelector(".post-hero");
 		if (hero) this.resizeObserver.observe(hero);
+		if (this.introAnchor) this.resizeObserver.observe(this.introAnchor);
 		window.addEventListener("scroll", () => this.scheduleUpdate(), {
 			passive: true,
 			signal: this.abortController.signal,
@@ -189,6 +203,8 @@ class ArticleTocController {
 		this.abortController.abort();
 		this.resizeObserver?.disconnect();
 		this.resizeObserver = null;
+		this.root.style.top = "";
+		this.appliedRailTop = null;
 		if (this.animationFrame !== null) cancelAnimationFrame(this.animationFrame);
 		if (this.measureFrame !== null) cancelAnimationFrame(this.measureFrame);
 		if (this.linesFrame !== null) cancelAnimationFrame(this.linesFrame);
@@ -620,9 +636,42 @@ class ArticleTocController {
 		const articleRect = this.article.getBoundingClientRect();
 		this.articleStart = articleRect.top + scrollY;
 		this.articleEnd = articleRect.bottom + scrollY;
+		this.railHeight = this.root.offsetHeight;
 		this.headingTops = tree.nodes.map(
 			(node) => node.element.getBoundingClientRect().top + scrollY,
 		);
+	}
+
+	/* 每次滚动实时测正文卡底部（含 License/相关文章/上下篇），避免初始化时布局
+	   未稳导致的钳制点漂移；图片/字体加载引起的高度变化由 ResizeObserver 兜住 */
+	private syncDock(): void {
+		if (!this.railHeight) return;
+		const anchor =
+			document.querySelector<HTMLElement>("#post-container") ?? this.article;
+		if (!anchor) return;
+
+		const anchorBottom = anchor.getBoundingClientRect().bottom + window.scrollY;
+		const limit =
+			anchorBottom - this.railHeight - RAIL_BOTTOM_GAP - this.railBaseTop;
+		/* 面板底边不许越过正文卡底：正常时停在 CSS 的 top，越过后随文档滚走 */
+		const maxTop = limit + this.railBaseTop - window.scrollY;
+
+		/* 顶部跟随：页面在顶时面板顶与信息卡顶对齐；信息卡随页面上移越过停靠线
+		   （CSS 的 8rem，即原本与标题对齐的位置）后，钳制在停靠线悬停跟随。
+		   每帧实时取视口坐标，字体加载/折叠卡片导致的位移无需额外缓存。
+		   fitTop 防止矮视口下初始位置把面板底边撑出屏幕。 */
+		let followTop = this.railBaseTop;
+		const introTop = this.introAnchor?.getBoundingClientRect().top;
+		if (introTop !== undefined) {
+			const fitTop = window.innerHeight - this.railHeight - RAIL_BOTTOM_GAP;
+			followTop = Math.min(Math.max(this.railBaseTop, introTop), fitTop);
+		}
+
+		const nextTop = Math.min(followTop, maxTop);
+		if (nextTop === this.appliedRailTop) return;
+
+		this.appliedRailTop = nextTop;
+		this.root.style.top = `${nextTop}px`;
 	}
 
 	private getProgress(): number {
@@ -678,6 +727,8 @@ class ArticleTocController {
 
 	private update(): void {
 		if (!this.tree) return;
+
+		this.syncDock();
 
 		const progressPercent = Math.round(this.getProgress() * 100);
 		if (progressPercent !== this.lastProgressPercent) {

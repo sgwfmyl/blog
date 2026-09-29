@@ -26,22 +26,36 @@
  *     dialog.article-toc-mindmap[data-toc-mindmap]
  */
 
+/* 默认不显示：只在「足够宽的视口 + 精确指针」下作为正文右侧浮层出现
+   （与参考实现同一策略；本项目正文卡宽 63rem，门槛按 left + width 不溢出视口反算） */
 .article-toc-panel {
-	--article-toc-active: #0e7490;
-	--article-toc-panel-bg: #dedede;
-	--article-toc-panel-text: #1f1f1f;
-	--article-toc-panel-muted: #4d4d4d;
-	--article-toc-panel-hover: rgb(0 0 0 / 8%);
-	--article-toc-line: rgb(0 0 0 / 28%);
-	--article-toc-dot: rgb(0 0 0 / 40%);
+	display: none;
+}
 
-	display: flex;
-	flex-direction: column;
-	width: 100%;
-	/* 内容不满时贴合内容高度，超限时封顶并由树内部滚动 */
-	max-height: min(40rem, calc(100vh - 10rem));
-	background: var(--article-toc-panel-bg);
-	border-radius: 0.75rem;
+@media (min-width: 101rem) and (hover: hover) and (pointer: fine) {
+	.article-toc-panel {
+		--article-toc-active: #0e7490;
+		--article-toc-panel-bg: #dedede;
+		--article-toc-panel-text: #1f1f1f;
+		--article-toc-panel-muted: #4d4d4d;
+		--article-toc-panel-hover: rgb(0 0 0 / 8%);
+		--article-toc-line: rgb(0 0 0 / 28%);
+		--article-toc-dot: rgb(0 0 0 / 40%);
+
+		position: fixed;
+		/* 停靠线：信息卡滚过这里之后，面板顶钳制在此跟随（控制器 syncDock） */
+		top: 8rem;
+		/* 正文卡宽 63rem（半宽 31.5rem），贴其右缘再留 1rem 间距 */
+		left: calc(50% + 31.5rem + 1rem);
+		z-index: 30;
+		display: flex;
+		flex-direction: column;
+		width: 18rem;
+		/* 内容不满时贴合内容高度，超限时封顶并由树内部滚动 */
+		max-height: min(40rem, calc(100vh - 10rem));
+		background: var(--article-toc-panel-bg);
+		border-radius: 0.75rem;
+	}
 }
 
 :root.dark .article-toc-panel {

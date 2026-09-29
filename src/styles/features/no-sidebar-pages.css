@@ -46,6 +46,13 @@
 	html:has(#content-wrapper[data-no-sidebar]) .article-list-page {
 		max-width: 100%;
 	}
+
+	/* 5) 文章详情页：正文锁回原有的 1008px。
+	   这个宽度原本由网格列算出来，改成单列后会撑满整行，右侧就没有多余空间放
+	   文章目录浮层了（浮层贴正文右缘外 1rem，即 left = 50% + 31.5rem + 1rem）。 */
+	html:has(#content-wrapper[data-no-sidebar="post"]) #content-wrapper {
+		max-width: 1008px;
+	}
 }
 
 /* ==========================================================================
