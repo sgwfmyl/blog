@@ -192,8 +192,6 @@
 }
 
 .nav-profile__view--site {
-  display: flex;
-  flex-direction: column;
   gap: 0.15rem;
 }
 
@@ -287,12 +285,24 @@
 
 /* ------------------------------- 右栏 ------------------------------- */
 
+/* 右栏：两态内容都绝对定位铺满它，所以卡片高度由**左栏**决定（参考站同款做法），
+   右栏内容超高时在栏内滚动，切态不会让卡片高度跳动。
+   min-height 兜住 default 态的天然高度，免得左栏偏矮时把内容压出滚动条。 */
 .nav-profile__right {
-  display: flex;
+  position: relative;
   flex: 1;
+  min-width: 0;
+  min-height: 11rem;
+}
+
+.nav-profile__view {
+  position: absolute;
+  inset: 0;
+  display: flex;
   flex-direction: column;
   gap: 0.6rem;
-  min-width: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 /* ------------------------------- 倒计时 ------------------------------- */

@@ -170,9 +170,9 @@ const events = [
 
 		<!-- 右栏：倒计时 + 事件进度 -->
 		<div class="nav-profile__right" data-nav-profile-right data-view="default">
-			<div
-				class="nav-profile__countdowns nav-profile__view nav-profile__view--default"
-			>
+			<!-- default 态：倒计时 + 事件进度（两态都铺满右栏、超高在栏内滚动） -->
+			<div class="nav-profile__view nav-profile__view--default">
+				<div class="nav-profile__countdowns">
 				<div class="nav-profile__countdown">
 					<span>{i18n(I18nKey.profileCountdownWeek)}</span>
 					<strong data-nav-profile-days="week">--</strong>
@@ -187,9 +187,7 @@ const events = [
 				</div>
 			</div>
 
-			<div
-				class="nav-profile__events nav-profile__view nav-profile__view--default"
-			>
+				<div class="nav-profile__events">
 				{
 					events.map((event) => (
 						<article class="nav-profile__event" data-nav-profile-event={event.key}>
@@ -219,6 +217,9 @@ const events = [
 				}
 			</div>
 
+			</div>
+
+			<!-- site 态：其他站点列表 -->
 			<div class="nav-profile__view nav-profile__view--site">
 				{
 					personalSites.map((site) => (

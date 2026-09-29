@@ -14,7 +14,8 @@ description: 资料面板补上「其他站点」——左栏按钮切换右栏�
 - **图标两种写法都支持**：iconify 名（`material-symbols:xxx`）渲染成 svg，图片 URL（各站点的 favicon）渲染成 1rem 见方的 `<img>`。
 - **交互**：点「其他站点」按钮 → 右栏从「倒计时 + 事件进度」切换为站点列表，再点一次切回；按钮按下时会变色，`aria-pressed` 同步；每次悬浮打开面板都回到默认态。
 - **实现**：右栏用 `data-view` 属性 + `.nav-profile__view--default / --site` 两态类名切换（不重建 DOM，倒计时与进度条不必重算）。
+- **卡片高度不随列表变化**（对齐参考站的做法）：两个视图都 `position: absolute; inset: 0` 铺满右栏，卡片高度改由**左栏**锚定，右栏内容超高时在**栏内滚动**（`overflow-y: auto`）—— 所以切到站点列表时卡片不会被拉长，9 个站点在栏内滚着看。
 - 新增 i18n 键 `otherSites`（其他站点 / 其他站點 / Other sites / その他のサイト / Другие сайты），5 个语言文件已同步。
 - 仍未做：参考站的「点热力图格子看当月文章列表」。
 
-> 验证：`pnpm check` 0 错误；浏览器实测（1725×965，悬浮站点名并点「其他站点」）默认态 `data-view="default"`、站点列表 `display: none`、倒计时 `display: flex`；点击后 `data-view="site"`、`aria-pressed="true"`、列表 `display: flex`，9 个站点全部列出、9 个 favicon 图标均加载成功、每项带外链图标且 `target="_blank"`，面板高度自适应到 345px。
+> 验证：`pnpm check` 0 错误；浏览器实测（1725×965，悬浮站点名并点「其他站点」）默认态 `data-view="default"`、站点列表 `display: none`、倒计时 `display: flex` 且视图无需滚动；点击后 `data-view="site"`、`aria-pressed="true"`、列表 `display: flex`，9 个站点全部列出、9 个 favicon 均加载成功、每项带外链图标且 `target="_blank"`；**卡片高度两态都是 252px 不跳动**，站点视图内容高 369px > 可视 218px 故栏内滚动（实测 scrollTop 可达 151）。
