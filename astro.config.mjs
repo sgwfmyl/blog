@@ -67,7 +67,10 @@ export default defineConfig({
 			],
 			smoothScrolling: false,
 			cache: true,
-			preload: true,
+			// 悬停即预载目标页（visible 保持关闭，避免首屏空闲就批量抓所有链接）；
+			// 预载时 utils/swup-css-prefetch 会顺带把目标页的样式表拉进缓存，
+			// 于是点击切页时样式表已就位、几乎零等待
+			preload: { hover: true, visible: false },
 			accessibility: true,
 			updateHead: true,
 			updateBodyClass: false,

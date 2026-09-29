@@ -68,42 +68,22 @@ html.is-animating .transition-swup-fade {
 
 #progress-bar {
   --progress-height: 3px;
-  --progress-duration: 3s;
 
   position: fixed;
   top: 0;
   left: 0;
-  width: 0;
+  width: 100%;
   height: var(--progress-height);
   z-index: 9999;
   pointer-events: none;
   background: var(--primary);
   box-shadow: 0 0 8px color-mix(in oklch, var(--primary) 60%, transparent);
+  /* 初始态：整条缩到 0、透明。
+     动画全部交给 src/utils/progress-bar.ts 用 WAAPI 驱动 —— 改 transform 而非
+     width（走合成线程，不触发重排），也不再靠切类名 + 强制重排来重启动画 */
+  transform: scaleX(0);
+  transform-origin: left center;
   opacity: 0;
-}
-
-@keyframes progress-loading {
-  0% { width: 0; }
-  100% { width: 95%; }
-}
-
-#progress-bar.loading {
-  opacity: 1;
-  width: 0;
-  animation: progress-loading var(--progress-duration) cubic-bezier(0.1, 0.05, 0.1, 1) forwards;
-}
-
-#progress-bar.finishing {
-  animation: none;
-  width: 100%;
-  opacity: 1;
-  transition: width 200ms ease-out;
-}
-
-#progress-bar.done {
-  width: 100%;
-  opacity: 0;
-  transition: opacity 300ms ease-out;
 }
 
 /* ==========================================================================

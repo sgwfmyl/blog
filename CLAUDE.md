@@ -637,6 +637,12 @@ export function initMyFeature() {
 // Layout.astro DOMContentLoaded 中调用一次即可
 ```
 
+### 11.5 切页性能：进度条与样式预取（2026-09-29）
+
+- **进度条**（`src/utils/progress-bar.ts`）：**必须用 WAAPI**（`element.animate()` + `transform: scaleX` / `opacity`），不要改回「切类名 + `@keyframes` + 用 `width` 做动画」。后者每次重启动画都得 `void el.offsetWidth` **强制同步重排**，而那正是切页最忙的时刻，长文章上会同步重算整棵布局树（站长反馈的切页卡顿就是这个）。收尾也只用一条带 offset 的关键帧，别再引入两层 `setTimeout` 摘类名。`swup.css` 里的 `#progress-bar` 只保留基础样式。
+- **CSS 预取**（`src/utils/swup-css-prefetch.ts`）：按页拆包后 SwupHeadPlugin 会等新样式表下载完才播入场动画，本模块监听 `page:preload`、把目标页 HTML 里的样式表以 `media="print"` 插进当前文档提前进缓存。⚠️ 两个坑：① `window.swup` 先创建、插件随后才挂上去，**不能用同步判断 `swup.preload`**（会静默跳过整个安装），要等 `swup:enable` / `swup:any` + 几帧轮询兜底；② v3 版 preload 插件的参数是 `args.html`（旧版是 `args.page.html`），两种都要兼容。
+- ⚠️ **dev 下看不到预取效果是正常的**：CSS 按页拆包是构建期行为，dev 下只有字体外链（会被同源过滤跳过）。要验证得 `pnpm build` + `astro preview`。
+
 ---
 
 ## 12. PageLoader 集成规范

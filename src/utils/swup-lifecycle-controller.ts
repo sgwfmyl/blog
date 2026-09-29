@@ -1,7 +1,9 @@
 import { expressiveCodeConfig, siteConfig } from "@/config";
 import { pathsEqual, url } from "@/utils/url-utils";
+import { finishProgressBar, startProgressBar } from "./progress-bar";
 import { initCustomScrollbar } from "./scrollbar-utils";
 import { updateSidebarComponentsVisibility } from "./sidebar-utils";
+import { installSwupCssPrefetch } from "./swup-css-prefetch";
 
 declare global {
 	interface Window {
@@ -17,6 +19,10 @@ declare global {
  */
 export function initSwupLifecycle(): void {
 	let bannerAnimCtrl: AbortController | null = null;
+
+	// hover 预载时顺带把目标页的样式表抓进缓存，消除 Swup 首次访问某类页面时
+	// 「等新样式表下载完才播入场动画」的串行等待
+	installSwupCssPrefetch();
 	const mainContentTop = "5.5rem";
 
 	const syncMainContentTop = (isHome: boolean) => {
@@ -242,14 +248,10 @@ export function initSwupLifecycle(): void {
 				});
 				document.body.style.overflow = "";
 
-				// Start progress bar
-				const progressBar = document.getElementById("progress-bar");
-				if (progressBar) {
-					progressBar.classList.remove("finishing", "done");
-					// Force reflow so the animation restarts cleanly
-					void progressBar.offsetWidth;
-					progressBar.classList.add("loading");
-				}
+				// 进度条：改由 WAAPI 驱动（transform / opacity 跑合成线程）。
+				// 原来那套「切类名 + void offsetWidth 强制重排」会在切页最忙的
+				// 时刻同步重算整棵布局树，长文章上就是明显的卡顿
+				startProgressBar();
 
 				// Control mobile banner visibility with improved staging animation
 				const isMobile = window.innerWidth < 1024;
@@ -475,19 +477,8 @@ export function initSwupLifecycle(): void {
 		});
 
 		window.swup.hooks.on("visit:end", (_visit: { to: { url: string } }) => {
-			// Finish progress bar
-			const progressBar = document.getElementById("progress-bar");
-			if (progressBar) {
-				progressBar.classList.remove("loading");
-				progressBar.classList.add("finishing");
-				setTimeout(() => {
-					progressBar.classList.remove("finishing");
-					progressBar.classList.add("done");
-					setTimeout(() => {
-						progressBar.classList.remove("done");
-					}, 150);
-				}, 100);
-			}
+			// 进度条收尾：一条关键帧补满 + 淡出，不再用两层 setTimeout 摘类名
+			finishProgressBar();
 
 			setTimeout(() => {
 				const heightExtend = document.getElementById("page-height-extend");
