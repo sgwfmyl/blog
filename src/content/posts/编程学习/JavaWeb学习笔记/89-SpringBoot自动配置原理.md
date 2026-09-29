@@ -71,7 +71,7 @@ order: 89
 光看定义不好体会，PPT 用了一段测试代码当证据：
 
 ![不写任何配置直接注入 Gson](assets/89-SpringBoot自动配置原理/22-无需配置直接注入Gson.jpg)
-*图：工程里只是在 pom 里加了一个 Gson（`com.google`）的 `<dependency>`，测试类里却可以 `@Autowired private Gson gson;` 直接注入，还能调 `gson.toJson(...)`——从没有人写过 Gson 的 bean 定义*
+*图：这段测试代码里 `Gson` 可以直接 `@Autowired` 注入，还能调 `gson.toJson(...)`——它的来源就是 PPT 同页那段 `com.google` 的 `<dependency>` 片段；而工程里从没有人写过 Gson 的 bean 定义*
 
 ![我们的项目结构](assets/89-SpringBoot自动配置原理/22-我们的项目结构.jpg)
 *图：对照着看这个工程的结构——`com.itheima` 下只有 controller / mapper / pojo / service 四个包和一个引导类，`resources` 里连 Gson 的影子都没有；"容器里为什么会有 Gson"这个问题，只能由 SpringBoot 自己回答*
