@@ -228,9 +228,18 @@ const events = [
 							target={site.external ? "_blank" : undefined}
 							rel={site.external ? "noopener noreferrer" : undefined}
 						>
-							{site.icon && (
-								<Icon name={site.icon} class="nav-profile__site-cta-icon" />
-							)}
+							{site.icon &&
+								(site.icon.startsWith("http") ? (
+									<img
+										src={site.icon}
+										alt=""
+										class="nav-profile__site-cta-icon is-img"
+										loading="lazy"
+										decoding="async"
+									/>
+								) : (
+									<Icon name={site.icon} class="nav-profile__site-cta-icon" />
+								))}
 							<span class="nav-profile__site-cta-name">{site.name}</span>
 							{site.external && (
 								<Icon

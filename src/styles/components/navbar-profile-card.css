@@ -220,6 +220,14 @@
   font-size: 1rem;
 }
 
+/* icon 填图片 URL 时（站点的 favicon）：给显式尺寸，否则 img 会撑满 */
+.nav-profile__site-cta-icon.is-img {
+  width: 1rem;
+  height: 1rem;
+  border-radius: 0.2rem;
+  object-fit: contain;
+}
+
 .nav-profile__site-cta-name {
   flex: 1;
   min-width: 0;

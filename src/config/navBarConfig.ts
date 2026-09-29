@@ -167,24 +167,63 @@ const getDynamicNavBarConfig = (): NavBarConfig => {
 	});
 
 	// 「其他站点」：资料面板里点「其他站点」按钮后，右栏切换展示的链接列表。
-	// 现在放的是几个站内页面做示例，替换成你自己的其他站点即可
-	// （跨站链接记得标 external: true，列表项右侧会出现外链图标）。
+	// 这份列表取自导航页 /projects/ 的「我的网站」分类（src/content/daohang/我的网站/），
+	// 改那边之后记得同步这里；跨站链接标 external: true，列表项右侧会出现外链图标。
+	// icon 既可以是 iconify 名（material-symbols:xxx），也可以是图片 URL。
 	const personalSites: NavBarLink[] = [
-		{ name: "网站导航", url: "/projects/", icon: "material-symbols:public" },
 		{
-			name: "归档",
-			url: "/archive/",
-			icon: "material-symbols:archive-outline",
+			name: "个人博客",
+			url: "https://blog.tsh520.cn/",
+			icon: "https://img.tsh520.cn/file/blog/daohang/blog.tsh520.cn-icon.webp",
+			external: true,
 		},
 		{
-			name: "关于我",
-			url: "/about/",
-			icon: "material-symbols:person-outline",
+			name: "团子的图床",
+			url: "https://img.tsh520.cn/",
+			icon: "https://img.tsh520.cn/file/blog/daohang/blog.tsh520.cn-icon.webp",
+			external: true,
 		},
 		{
-			name: "更新日志",
-			url: "/changelog/",
-			icon: "material-symbols:history",
+			name: "团子的邮箱",
+			url: "https://email.0824.uk/inbox",
+			icon: "https://img.tsh520.cn/file/blog/daohang/blog.tsh520.cn-icon.webp",
+			external: true,
+		},
+		{
+			name: "评论管理后台",
+			url: "https://waline.tsh520.cn/",
+			icon: "https://img.tsh520.cn/file/blog/daohang/blog.tsh520.cn-icon.webp",
+			external: true,
+		},
+		{
+			name: "AstrBot",
+			url: "https://astrbot.tsh520.cn/",
+			icon: "https://astrbot.tsh520.cn/favicon.svg",
+			external: true,
+		},
+		{
+			name: "NapCat",
+			url: "https://napcat.tsh520.cn/",
+			icon: "https://napcat.tsh520.cn/webui/favicon.ico",
+			external: true,
+		},
+		{
+			name: "PagesCMS",
+			url: "https://cms.tsh520.cn/tianshihao2003/dumplingandcakeblog/main/collection/posts",
+			icon: "https://app.pagescms.org/icon.svg",
+			external: true,
+		},
+		{
+			name: "COC 阵型库",
+			url: "https://coc.tsh520.cn/",
+			icon: "https://coc.tsh520.cn/favicon.png",
+			external: true,
+		},
+		{
+			name: "ZeppLife 刷步数",
+			url: "https://ze.tsh520.cn/",
+			icon: "https://img.tsh520.cn/file/blog/daohang/blog.tsh520.cn-icon.webp",
+			external: true,
 		},
 	];
 
