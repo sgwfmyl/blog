@@ -7,6 +7,7 @@ import MomentCommentChat from "@/components/moments/MomentCommentChat.svelte";
 import MomentsCover from "@/components/moments/MomentsCover.astro";
 import { commentConfig } from "@/config";
 import MainGridLayout from "@/layouts/MainGridLayout.astro";
+import PageTitle from "@/components/common/PageTitle.astro";
 
 const walineServerURL = commentConfig.waline?.serverURL || "";
 
@@ -74,7 +75,15 @@ const pinnedData = pinnedMoments.map((m) => ({
 ---
 
 <MainGridLayout title="动态" description="记录生活中的点点滴滴">
-  <!-- 微信朋友圈风格封面 -->
+    <div class="mb-6">
+  	<PageTitle
+  		title="动态"
+  		eyebrow="Moments"
+  		description="记录生活中的点点滴滴"
+  	/>
+  </div>
+  
+<!-- 微信朋友圈风格封面 -->
   <MomentsCover />
 
   <!-- 置顶说说（始终渲染容器，JS 可动态追加外部置顶） -->

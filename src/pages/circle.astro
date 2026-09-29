@@ -4,6 +4,7 @@ import { circleConfig } from "@/config/circleConfig";
 import I18nKey from "@/i18n/i18nKey";
 import { i18n } from "@/i18n/translation";
 import MainGridLayout from "@/layouts/MainGridLayout.astro";
+import PageTitle from "@/components/common/PageTitle.astro";
 import "@/styles/features/circle.css";
 
 const title = i18n(I18nKey.circleTitle);
@@ -11,7 +12,15 @@ const description = i18n(I18nKey.circleSubtitle);
 ---
 
 <MainGridLayout title={title} description={description}>
-  <div class="circle-container">
+    <div class="mb-6">
+  	<PageTitle
+  		title={title}
+  		eyebrow="Circle"
+  		description="朋友们的最新动态"
+  	/>
+  </div>
+  
+<div class="circle-container">
     <!-- 顶部导航栏 -->
     <div class="circle-header">
       <div class="circle-header-left">

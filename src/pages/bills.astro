@@ -10,6 +10,7 @@ import MonthlyFlowCard from "@/components/bills/MonthlyFlowCard.astro";
 import MonthlySummaryCard from "@/components/bills/MonthlySummaryCard.astro";
 import YearlyFlowCard from "@/components/bills/YearlyFlowCard.astro";
 import MainGridLayout from "@/layouts/MainGridLayout.astro";
+import PageTitle from "@/components/common/PageTitle.astro";
 import {
 	categoryExpenseRank,
 	categoryIncomeList,
@@ -162,7 +163,15 @@ const incomeTotalCount = incomeList.reduce((s, r) => s + r.count, 0);
 const incomeTotalAmt = incomeList.reduce((s, r) => s + r.amount, 0);
 ---
 <MainGridLayout title="账单" description="账单仪表盘">
-  <div class="bills-page" data-pagefind-body>
+    <div class="mb-6">
+  	<PageTitle
+  		title="账单"
+  		eyebrow="Bills"
+  		description="日常开销的记录"
+  	/>
+  </div>
+  
+<div class="bills-page" data-pagefind-body>
     <div class="bills-grid">
       <div class="bills-col">
         <div class="order-net"><BalanceCard income={yearStats.income} expense={yearStats.expense} balance={yearBalance} /></div>

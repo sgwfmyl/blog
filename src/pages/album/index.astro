@@ -4,6 +4,7 @@ import { getCollection } from "astro:content";
 import { Icon } from "astro-icon/components";
 import BounceCards from "@/components/features/BounceCards.astro";
 import MainGridLayout from "@/layouts/MainGridLayout.astro";
+import PageTitle from "@/components/common/PageTitle.astro";
 
 const imgbedUrl = import.meta.env.PUBLIC_IMAGEBED_URL || "";
 const imgbedToken = import.meta.env.PUBLIC_IMAGEBED_API_TOKEN || "";
@@ -81,10 +82,11 @@ function getPreviewPhotos(album: CollectionEntry<"album">) {
     <div class="card-base z-10 px-4 py-6 md:px-9 relative w-full">
     <!-- 头部横幅 -->
     <div class="relative w-full mb-10">
-      <div class="flex items-center gap-3 mb-5">
-        <Icon name="material-symbols:photo-album" class="text-[1.875rem] text-neutral-900 dark:text-neutral-100" />
-        <div class="text-3xl font-bold text-neutral-900 dark:text-neutral-100">我的相册</div>
-      </div>
+      <PageTitle
+        title="相册"
+        eyebrow="Album"
+        description="照片里的生活"
+      />
 
       <!-- 统计信息 -->
       <div class="flex items-center gap-3 mt-5">

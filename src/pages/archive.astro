@@ -4,6 +4,7 @@ import ArchiveHeatmap from "@components/widget/ArchiveHeatmap.astro";
 import I18nKey from "@i18n/i18nKey";
 import { i18n } from "@i18n/translation";
 import MainGridLayout from "@layouts/MainGridLayout.astro";
+import PageTitle from "@/components/common/PageTitle.astro";
 import { Icon } from "astro-icon/components";
 import { getArchiveList, getSortedPostsList } from "@/utils/content-utils";
 
@@ -21,14 +22,13 @@ const defaultYear = availableYears[0] ?? new Date().getFullYear();
 <MainGridLayout title={title}>
   <div class="flex w-full overflow-hidden relative min-h-32">
     <div class="card-base z-10 px-4 py-6 md:px-9 relative w-full">
-      <!-- 顶部一行（左上角）：归档标题 + 年份下拉 -->
+      <!-- 页面标题（PageTitle：英文小字 + 签写动画 + 描述） -->
+      <div class="mb-4">
+        <PageTitle title={title} eyebrow="Archive" description="按时间翻阅写过的所有文章" />
+      </div>
+
+      <!-- 年份下拉（数据筛选） -->
       <div class="flex flex-wrap items-center gap-x-3 gap-y-2 mb-3">
-        <div class="flex items-center gap-2">
-          <Icon name="material-symbols:schedule-outline-rounded" class="text-[1.875rem]" />
-          <div class="text-3xl font-bold text-neutral-900 dark:text-neutral-100">
-            {title}
-          </div>
-        </div>
         <div class="archive-year-dropdown" data-archive-year-dropdown>
           <button type="button" class="archive-year-trigger" aria-haspopup="listbox" aria-expanded="false" data-archive-year-trigger>
             <span data-archive-year-label>{defaultYear}</span>

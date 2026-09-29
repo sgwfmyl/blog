@@ -3,6 +3,7 @@ import { getCollection } from "astro:content";
 import { Lunar } from "lunar-javascript";
 import SchedulesView from "@/components/schedules/SchedulesView.svelte";
 import MainGridLayout from "@/layouts/MainGridLayout.astro";
+import PageTitle from "@/components/common/PageTitle.astro";
 
 const raw = await getCollection("schedules");
 // 服务端预换算农历→当年阳历，消首屏闪烁：isLunar 无 date 的生日在此算好 solar
@@ -53,7 +54,15 @@ const selected =
 	`${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
 ---
 <MainGridLayout title="日程" description="日历与日程">
-  <div class="flex w-full rounded-(--radius-large) overflow-hidden relative min-h-32">
+    <div class="mb-6">
+  	<PageTitle
+  		title="日程"
+  		eyebrow="Schedules"
+  		description="近期的安排与计划"
+  	/>
+  </div>
+  
+<div class="flex w-full rounded-(--radius-large) overflow-hidden relative min-h-32">
     <div data-pagefind-body class="card-base z-10 px-4 py-6 md:px-9 relative w-full">
       <SchedulesView
         client:load

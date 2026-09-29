@@ -5,6 +5,7 @@ import { siteConfig } from "@/config";
 import I18nKey from "@/i18n/i18nKey";
 import { i18n } from "@/i18n/translation";
 import MainGridLayout from "@/layouts/MainGridLayout.astro";
+import PageTitle from "@/components/common/PageTitle.astro";
 
 // 检查页面是否启用
 if (!siteConfig.pages.guestbook) {
@@ -17,7 +18,24 @@ const description = i18n(I18nKey.guestbookDescription);
 ---
 
 <MainGridLayout title={title} description={description}>
-	<div class="guestbook-page">
+
+	
+	<div class="mb-6">
+
+		<PageTitle
+
+			title={title}
+
+			eyebrow="Guestbook"
+
+			description="随便说点什么吧，我都会看到"
+
+		/>
+
+	</div>
+
+	
+<div class="guestbook-page">
 		<GuestbookChat client:only="svelte">
 			<GuestbookChatFallback slot="fallback" />
 		</GuestbookChat>
