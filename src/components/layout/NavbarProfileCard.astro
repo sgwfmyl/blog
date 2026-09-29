@@ -27,47 +27,91 @@ const { avatar, name, occupation, links } = profileConfig;
 const avatarSrc = avatar ? (avatar.startsWith("/") ? url(avatar) : avatar) : "";
 const socialLinks = (links ?? []).filter((link) => link.icon && link.url);
 
-/* 「其他站点」：直接读导航集合里「我的网站」这个分类（文件夹）的条目 ——
-   在 /projects/ 页面增删站点后这里自动跟着变，不用维护两份。
-   文件夹判定与 projects.astro 的 getFolderCategory 保持一致（取直接父目录）。 */
-const daohangEntries = await getCollection("daohang");
-const personalSites = daohangEntries
-	.filter((entry) => {
-		const normalized = entry.id.replace(/\\/g, "/").replace(/\.(md|mdx)$/i, "");
-		const slash = normalized.lastIndexOf("/");
-		return slash >= 0 && normalized.slice(0, slash) === "我的网站";
-	})
-	.map((entry) => ({
-		name: entry.data.name,
-		url: entry.data.url,
-		icon: entry.data.icon,
-		external: /^https?:\/\//.test(entry.data.url),
-	}))
-	.sort((a, b) => a.name.localeCompare(b.name, "zh-CN"));
+/* ---------------------------------------------------------------------------
+   构建期数据（模块级缓存）
+   本组件挂在导航栏上、**每个页面都会渲染一次**，这里把两份依赖内容集合的
+   数据缓存住，避免每页重复读集合、反复持有集合快照 —— dev 下长时间开着
+   会明显吃内存（曾把 dev server 撑到 heap OOM）。
+   --------------------------------------------------------------------------- */
 
-/* 热力图：今年每个「月 × 周段」的发文数；同时把今年的文章按月份存一份，
-   给「点格子看当月文章列表」用（只带今年的，控制内联 JSON 的体积） */
-const posts = await getCollection("posts");
-const thisYear = new Date().getFullYear();
-const heat: number[][] = Array.from({ length: 12 }, () => [0, 0, 0, 0]);
-const postsByMonth: { title: string; url: string; date: string }[][] =
-	Array.from({ length: 12 }, () => []);
-for (const post of posts) {
-	const date = post.data.published;
-	if (date.getFullYear() !== thisYear) continue;
-	const week = Math.min(3, Math.floor((date.getDate() - 1) / 7));
-	heat[date.getMonth()][week] += 1;
-	postsByMonth[date.getMonth()].push({
-		title: post.data.title,
-		url: url(`/posts/${post.id}/`),
-		date: `${date.getMonth() + 1}/${date.getDate()}`,
-	});
+type PersonalSite = {
+	name: string;
+	url: string;
+	icon: string;
+	external: boolean;
+};
+type MiniPost = { title: string; url: string; date: string };
+type ProfileData = {
+	personalSites: PersonalSite[];
+	/** 12 × 4 的发文数（月 × 月内周段） */
+	heat: number[][];
+	/** 今年的文章（按月份分组），给热力图与「点格子看当月文章」用 */
+	postsByMonth: MiniPost[][];
+	/** 预先序列化好的 postsByMonth：每页渲染都要写进 data-posts，只序列化一次 */
+	postsJson: string;
+};
+
+let profileDataPromise: Promise<ProfileData> | null = null;
+
+/** 读集合并算出资料面板要的两份数据（整个构建期只跑一次） */
+async function loadProfileData(): Promise<ProfileData> {
+	if (profileDataPromise) return profileDataPromise;
+
+	profileDataPromise = (async () => {
+		/* 「其他站点」：导航集合里「我的网站」这个分类（文件夹）的条目 ——
+		   在 /projects/ 增删站点后这里自动跟着变。文件夹判定与 projects.astro
+		   的 getFolderCategory 一致（取直接父目录）。 */
+		const daohangEntries = await getCollection("daohang");
+		const personalSites: PersonalSite[] = daohangEntries
+			.filter((entry) => {
+				const normalized = entry.id
+					.replace(/\\/g, "/")
+					.replace(/\.(md|mdx)$/i, "");
+				const slash = normalized.lastIndexOf("/");
+				return slash >= 0 && normalized.slice(0, slash) === "我的网站";
+			})
+			.map((entry) => ({
+				name: entry.data.name,
+				url: entry.data.url,
+				icon: entry.data.icon,
+				external: /^https?:\/\//.test(entry.data.url),
+			}))
+			.sort((a, b) => a.name.localeCompare(b.name, "zh-CN"));
+
+		/* 热力图 + 当月文章：只带今年的，控制内联 JSON 的体积 */
+		const posts = await getCollection("posts");
+		const year = new Date().getFullYear();
+		const heat: number[][] = Array.from({ length: 12 }, () => [0, 0, 0, 0]);
+		const postsByMonth: MiniPost[][] = Array.from({ length: 12 }, () => []);
+		for (const post of posts) {
+			const date = post.data.published;
+			if (date.getFullYear() !== year) continue;
+			const week = Math.min(3, Math.floor((date.getDate() - 1) / 7));
+			heat[date.getMonth()][week] += 1;
+			postsByMonth[date.getMonth()].push({
+				title: post.data.title,
+				url: url(`/posts/${post.id}/`),
+				date: `${date.getMonth() + 1}/${date.getDate()}`,
+			});
+		}
+		for (const list of postsByMonth) {
+			list.sort(
+				(a, b) => Number.parseInt(b.date, 10) - Number.parseInt(a.date, 10),
+			);
+		}
+
+		return {
+			personalSites,
+			heat,
+			postsByMonth,
+			postsJson: JSON.stringify(postsByMonth),
+		};
+	})();
+
+	return profileDataPromise;
 }
-for (const list of postsByMonth) {
-	list.sort(
-		(a, b) => Number.parseInt(b.date, 10) - Number.parseInt(a.date, 10),
-	);
-}
+
+const { personalSites, heat, postsJson } = await loadProfileData();
 const maxCount = Math.max(1, ...heat.flat());
 const heatLevel = (count: number): number => {
 	if (count === 0) return 0;
@@ -108,7 +152,7 @@ const events = [
 	data-nav-profile
 	data-events={JSON.stringify(events)}
 	data-day-suffix={i18n(I18nKey.dayShort)}
-	data-posts={JSON.stringify(postsByMonth)}
+	data-posts={postsJson}
 	data-posts-title={i18n(I18nKey.profilePostsOfMonth)}
 	data-no-posts={i18n(I18nKey.profileNoPosts)}
 >
