@@ -87,10 +87,10 @@
 	}
 }
 
-/* 留言板 /guestbook/ */
+/* 留言板 /guestbook/ —— 聊天布局，内容区直接吃满（站长要「左右变大、填满」） */
 @media (min-width: 768px) {
 	html:has(#content-wrapper[data-no-sidebar="guestbook"]) #content-wrapper {
-		max-width: 932px;
+		max-width: 100%;
 	}
 }
 

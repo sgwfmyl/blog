@@ -1035,15 +1035,13 @@ onMount(() => {
 				aria-label={syncing ? "留言板正在刷新" : "刷新留言板"}
 				aria-busy={syncing}
 			>
-				<span>留言板</span>
 				<span class:is-visible={syncing} class="guestbook-chat__mobile-refresh-icon">
 					<RefreshCw size={15} aria-hidden="true" />
 				</span>
 			</button>
 			<div class="guestbook-chat__desktop-channel-details">
 				<div class="guestbook-chat__title-row">
-					<h2>留言板</h2>
-					<span>· {initialLoading ? "--" : totalCount} 条留言</span>
+					<span>{initialLoading ? "--" : totalCount} 条留言</span>
 					<div class="guestbook-chat__sync">
 						<div
 							class:is-failed={Boolean(syncError)}
