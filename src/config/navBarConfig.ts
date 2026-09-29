@@ -14,9 +14,9 @@ const getDynamicNavBarConfig = (): NavBarConfig => {
 		// 主页
 		LinkPreset.Home,
 
-		// 网站导航
+		// 网站导航（页面在 /projects/）
 		{
-			name: "网站导航",
+			name: "导航",
 			url: "/projects/",
 			icon: "material-symbols:public",
 		},
