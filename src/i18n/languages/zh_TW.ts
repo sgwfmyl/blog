@@ -39,6 +39,7 @@ export const zh_TW: Translation = {
 	[Key.profileEventNational]: "國慶節",
 	[Key.profileEventSite]: "建站日",
 	[Key.profileMonthWeek]: "{month} 第{week}週",
+	[Key.otherSites]: "其他站點",
 	[Key.music]: "音樂",
 	[Key.changelog]: "更新日誌",
 	[Key.changelogTitle]: "更新日誌",

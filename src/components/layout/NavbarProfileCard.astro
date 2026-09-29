@@ -17,7 +17,7 @@
  */
 import { Icon } from "astro-icon/components";
 import { getCollection } from "astro:content";
-import { profileConfig, siteConfig } from "@/config";
+import { navBarConfig, profileConfig, siteConfig } from "@/config";
 import I18nKey from "@/i18n/i18nKey";
 import { i18n } from "@/i18n/translation";
 import { url } from "@/utils/url-utils";
@@ -26,6 +26,7 @@ import "@/styles/components/navbar-profile-card.css";
 const { avatar, name, occupation, links } = profileConfig;
 const avatarSrc = avatar ? (avatar.startsWith("/") ? url(avatar) : avatar) : "";
 const socialLinks = (links ?? []).filter((link) => link.icon && link.url);
+const personalSites = navBarConfig.personalSites ?? [];
 
 /* 热力图：今年每个「月 × 周段」的发文数（周段 1 = 1-7 日，…，周段 4 = 22 日往后） */
 const posts = await getCollection("posts");
@@ -108,27 +109,37 @@ const events = [
 				</span>
 			</div>
 
-			{
-				socialLinks.length > 0 && (
-					<div class="nav-profile__socials">
-						{socialLinks.map((link) => {
-							const external = link.url.startsWith("http");
-							return (
-								<a
-									class="nav-profile__social-btn"
-									href={link.url}
-									target={external ? "_blank" : undefined}
-									rel={external ? "noopener noreferrer" : undefined}
-									aria-label={link.name}
-									title={link.name}
-								>
-									<Icon name={link.icon} class="h-4 w-4" />
-								</a>
-							);
-						})}
-					</div>
-				)
-			}
+			<div class="nav-profile__socials">
+				{
+					socialLinks.map((link) => {
+						const external = link.url.startsWith("http");
+						return (
+							<a
+								class="nav-profile__social-btn"
+								href={link.url}
+								target={external ? "_blank" : undefined}
+								rel={external ? "noopener noreferrer" : undefined}
+								aria-label={link.name}
+								title={link.name}
+							>
+								<Icon name={link.icon} class="h-4 w-4" />
+							</a>
+						);
+					})
+				}
+				{
+					personalSites.length > 0 && (
+						<button
+							type="button"
+							class="nav-profile__site-btn"
+							data-nav-profile-site-trigger
+							aria-pressed="false"
+						>
+							{i18n(I18nKey.otherSites)}
+						</button>
+					)
+				}
+			</div>
 
 			<div class="nav-profile__heatmap">
 				{
@@ -158,8 +169,10 @@ const events = [
 		</div>
 
 		<!-- 右栏：倒计时 + 事件进度 -->
-		<div class="nav-profile__right">
-			<div class="nav-profile__countdowns">
+		<div class="nav-profile__right" data-nav-profile-right data-view="default">
+			<div
+				class="nav-profile__countdowns nav-profile__view nav-profile__view--default"
+			>
 				<div class="nav-profile__countdown">
 					<span>{i18n(I18nKey.profileCountdownWeek)}</span>
 					<strong data-nav-profile-days="week">--</strong>
@@ -174,7 +187,9 @@ const events = [
 				</div>
 			</div>
 
-			<div class="nav-profile__events">
+			<div
+				class="nav-profile__events nav-profile__view nav-profile__view--default"
+			>
 				{
 					events.map((event) => (
 						<article class="nav-profile__event" data-nav-profile-event={event.key}>
@@ -200,6 +215,30 @@ const events = [
 								</span>
 							</div>
 						</article>
+					))
+				}
+			</div>
+
+			<div class="nav-profile__view nav-profile__view--site">
+				{
+					personalSites.map((site) => (
+						<a
+							class="nav-profile__site-cta"
+							href={site.external ? site.url : url(site.url)}
+							target={site.external ? "_blank" : undefined}
+							rel={site.external ? "noopener noreferrer" : undefined}
+						>
+							{site.icon && (
+								<Icon name={site.icon} class="nav-profile__site-cta-icon" />
+							)}
+							<span class="nav-profile__site-cta-name">{site.name}</span>
+							{site.external && (
+								<Icon
+									name="fa7-solid:arrow-up-right-from-square"
+									class="nav-profile__site-cta-arrow"
+								/>
+							)}
+						</a>
 					))
 				}
 			</div>
@@ -289,6 +328,16 @@ const events = [
 		}
 	}
 
+	/* 右栏两态：default（倒计时 + 事件）/ site（其他站点列表），由「其他站点」按钮切换 */
+	const siteTrigger = root?.querySelector<HTMLElement>(
+		"[data-nav-profile-site-trigger]",
+	);
+	const rightPane = root?.querySelector<HTMLElement>("[data-nav-profile-right]");
+	function showView(view: "default" | "site"): void {
+		if (rightPane) rightPane.dataset.view = view;
+		siteTrigger?.setAttribute("aria-pressed", String(view === "site"));
+	}
+
 	function positionCard(): void {
 		if (!trigger || !card) return;
 		const rect = trigger.getBoundingClientRect();
@@ -307,6 +356,7 @@ const events = [
 		if (!root) return;
 		if (closeTimer) window.clearTimeout(closeTimer);
 		render();
+		showView("default");
 		positionCard();
 		root.classList.add("is-open");
 		trigger?.setAttribute("aria-expanded", "true");
@@ -328,6 +378,12 @@ const events = [
 		trigger.addEventListener("focus", () => openCard());
 		card.addEventListener("mouseenter", () => openCard());
 		card.addEventListener("mouseleave", () => closeCard(140));
+		siteTrigger?.addEventListener("click", (event) => {
+			event.stopPropagation();
+			showView(
+				siteTrigger.getAttribute("aria-pressed") === "true" ? "default" : "site",
+			);
+		});
 		// 触屏 / 键盘：点到别处也收起（悬浮模式下没有遮罩可用）
 		document.addEventListener("click", (event) => {
 			if (!root.classList.contains("is-open")) return;

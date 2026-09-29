@@ -399,7 +399,8 @@ Layout.astro          ← HTML 骨架：<html>, <head>, <body>, 全局组件, �
   - ⚠️ **不要给它加遮罩层**：悬浮交互下遮罩会拦住「站点名 → 面板」的鼠标路径，还会触发自身 mouseenter 把面板关掉（这个坑踩过一次）。
   - 面板两栏（照参考站）：左栏 18.5rem = 身份 + 社交 + 文章热力图（12 月 × 月内 4 周段），右栏自适应 = 三个倒计时 + 两个事件进度条；卡片 min 33.5rem / max 38rem。
   - 数据：热力图在**构建期** `getCollection("posts")` 统计当年发文量（跨年后需重新构建）；倒计时与事件进度在客户端按当天算，事件日期（国庆节 10/1、建站日取 `siteConfig.siteStartDate`）通过 `data-events` JSON 传入。
-  - 参考站还有「点热力图格子看当月文章列表」「其他站点列表」与日历/节假日 API，本项目未移植。
+  - 「其他站点」：列表来自 `NavBarConfig.personalSites`（在 `src/config/navBarConfig.ts` 里维护，跨站链接要标 `external: true` 才显示外链图标）；左栏按钮把右栏从「倒计时 + 事件」切成站点列表，靠 `data-view` + `.nav-profile__view--default / --site` 两态类名切换（不重建 DOM），每次打开面板回到默认态。
+  - 仍未移植：参考站「点热力图格子看当月文章列表」与它的节假日 / 文章元数据 API。
 
 ---
 

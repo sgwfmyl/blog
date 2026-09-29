@@ -163,6 +163,77 @@
   outline: none;
 }
 
+/* 「其他站点」按钮：挤在社交行右端 */
+.nav-profile__site-btn {
+  margin-left: auto;
+  align-self: center;
+  padding: 0.15rem 0.3rem;
+  border: none;
+  border-radius: 0.375rem;
+  background: transparent;
+  color: var(--deep-text);
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: color 140ms ease-out;
+}
+
+.nav-profile__site-btn:hover,
+.nav-profile__site-btn:focus-visible,
+.nav-profile__site-btn[aria-pressed="true"] {
+  color: var(--content-meta);
+  outline: none;
+}
+
+/* 右栏两态：default（倒计时 + 事件）/ site（其他站点列表），按 data-view 二选一 */
+.nav-profile__right[data-view="default"] .nav-profile__view--site,
+.nav-profile__right[data-view="site"] .nav-profile__view--default {
+  display: none;
+}
+
+.nav-profile__view--site {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.nav-profile__site-cta {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  padding: 0.4rem 0.5rem;
+  border-radius: 0.375rem;
+  color: var(--deep-text);
+  font-size: 0.82rem;
+  text-decoration: none;
+  transition: background-color 140ms ease-out;
+}
+
+.nav-profile__site-cta:hover,
+.nav-profile__site-cta:focus-visible {
+  background: var(--btn-plain-bg-hover);
+  outline: none;
+}
+
+.nav-profile__site-cta-icon {
+  flex: none;
+  font-size: 1rem;
+}
+
+.nav-profile__site-cta-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nav-profile__site-cta-arrow {
+  flex: none;
+  color: var(--content-meta);
+  font-size: 0.7rem;
+}
+
 /* ----------------------------- 文章热力图 -----------------------------
    12 个月各一列，每列 4 格（月内第 1-4 周段），格色按当月段发文量分三级 */
 

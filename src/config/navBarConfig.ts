@@ -166,8 +166,30 @@ const getDynamicNavBarConfig = (): NavBarConfig => {
 		],
 	});
 
+	// 「其他站点」：资料面板里点「其他站点」按钮后，右栏切换展示的链接列表。
+	// 现在放的是几个站内页面做示例，替换成你自己的其他站点即可
+	// （跨站链接记得标 external: true，列表项右侧会出现外链图标）。
+	const personalSites: NavBarLink[] = [
+		{ name: "网站导航", url: "/projects/", icon: "material-symbols:public" },
+		{
+			name: "归档",
+			url: "/archive/",
+			icon: "material-symbols:archive-outline",
+		},
+		{
+			name: "关于我",
+			url: "/about/",
+			icon: "material-symbols:person-outline",
+		},
+		{
+			name: "更新日志",
+			url: "/changelog/",
+			icon: "material-symbols:history",
+		},
+	];
+
 	// 仅返回链接，其它导航搜索相关配置在模块顶层常量中独立导出
-	return { links } as NavBarConfig;
+	return { links, personalSites } as NavBarConfig;
 };
 
 // 导航搜索配置

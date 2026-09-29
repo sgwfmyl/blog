@@ -39,6 +39,7 @@ export const en: Translation = {
 	[Key.profileEventNational]: "National Day",
 	[Key.profileEventSite]: "Site launch",
 	[Key.profileMonthWeek]: "{month} · week {week}",
+	[Key.otherSites]: "Other sites",
 	[Key.changelog]: "Changelog",
 	[Key.changelogTitle]: "Changelog",
 	[Key.changelogSubtitle]:

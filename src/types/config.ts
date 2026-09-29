@@ -237,6 +237,8 @@ export type NavBarSearchConfig = {
 
 export type NavBarConfig = {
 	links: (NavBarLink | LinkPreset)[];
+	/** 「其他站点」列表：资料面板左栏的「其他站点」按钮 → 右栏切换展示 */
+	personalSites: NavBarLink[];
 };
 
 export type HomePortfolioShutterPanel = {

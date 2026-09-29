@@ -39,6 +39,7 @@ export const ru: Translation = {
 	[Key.profileEventNational]: "День образования КНР",
 	[Key.profileEventSite]: "День запуска сайта",
 	[Key.profileMonthWeek]: "{month}, неделя {week}",
+	[Key.otherSites]: "Другие сайты",
 	[Key.music]: "Музыка",
 	[Key.changelog]: "Журнал изменений",
 	[Key.changelogTitle]: "Журнал изменений",
