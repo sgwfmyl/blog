@@ -443,7 +443,7 @@ PPT 第 52 页的问答，就是这两种方式的总结：
 ### 本机实测：两种方式都能注入
 
 > [!TIP]
-> **本机实测**（LAB §4）：在工程里加一个绑定组件（`@ConfigurationProperties(prefix = "aliyun.oss")`）后启动，控制台输出：
+> **本机实测**：在工程里加一个绑定组件（`@ConfigurationProperties(prefix = "aliyun.oss")`）后启动，控制台输出：
 >
 > ```text
 > [实测]@ConfigurationProperties 批量注入 => endpoint=https://oss-cn-beijing.aliyuncs.com , bucketName=java-ai , region=cn-beijing
@@ -451,7 +451,7 @@ PPT 第 52 页的问答，就是这两种方式的总结：
 >
 > 三项配置**全部按名字绑定成功**，值和 `application.yml` 里写的一模一样。同一台机器上，工程用 `@Value("${aliyun.oss.xxx}")` 逐个注入的写法也能正常启动——**说明两个 `@Value` 注入的配置项都取到了值**（`endpoint`、`bucketName`、`region` 少任何一个，创建 OSS 客户端时都会出问题）。也就是说：**"参数从配置文件读进来"这件事是被实测验证过的**。
 
-## 实测与没实测：把边界说清楚（LAB §6）
+## 实测与没实测：把边界说清楚
 
 写技术笔记最怕"看着像跑通了"。这一节把本篇的验证边界交代清楚：
 
@@ -715,7 +715,7 @@ PPT 第 52 页的问答，就是这两种方式的总结：
   > }
   > // 使用方：@Autowired private AliyunOSSProperties aliyunOSSProperties; 然后 getEndpoint() 等
   > ```
-  > **本机实测**（LAB §4）：批量绑定组件启动后打印 `[实测]@ConfigurationProperties 批量注入 => endpoint=https://oss-cn-beijing.aliyuncs.com , bucketName=java-ai , region=cn-beijing`；`@Value` 注入的写法工程也能正常启动（两项都取到了值）。PPT 第 52 页的问答：两种方式——`@Value` 一个属性一个属性地注入、`@ConfigurationProperties` 批量将多个属性注入到 bean 对象中；适用场景——**属性较少**建议 `@Value`，**属性较多、考虑复用**建议 `@ConfigurationProperties`。
+  > **本机实测**：批量绑定组件启动后打印 `[实测]@ConfigurationProperties 批量注入 => endpoint=https://oss-cn-beijing.aliyuncs.com , bucketName=java-ai , region=cn-beijing`；`@Value` 注入的写法工程也能正常启动（两项都取到了值）。PPT 第 52 页的问答：两种方式——`@Value` 一个属性一个属性地注入、`@ConfigurationProperties` 批量将多个属性注入到 bean 对象中；适用场景——**属性较少**建议 `@Value`，**属性较多、考虑复用**建议 `@ConfigurationProperties`。
   > **5. 接口**：
   > ```java
   > @PostMapping("/upload")
