@@ -6,6 +6,7 @@ import { Icon } from "astro-icon/components";
 import NotebookCommentModal from "@/components/comment/NotebookCommentModal.svelte";
 import { profileConfig } from "@/config";
 import MainGridLayout from "@/layouts/MainGridLayout.astro";
+import PageTitle from "@/components/common/PageTitle.astro";
 
 const noteAvatar = profileConfig.avatar || "/assets/ziyuan/tx.webp";
 
@@ -211,11 +212,11 @@ const recentNotes: RecentNote[] = allNotes
 			<!-- 顶部：图标 + 标题 + 统计 -->
 			<div class="diary-header">
 				<div class="mb-6">
-					<div class="flex items-center gap-3 mb-3">
-						<Icon name="material-symbols:menu-book-outline" class="text-[1.875rem] text-neutral-900 dark:text-neutral-100" />
-						<div class="text-3xl font-bold text-neutral-900 dark:text-neutral-100">笔记本</div>
-					</div>
-					<p class="text-base text-neutral-600 dark:text-neutral-400 leading-relaxed">成长日记、学习复盘、灵感随笔</p>
+					<PageTitle
+						title="笔记本"
+						eyebrow="Notebooks"
+						description="成长日记、学习复盘、灵感随笔"
+					/>
 				</div>
 
 			<!-- 随机笔记（一行） -->
