@@ -46,51 +46,19 @@ export function initScrollHandler(): void {
 			});
 		}
 
-		// Scroll direction detection - navbar auto-hide/show (always active)
+		// 导航栏：只保留「滚动后收缩成球」的 scrolled 标记。
+		// 按滚动方向隐藏/显示（navbar-hidden ↔ navbar-visible）已于 2026-09-29 按要求移除，
+		// 导航栏现在常驻；这里顺手把可能残留的 navbar-hidden 清掉。
 		if (navbar) {
 			operations.push(() => {
 				const currentScrollY =
 					window.pageYOffset || document.documentElement.scrollTop;
-
-				// Always show at top
-				if (currentScrollY <= 10) {
-					navbar.classList.remove("navbar-hidden");
-					navbar.classList.add("navbar-visible");
-					window._navbarHidden = false;
-					const _navEl2 = document.getElementById("navbar");
-					if (_navEl2) _navEl2.classList.remove("scrolled");
-					window._lastScrollY = currentScrollY;
-					return;
-				}
-
-				const lastScrollY = window._lastScrollY || 0;
-				const isHidden = window._navbarHidden || false;
-
-				// Enable navbar pill-shaped shrink after scrolling 20px
-				const _navEl = document.getElementById("navbar");
-				if (_navEl) {
-					if (currentScrollY > 20) {
-						_navEl.classList.add("scrolled");
-					}
-				}
-				const scrollDelta = currentScrollY - lastScrollY;
-
-				// Scrolling up - show navbar
-				if (scrollDelta < 0) {
-					if (isHidden) {
-						navbar.classList.remove("navbar-hidden");
-						navbar.classList.add("navbar-visible");
-						window._navbarHidden = false;
-					}
-				}
-				// Scrolling down more than 50px - hide navbar
-				else if (scrollDelta > 50 && !isHidden) {
-					navbar.classList.remove("navbar-visible");
-					navbar.classList.add("navbar-hidden");
-					window._navbarHidden = true;
-				}
-
 				window._lastScrollY = currentScrollY;
+				window._navbarHidden = false;
+				navbar.classList.remove("navbar-hidden");
+				navbar.classList.add("navbar-visible");
+				const navEl = document.getElementById("navbar");
+				if (navEl) navEl.classList.toggle("scrolled", currentScrollY > 20);
 			});
 		}
 

@@ -314,9 +314,14 @@
   background-color: var(--navbar-highlight-bg);
 }
 
-/* 高亮块是反色底：落在块上的文字跟着反色，否则深字压在黑底上看不见 */
-.navbar-nav .dropdown-container.is-highlighted > a,
-.navbar-nav .dropdown-container.is-highlighted > button {
+/* 高亮块是反色底：当前栏目与鼠标悬停的栏目，文字/图标都要跟着反色，
+   否则深色字压在黑底上完全看不见。
+   ⚠️ class 用本项目 JS 打的 `nav-item-active`（参考实现那边叫 is-highlighted，
+   照抄那边的选择器不会生效）。 */
+.navbar-nav .dropdown-container.nav-item-active > a,
+.navbar-nav .dropdown-container.nav-item-active > button,
+.navbar-nav .dropdown-container:hover > a,
+.navbar-nav .dropdown-container:hover > button {
   color: var(--navbar-highlight-text) !important;
 }
 

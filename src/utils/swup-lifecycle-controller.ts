@@ -1,5 +1,4 @@
 import { expressiveCodeConfig, siteConfig } from "@/config";
-import { BANNER_HEIGHT_HOME } from "@/constants/constants";
 import { pathsEqual, url } from "@/utils/url-utils";
 import { initCustomScrollbar } from "./scrollbar-utils";
 import { updateSidebarComponentsVisibility } from "./sidebar-utils";
@@ -17,7 +16,6 @@ declare global {
  * page:view, and visit:end.
  */
 export function initSwupLifecycle(): void {
-	const bannerEnabled = !!document.getElementById("wallpaper-wrapper");
 	let bannerAnimCtrl: AbortController | null = null;
 	const mainContentTop = "5.5rem";
 
@@ -58,17 +56,11 @@ export function initSwupLifecycle(): void {
 					document.documentElement.classList.add("is-navigating-to-music");
 				}
 
-				// Simplified navbar handling
-				if (bannerEnabled) {
-					const navbar = document.getElementById("navbar-wrapper");
-					if (navbar) {
-						const threshold =
-							window.innerHeight * (BANNER_HEIGHT_HOME / 100) - 88;
-						if (document.documentElement.scrollTop >= threshold) {
-							navbar.classList.add("navbar-hidden");
-						}
-					}
-				}
+				// 导航栏不再随滚动或导航隐藏（2026-09-29 按要求移除 auto-hide），
+				// 这里只清掉上一次可能残留的 navbar-hidden
+				document
+					.getElementById("navbar-wrapper")
+					?.classList.remove("navbar-hidden");
 			},
 		);
 

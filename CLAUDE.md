@@ -390,7 +390,8 @@ Layout.astro          ← HTML 骨架：<html>, <head>, <body>, 全局组件, �
 
 ### 5.7 导航栏配色与站点名资料面板（2026-09-29，对齐参考博客）
 
-- **配色三变量**（定义在 `src/styles/tokens/colors.css`，亮/暗各一套）：`--navbar-bg`（三段椭圆的底，亮 `oklch(0.925 0 0)` ≈ 参考站 `#E7E7E7` / 暗 `oklch(0.19 0 0)`，**实色、无阴影**）、`--navbar-highlight-bg`（滑动高亮块，亮纯黑 / 暗纯白）、`--navbar-highlight-text`（落在高亮块上的文字，与底色相反）。⚠️ 动高亮底色时必须一起确认文字反色规则（`navbar-new.css` 里 `.navbar-nav .dropdown-container.is-highlighted > a/button` 的 `color: var(--navbar-highlight-text) !important`），否则深色字压在黑底上直接看不见。
+- **配色三变量**（定义在 `src/styles/tokens/colors.css`，亮/暗各一套）：`--navbar-bg`（三段椭圆的底，亮 `oklch(0.925 0 0)` ≈ 参考站 `#E7E7E7` / 暗 `oklch(0.19 0 0)`，**实色、无阴影**）、`--navbar-highlight-bg`（滑动高亮块，亮纯黑 / 暗纯白）、`--navbar-highlight-text`（落在高亮块上的文字，与底色相反）。⚠️ 反色规则的选择器必须用**本项目的 `nav-item-active`**（写在 `navbar-new.css`，同时覆盖当前项与 `:hover`）；参考实现那边叫 `is-highlighted`，照抄会不生效、文字直接消失在黑底里。
+- **导航栏不再随滚动收起**（2026-09-29 按要求移除 auto-hide）：`scroll-handler.ts` 只维护滚动 20px 后的 `scrolled`（收缩成球）标记，不再加 `navbar-hidden`；`swup-lifecycle-controller.ts` 里对应的那段也一并删了（只保留清理残留 class）。要恢复收起行为得同时改这两处。
 - **站点名资料面板**：组件 `src/components/layout/NavbarProfileCard.astro` + 样式 `src/styles/components/navbar-profile-card.css`，通过 `Navbar.astro` 挂载。触发器**不是**组件自带的按钮，而是 Navbar 左段的站点名按钮（带 `data-nav-profile-trigger`）——改导航栏结构时别把这个属性弄丢，否则面板打不开；Logo 仍单独是回首页的链接。
 - 面板是 fixed 浮层，位置由组件脚本按站点名的位置写入（左缘对齐、靠近右边界时往回收）；倒计时是纯前端算的（距周末 = 下一个周五、距月底、距年底），「天」的单位文案取 `Key.dayShort`。
 - 参考站那份面板还有文章热力图 / 当月文章列表 / 节假日与纪念日进度 / 个人站点列表，它们依赖参考站的 `/api/holidays.json`、`/api/allPostMeta.json`，本项目没有对应数据源，**没有移植**（要补得先做数据源）。
