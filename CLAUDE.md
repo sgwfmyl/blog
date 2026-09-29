@@ -356,11 +356,14 @@ Layout.astro          ← HTML 骨架：<html>, <head>, <body>, 全局组件, �
 
 ### 5.5 页面大标题（PageTitle，"签写"入场动效）
 
-`src/components/common/PageTitle.astro` + `src/styles/components/page-title.css`（动效复刻自参考博客 MMZMING）。用在需要大标题的页面（当前 `/projects/`、`/about/`）：
+`src/components/common/PageTitle.astro` + `src/styles/components/page-title.css`（动效复刻自参考博客 MMZMING）。用在需要页面大标题的页面 —— 2026-09-29 起**绝大多数列表页 / 独立页都换成了它**（about / projects / music / archive / categories / changelog / apps / sponsor / places / album / friends / notebooks / books / movies-games / bangumi / moments / bills / schedules / circle / guestbook）；**详情页**（文章 / 书籍 / 相册 / 笔记 / 追番详情）与 404 / rss / search / debug-urls 不挂。
 
 ```astro
 <PageTitle title="网站导航" eyebrow="Collections" description="一句话介绍" variant="stacked" />
 ```
+
+- ⚠️ **是「原地替换」不是「新增」**：页面里原本若有「图标 + 大标题 + 描述」那一块（归档、分类标签、书架那种），要把**那一块换成** PageTitle；直接往内容区上方再叠一个会出现**一页两个标题**（站长抓过一次）。只有原本就没有可见标题的页面，才在内容顶部新增。
+- ⚠️ **Svelte 组件里用不了它**：`GuestbookChat.svelte` 这类 Svelte 组件无法嵌 Astro 组件，要同款排版只能用组件内元素复刻（留言板就是这么做的，没有签写动画）。
 
 - 标题用 **SVG `<text>` 双层绘制**：描边层跑 `stroke-dashoffset` 做「写字」动效（1.9s），实心层 0.95s 后淡入；`eyebrow`（英文小字）与 `description`（带弯引号，伪元素生成）都是 0.7~0.9s 的淡入上移。**纯 CSS @keyframes、挂载即播**，不用 GSAP / IntersectionObserver（Swup 换页重建 DOM 会重播）。
 - **DOM 里标题文字会出现 3 次**（隐藏 measure + 描边层 + 实心层，另有 sr-only），抓正文/写测试选择器时注意去重（参考项目线上就被抓重过）。
