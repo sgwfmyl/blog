@@ -316,13 +316,25 @@
 
 /* 高亮块是反色底：当前栏目与鼠标悬停的栏目，文字/图标都要跟着反色，
    否则深色字压在黑底上完全看不见。
-   ⚠️ class 用本项目 JS 打的 `nav-item-active`（参考实现那边叫 is-highlighted，
-   照抄那边的选择器不会生效）。 */
+   ⚠️ 两个坑：
+   1) class 用本项目 JS 打的 `nav-item-active`（参考实现那边叫 is-highlighted）；
+   2) 触发器文字在内层 span.navbar-link-text 上，它自带 hover 变主题色的规则，
+      只写 `> a` 会被它盖掉，所以必须连 span 一起覆盖。 */
 .navbar-nav .dropdown-container.nav-item-active > a,
 .navbar-nav .dropdown-container.nav-item-active > button,
 .navbar-nav .dropdown-container:hover > a,
-.navbar-nav .dropdown-container:hover > button {
+.navbar-nav .dropdown-container:hover > button,
+.navbar-nav .dropdown-container.nav-item-active .navbar-link-text,
+.navbar-nav .dropdown-container:hover .navbar-link-text,
+.navbar-nav .dropdown-container.dropdown-open .navbar-link-text {
   color: var(--navbar-highlight-text) !important;
+}
+
+/* 同理，高亮块上的「渐变下划线」也要收掉：黑底上一条线很脏，参考站也没有 */
+.navbar-nav .dropdown-container.nav-item-active .navbar-link-text::after,
+.navbar-nav .dropdown-container:hover .navbar-link-text::after,
+.navbar-nav .dropdown-container.dropdown-open .navbar-link-text::after {
+  transform: scaleX(0) !important;
 }
 
 .navbar-nav:hover .navbar-hover-highlight,
