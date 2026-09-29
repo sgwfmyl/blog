@@ -36,6 +36,9 @@ export const en: Translation = {
 	[Key.profileCountdownMonth]: "To month end",
 	[Key.profileCountdownYear]: "To year end",
 	[Key.dayShort]: "d",
+	[Key.profileEventNational]: "National Day",
+	[Key.profileEventSite]: "Site launch",
+	[Key.profileMonthWeek]: "{month} · week {week}",
 	[Key.changelog]: "Changelog",
 	[Key.changelogTitle]: "Changelog",
 	[Key.changelogSubtitle]:

@@ -394,9 +394,12 @@ Layout.astro          ← HTML 骨架：<html>, <head>, <body>, 全局组件, �
 - **导航栏不再随滚动收起**（2026-09-29 按要求移除 auto-hide）：`scroll-handler.ts` 只维护滚动 20px 后的 `scrolled`（收缩成球）标记，不再加 `navbar-hidden`；`swup-lifecycle-controller.ts` 里对应的那段也一并删了（只保留清理残留 class）。要恢复收起行为得同时改这两处。
 - **下拉菜单**（`src/styles/components/dropdown.css`）与面包屑下拉同一套语言：1.5px `--deep-text` 实边框 + 纯色底 + 45° 小角。⚠️ 三个必须注意的点：① `DropdownPanel` 的根元素带 `.float-panel`，而 `.float-panel` 的规则在同文件更靠后且优先级相同，改卡片外观要用 `.float-panel.dropdown-content` 才盖得住；② `.float-panel` 的 `overflow: hidden` 会裁掉小角，要显式 `overflow: visible`；③ `.float-panel` 的 `top: 5.25rem` 在卡片改 `relative` 后会让它整体下移，要显式 `top: auto`。
 - **高亮块上的反色**还要盖住 `.navbar-link-text`（触发器内层 span 自带 `:hover { color: var(--primary) }`），并隐藏该 span 的渐变下划线（`scaleX(0)`）—— 黑底上一条下划线很脏，参考站也没有。
-- **站点名资料面板**：组件 `src/components/layout/NavbarProfileCard.astro` + 样式 `src/styles/components/navbar-profile-card.css`，通过 `Navbar.astro` 挂载。触发器**不是**组件自带的按钮，而是 Navbar 左段的站点名按钮（带 `data-nav-profile-trigger`）——改导航栏结构时别把这个属性弄丢，否则面板打不开；Logo 仍单独是回首页的链接。
-- 面板是 fixed 浮层，位置由组件脚本按站点名的位置写入（左缘对齐、靠近右边界时往回收）；倒计时是纯前端算的（距周末 = 下一个周五、距月底、距年底），「天」的单位文案取 `Key.dayShort`。
-- 参考站那份面板还有文章热力图 / 当月文章列表 / 节假日与纪念日进度 / 个人站点列表，它们依赖参考站的 `/api/holidays.json`、`/api/allPostMeta.json`，本项目没有对应数据源，**没有移植**（要补得先做数据源）。
+- **站点名资料面板**：组件 `src/components/layout/NavbarProfileCard.astro` + 样式 `src/styles/components/navbar-profile-card.css`，通过 `Navbar.astro` 挂载。**触发方式是悬浮**（鼠标移到站点名上出现，移开 140ms 后收起），触发器**不是**组件自带的按钮，而是 Navbar 左段的站点名按钮（带 `data-nav-profile-trigger`）——改导航栏结构时别把这个属性弄丢；Logo 仍单独是回首页的链接。
+  - ⚠️ **站点名触发器不允许有任何外观变化**（悬浮、展开都不变色、不变黑、不降透明度）——站长 2026-09-29 明确要求，别再加 `is-open` 反色或 hover 效果。
+  - ⚠️ **不要给它加遮罩层**：悬浮交互下遮罩会拦住「站点名 → 面板」的鼠标路径，还会触发自身 mouseenter 把面板关掉（这个坑踩过一次）。
+  - 面板两栏（照参考站）：左栏 18.5rem = 身份 + 社交 + 文章热力图（12 月 × 月内 4 周段），右栏自适应 = 三个倒计时 + 两个事件进度条；卡片 min 33.5rem / max 38rem。
+  - 数据：热力图在**构建期** `getCollection("posts")` 统计当年发文量（跨年后需重新构建）；倒计时与事件进度在客户端按当天算，事件日期（国庆节 10/1、建站日取 `siteConfig.siteStartDate`）通过 `data-events` JSON 传入。
+  - 参考站还有「点热力图格子看当月文章列表」「其他站点列表」与日历/节假日 API，本项目未移植。
 
 ---
 

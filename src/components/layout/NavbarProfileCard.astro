@@ -1,16 +1,23 @@
 ---
 /**
- * 导航栏个人资料面板（复刻参考博客的圆形按钮弹层）
+ * 导航栏个人资料面板（对齐参考博客：悬浮在站点名上时出现）
  *
- * 触发按钮就在本组件内（渲染在导航栏右段），面板是 fixed 浮层，由脚本按
- * 按钮位置定位；样式见 src/styles/components/navbar-profile-card.css。
+ * 触发器是 Navbar 左段的站点名按钮（带 data-nav-profile-trigger），本组件只负责
+ * 面板本体。样式见 src/styles/components/navbar-profile-card.css。
  *
- * 与参考实现的差异：参考站的面板还有「文章热力图 / 按月的文章列表 / 节假日」
- * 三块，依赖它的 /api/holidays.json 与 /api/allPostMeta.json；本项目没有这些
- * 数据源，所以只保留身份卡、社交链接与三个倒计时（倒计时是纯前端算的）。
+ * 数据来源：
+ * - 身份 / 社交：`profileConfig`
+ * - 热力图：构建期用 `getCollection("posts")` 统计「今年 12 个月 × 月内 4 周段」
+ *   的发文量（不需要接口）；跨年后需要重新构建才会换到新年份
+ * - 倒计时与事件进度：事件日期（国庆节 10/1、建站日取 `siteConfig.siteStartDate`）
+ *   以 JSON 传给客户端，由脚本按当天实时计算
+ *
+ * 参考站的面板还有「点热力图格子看当月文章列表」与「其他站点」两处，本项目
+ * 暂时没做（前者要额外的右栏 pane 与文章标题数据，后者缺 navBarConfig 配置项）。
  */
 import { Icon } from "astro-icon/components";
-import { profileConfig } from "@/config";
+import { getCollection } from "astro:content";
+import { profileConfig, siteConfig } from "@/config";
 import I18nKey from "@/i18n/i18nKey";
 import { i18n } from "@/i18n/translation";
 import { url } from "@/utils/url-utils";
@@ -19,71 +26,182 @@ import "@/styles/components/navbar-profile-card.css";
 const { avatar, name, occupation, links } = profileConfig;
 const avatarSrc = avatar ? (avatar.startsWith("/") ? url(avatar) : avatar) : "";
 const socialLinks = (links ?? []).filter((link) => link.icon && link.url);
+
+/* 热力图：今年每个「月 × 周段」的发文数（周段 1 = 1-7 日，…，周段 4 = 22 日往后） */
+const posts = await getCollection("posts");
+const thisYear = new Date().getFullYear();
+const heat: number[][] = Array.from({ length: 12 }, () => [0, 0, 0, 0]);
+for (const post of posts) {
+	const date = post.data.published;
+	if (date.getFullYear() !== thisYear) continue;
+	const week = Math.min(3, Math.floor((date.getDate() - 1) / 7));
+	heat[date.getMonth()][week] += 1;
+}
+const maxCount = Math.max(1, ...heat.flat());
+const heatLevel = (count: number): number => {
+	if (count === 0) return 0;
+	const ratio = count / maxCount;
+	if (ratio <= 0.34) return 1;
+	if (ratio <= 0.67) return 2;
+	return 3;
+};
+const monthWeekLabel = (month: number, week: number): string =>
+	i18n(I18nKey.profileMonthWeek)
+		.replace("{month}", `${month + 1}月`)
+		.replace("{week}", String(week + 1));
+
+/* 事件：客户端按当天算剩余天数与「上一次 → 下一次」的进度 */
+const startParts = String(siteConfig.siteStartDate ?? "")
+	.split("-")
+	.map((part) => Number.parseInt(part, 10));
+const siteMonth = Number.isFinite(startParts[1]) ? startParts[1] : 1;
+const siteDay = Number.isFinite(startParts[2]) ? startParts[2] : 1;
+const events = [
+	{
+		key: "national",
+		label: i18n(I18nKey.profileEventNational),
+		month: 10,
+		day: 1,
+	},
+	{
+		key: "site",
+		label: i18n(I18nKey.profileEventSite),
+		month: siteMonth,
+		day: siteDay,
+	},
+];
 ---
 
-<div class="nav-profile" data-nav-profile>
-	<!-- 触发按钮由 Navbar 提供（左段的站点名按钮带 data-nav-profile-trigger） -->
-	<div class="nav-profile__mask" data-nav-profile-mask aria-hidden="true"></div>
-
+<div
+	class="nav-profile"
+	data-nav-profile
+	data-events={JSON.stringify(events)}
+	data-day-suffix={i18n(I18nKey.dayShort)}
+>
+	<!-- 触发按钮由 Navbar 提供（左段的站点名按钮带 data-nav-profile-trigger）；
+	     悬浮交互不需要遮罩层——它反而会拦住「站点名 → 面板」的鼠标路径 -->
 	<div
 		class="nav-profile__card"
 		data-nav-profile-card
-		data-day-suffix={i18n(I18nKey.dayShort)}
 		role="dialog"
 		aria-label={name}
 	>
 		<span class="nav-profile__triangle" aria-hidden="true"></span>
 
-		<div class="nav-profile__identity">
-			<span class="nav-profile__avatar">
+		<!-- 左栏：身份 + 社交 + 文章热力图 -->
+		<div class="nav-profile__left">
+			<div class="nav-profile__identity">
+				<span class="nav-profile__avatar">
+					{
+						avatarSrc ? (
+							<img src={avatarSrc} alt="" loading="lazy" decoding="async" />
+						) : (
+							<span>{name.slice(0, 1)}</span>
+						)
+					}
+				</span>
+				<span class="nav-profile__text">
+					<strong class="nav-profile__name">{name}</strong>
+					{occupation && (
+						<span class="nav-profile__occupation">{occupation}</span>
+					)}
+				</span>
+			</div>
+
+			{
+				socialLinks.length > 0 && (
+					<div class="nav-profile__socials">
+						{socialLinks.map((link) => {
+							const external = link.url.startsWith("http");
+							return (
+								<a
+									class="nav-profile__social-btn"
+									href={link.url}
+									target={external ? "_blank" : undefined}
+									rel={external ? "noopener noreferrer" : undefined}
+									aria-label={link.name}
+									title={link.name}
+								>
+									<Icon name={link.icon} class="h-4 w-4" />
+								</a>
+							);
+						})}
+					</div>
+				)
+			}
+
+			<div class="nav-profile__heatmap">
 				{
-					avatarSrc ? (
-						<img src={avatarSrc} alt="" loading="lazy" decoding="async" />
-					) : (
-						<span>{name.slice(0, 1)}</span>
-					)
+					Array.from({ length: 12 }, (_, month) => (
+						<div class="nav-profile__heat-col">
+							<span class="nav-profile__heat-month" aria-hidden="true">
+								{month + 1}
+							</span>
+							{Array.from({ length: 4 }, (_, week) => {
+								const count = heat[month][week];
+								const label = `${monthWeekLabel(month, week)} · ${count}`;
+								return (
+									<span
+										class:list={[
+											"nav-profile__heat-cell",
+											count > 0 && `is-level-${heatLevel(count)}`,
+										]}
+										title={label}
+										aria-label={label}
+									/>
+								);
+							})}
+						</div>
+					))
 				}
-			</span>
-			<span class="nav-profile__text">
-				<strong class="nav-profile__name">{name}</strong>
-				{occupation && <span class="nav-profile__occupation">{occupation}</span>}
-			</span>
+			</div>
 		</div>
 
-		{
-			socialLinks.length > 0 && (
-				<div class="nav-profile__socials">
-					{socialLinks.map((link) => {
-						const external = link.url.startsWith("http");
-						return (
-							<a
-								class="nav-profile__social-btn"
-								href={link.url}
-								target={external ? "_blank" : undefined}
-								rel={external ? "noopener noreferrer" : undefined}
-								aria-label={link.name}
-								title={link.name}
-							>
-								<Icon name={link.icon} class="h-4 w-4" />
-							</a>
-						);
-					})}
+		<!-- 右栏：倒计时 + 事件进度 -->
+		<div class="nav-profile__right">
+			<div class="nav-profile__countdowns">
+				<div class="nav-profile__countdown">
+					<span>{i18n(I18nKey.profileCountdownWeek)}</span>
+					<strong data-nav-profile-days="week">--</strong>
 				</div>
-			)
-		}
+				<div class="nav-profile__countdown">
+					<span>{i18n(I18nKey.profileCountdownMonth)}</span>
+					<strong data-nav-profile-days="month">--</strong>
+				</div>
+				<div class="nav-profile__countdown">
+					<span>{i18n(I18nKey.profileCountdownYear)}</span>
+					<strong data-nav-profile-days="year">--</strong>
+				</div>
+			</div>
 
-		<div class="nav-profile__countdowns">
-			<div class="nav-profile__countdown">
-				<span>{i18n(I18nKey.profileCountdownWeek)}</span>
-				<strong data-nav-profile-days="week">--</strong>
-			</div>
-			<div class="nav-profile__countdown">
-				<span>{i18n(I18nKey.profileCountdownMonth)}</span>
-				<strong data-nav-profile-days="month">--</strong>
-			</div>
-			<div class="nav-profile__countdown">
-				<span>{i18n(I18nKey.profileCountdownYear)}</span>
-				<strong data-nav-profile-days="year">--</strong>
+			<div class="nav-profile__events">
+				{
+					events.map((event) => (
+						<article class="nav-profile__event" data-nav-profile-event={event.key}>
+							<div class="nav-profile__event-main">
+								<strong class="nav-profile__event-title">{event.label}</strong>
+								<span class="nav-profile__event-date">
+									{event.month}月{event.day}日
+								</span>
+							</div>
+							<div class="nav-profile__progress-row">
+								<span
+									class="nav-profile__progress"
+									role="progressbar"
+									aria-valuemin="0"
+									aria-valuemax="100"
+									aria-valuenow="0"
+									data-nav-profile-progress
+								>
+									<span data-nav-profile-progress-fill />
+								</span>
+								<span class="nav-profile__remaining" data-nav-profile-remaining>
+									--
+								</span>
+							</div>
+						</article>
+					))
+				}
 			</div>
 		</div>
 	</div>
@@ -97,24 +215,47 @@ const socialLinks = (links ?? []).filter((link) => link.icon && link.url);
 		"[data-nav-profile-trigger]",
 	);
 	const card = root?.querySelector<HTMLElement>("[data-nav-profile-card]");
-	const mask = root?.querySelector<HTMLElement>("[data-nav-profile-mask]");
-	/** 「天」的单位文案由服务端按当前语言输出 */
-	const DAY_SUFFIX = card?.dataset.daySuffix ?? "";
+	const DAY_SUFFIX = root?.dataset.daySuffix ?? "";
+	const events: { key: string; month: number; day: number }[] = JSON.parse(
+		root?.dataset.events ?? "[]",
+	);
+
+	const startOfDay = (date: Date): Date =>
+		new Date(date.getFullYear(), date.getMonth(), date.getDate());
+	const daysBetween = (from: Date, to: Date): number =>
+		Math.round((to.getTime() - from.getTime()) / DAY_MS);
 
 	/** 距周末（下一个周五）、距月底、距年底的整天数 */
 	function computeCountdowns(): { week: number; month: number; year: number } {
-		const now = new Date();
-		const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+		const today = startOfDay(new Date());
 		const weekday = today.getDay(); // 0 = 周日
 		const toFriday = (5 - weekday + 7) % 7 || 7;
 		const monthEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0);
 		const yearEnd = new Date(today.getFullYear(), 11, 31);
-		const days = (target: Date) =>
-			Math.round((target.getTime() - today.getTime()) / DAY_MS);
-		return { week: toFriday, month: days(monthEnd), year: days(yearEnd) };
+		return {
+			week: toFriday,
+			month: daysBetween(today, monthEnd),
+			year: daysBetween(today, yearEnd),
+		};
 	}
 
-	function renderCountdowns(): void {
+	/** 事件的一年窗口：上一次（去年这天）→ 下一次（今年或明年这天） */
+	function eventWindow(
+		month: number,
+		day: number,
+		today: Date,
+	): { previous: Date; next: Date } {
+		const thisYear = new Date(today.getFullYear(), month - 1, day);
+		const next =
+			thisYear.getTime() >= today.getTime()
+				? thisYear
+				: new Date(today.getFullYear() + 1, month - 1, day);
+		const previous = new Date(next.getFullYear() - 1, month - 1, day);
+		return { previous, next };
+	}
+
+	function render(): void {
+		const today = startOfDay(new Date());
 		const values = computeCountdowns();
 		for (const key of ["week", "month", "year"] as const) {
 			const el = card?.querySelector<HTMLElement>(
@@ -122,12 +263,36 @@ const socialLinks = (links ?? []).filter((link) => link.icon && link.url);
 			);
 			if (el) el.textContent = `${values[key]}${DAY_SUFFIX}`;
 		}
+
+		for (const event of events) {
+			const article = card?.querySelector<HTMLElement>(
+				`[data-nav-profile-event="${event.key}"]`,
+			);
+			if (!article) continue;
+			const { previous, next } = eventWindow(event.month, event.day, today);
+			const span = daysBetween(previous, next);
+			const passed = daysBetween(previous, today);
+			const percent = span > 0 ? Math.round((passed / span) * 100) : 0;
+			const remaining = daysBetween(today, next);
+			const bar = article.querySelector<HTMLElement>(
+				"[data-nav-profile-progress]",
+			);
+			bar?.setAttribute("aria-valuenow", String(percent));
+			const fill = article.querySelector<HTMLElement>(
+				"[data-nav-profile-progress-fill]",
+			);
+			if (fill) fill.style.width = `${percent}%`;
+			const remainingEl = article.querySelector<HTMLElement>(
+				"[data-nav-profile-remaining]",
+			);
+			if (remainingEl) remainingEl.textContent = `${remaining}${DAY_SUFFIX}`;
+		}
 	}
 
 	function positionCard(): void {
 		if (!trigger || !card) return;
 		const rect = trigger.getBoundingClientRect();
-		const width = card.offsetWidth || 272;
+		const width = card.offsetWidth || 560;
 		card.style.top = `${rect.bottom + 10}px`;
 		// 面板比站点名宽：左缘对齐站点名，但不许顶出屏幕右缘
 		const left = Math.min(rect.left, window.innerWidth - width - 12);
@@ -135,37 +300,50 @@ const socialLinks = (links ?? []).filter((link) => link.icon && link.url);
 		card.style.right = "auto";
 	}
 
+	/* 悬浮触发：站点名与面板之间隔着 0.6rem 缝隙，两边都留一点宽限再收，
+	   免得鼠标从名字移进面板的途中闪断 */
+	let closeTimer: number | undefined;
 	function openCard(): void {
-		if (!trigger || !card) return;
-		renderCountdowns();
+		if (!root) return;
+		if (closeTimer) window.clearTimeout(closeTimer);
+		render();
 		positionCard();
-		trigger.setAttribute("aria-expanded", "true");
-		root?.classList.add("is-open");
+		root.classList.add("is-open");
+		trigger?.setAttribute("aria-expanded", "true");
 	}
-
-	function closeCard(): void {
-		if (!trigger) return;
-		trigger.setAttribute("aria-expanded", "false");
-		root?.classList.remove("is-open");
+	function closeCard(delay = 0): void {
+		if (!root) return;
+		if (closeTimer) window.clearTimeout(closeTimer);
+		closeTimer = window.setTimeout(() => {
+			root.classList.remove("is-open");
+			trigger?.setAttribute("aria-expanded", "false");
+		}, delay);
 	}
 
 	if (root && trigger && card) {
-		trigger.addEventListener("click", (event) => {
-			event.stopPropagation();
-			if (root.classList.contains("is-open")) closeCard();
-			else openCard();
-		});
-		mask?.addEventListener("click", closeCard);
-		document.addEventListener("keydown", (event) => {
-			if (event.key === "Escape") closeCard();
-		});
+		trigger.addEventListener("mouseenter", () => openCard());
+		trigger.addEventListener("mouseleave", () => closeCard(140));
+		// 触屏设备没有 hover，点一下也能开
+		trigger.addEventListener("click", () => openCard());
+		trigger.addEventListener("focus", () => openCard());
+		card.addEventListener("mouseenter", () => openCard());
+		card.addEventListener("mouseleave", () => closeCard(140));
+		// 触屏 / 键盘：点到别处也收起（悬浮模式下没有遮罩可用）
 		document.addEventListener("click", (event) => {
 			if (!root.classList.contains("is-open")) return;
 			const target = event.target as HTMLElement | null;
-			if (target && !target.closest("[data-nav-profile-card]")) closeCard();
+			if (
+				target &&
+				!target.closest("[data-nav-profile-card]") &&
+				!target.closest("[data-nav-profile-trigger]")
+			) {
+				closeCard();
+			}
 		});
-		// Swup 导航后收起，避免面板跨页残留
-		document.addEventListener("swup:content:replaced", closeCard);
+		document.addEventListener("keydown", (event) => {
+			if (event.key === "Escape") closeCard();
+		});
+		document.addEventListener("swup:content:replaced", () => closeCard());
 		window.addEventListener("resize", () => {
 			if (root.classList.contains("is-open")) positionCard();
 		});

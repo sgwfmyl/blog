@@ -59,6 +59,9 @@ enum I18nKey {
 	profileCountdownMonth = "profileCountdownMonth",
 	profileCountdownYear = "profileCountdownYear",
 	dayShort = "dayShort",
+	profileEventNational = "profileEventNational",
+	profileEventSite = "profileEventSite",
+	profileMonthWeek = "profileMonthWeek",
 	music = "music",
 
 	// 公告栏
