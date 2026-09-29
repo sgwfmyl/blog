@@ -330,6 +330,16 @@
   color: var(--navbar-highlight-text) !important;
 }
 
+/* 反例：鼠标在导航栏里、但没停在这一项上时，高亮块在悬停项那边，
+   当前项落回浅灰底 —— 它的文字必须恢复深色，否则白字压在浅底上看不见 */
+.navbar-nav:hover .dropdown-container.nav-item-active:not(:hover) > a,
+.navbar-nav:hover .dropdown-container.nav-item-active:not(:hover) > button,
+.navbar-nav:hover
+  .dropdown-container.nav-item-active:not(:hover)
+  .navbar-link-text {
+  color: var(--deep-text) !important;
+}
+
 /* 同理，高亮块上的「渐变下划线」也要收掉：黑底上一条线很脏，参考站也没有 */
 .navbar-nav .dropdown-container.nav-item-active .navbar-link-text::after,
 .navbar-nav .dropdown-container:hover .navbar-link-text::after,
