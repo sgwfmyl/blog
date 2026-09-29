@@ -377,6 +377,7 @@ PPT 第 71 页先把依赖注入的注解总结成一张小表，再对比两个
 
 - [上一篇：分层解耦与IOC-DI入门](/posts/编程学习/javaweb学习笔记/38-分层解耦与ioc-di入门/)
 - [回看案例起点：SpringBoot Web案例-用户列表渲染](/posts/编程学习/javaweb学习笔记/36-springboot-web案例-用户列表渲染/)
+- [下一篇：数据库概述与MySQL入门](/posts/编程学习/javaweb学习笔记/40-数据库概述与mysql入门/)
 
 ## 练习题
 
