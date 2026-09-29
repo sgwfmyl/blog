@@ -6,6 +6,7 @@ tags:
   - JavaWeb
   - Maven
   - 后端
+image: https://img.tsh520.cn/file/blog/post-covers/javaweb-26-maven-dependency-lifecycle.webp
 order: 26
 ---
 

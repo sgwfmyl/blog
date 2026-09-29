@@ -6,6 +6,7 @@ tags:
   - JavaWeb
   - MySQL
   - 后端
+image: https://img.tsh520.cn/file/blog/post-covers/javaweb-40-mysql-intro.webp
 order: 40
 ---
 

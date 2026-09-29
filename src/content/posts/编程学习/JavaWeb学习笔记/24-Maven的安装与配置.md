@@ -6,6 +6,7 @@ tags:
   - JavaWeb
   - Maven
   - 后端
+image: https://img.tsh520.cn/file/blog/post-covers/javaweb-24-maven-install-config.webp
 order: 24
 ---
 

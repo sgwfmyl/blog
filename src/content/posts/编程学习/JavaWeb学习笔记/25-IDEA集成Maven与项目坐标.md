@@ -6,6 +6,7 @@ tags:
   - JavaWeb
   - Maven
   - 后端
+image: https://img.tsh520.cn/file/blog/post-covers/javaweb-25-idea-maven-coordinates.webp
 order: 25
 ---
 

@@ -6,6 +6,7 @@ tags:
   - JavaWeb
   - 测试
   - Maven
+image: https://img.tsh520.cn/file/blog/post-covers/javaweb-28-junit-assert-annotations.webp
 order: 28
 ---
 

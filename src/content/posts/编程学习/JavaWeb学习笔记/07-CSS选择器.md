@@ -6,6 +6,7 @@ tags:
   - JavaWeb
   - CSS
   - 前端
+image: https://img.tsh520.cn/file/blog/post-covers/javaweb-07-css-selectors.webp
 order: 7
 ---
 

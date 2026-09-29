@@ -5,6 +5,7 @@ tags:
   - claudecode
   - AI 编程
 description: Claude Code 常用命令速查：恢复会话、压缩上下文、切换模型、调整努力程度、权限模式……按用途分组整理成表格，随用随查。
+image: https://img.tsh520.cn/file/blog/post-covers/ai-cc-commands.webp
 ---
 
 > Claude Code 的命令统一以 `/` 开头，在输入框直接敲就能用。下面是按用途分组的常用命令速查。

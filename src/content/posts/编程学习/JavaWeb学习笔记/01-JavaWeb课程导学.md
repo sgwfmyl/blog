@@ -6,6 +6,7 @@ tags:
   - JavaWeb
   - Web
   - AI辅助开发
+image: https://img.tsh520.cn/file/blog/post-covers/javaweb-01-course-intro.webp
 order: 1
 ---
 

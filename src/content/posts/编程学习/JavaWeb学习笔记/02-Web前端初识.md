@@ -6,6 +6,7 @@ tags:
   - JavaWeb
   - 前端
   - Web
+image: https://img.tsh520.cn/file/blog/post-covers/javaweb-02-web-frontend-intro.webp
 order: 2
 ---
 

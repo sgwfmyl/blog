@@ -8,6 +8,7 @@ tags:
   - 视觉识别
   - 教程
 description: DeepSeek 是纯文本模型看不了图，用 OpenCode Go 订阅里支持视觉的 qwen3.6-plus 模型，写一个脚本 + 配一个 Skill，让 AI 编码工具自动获得图片识别能力。
+image: https://img.tsh520.cn/file/blog/post-covers/ai-deepseek-vision.webp
 descriptionSource: manual
 ---
 

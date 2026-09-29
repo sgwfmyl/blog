@@ -6,6 +6,7 @@ tags:
   - JavaWeb
   - JDBC
   - MySQL
+image: https://img.tsh520.cn/file/blog/post-covers/javaweb-49-jdbc-intro.webp
 order: 49
 ---
 

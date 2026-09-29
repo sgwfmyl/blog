@@ -2,6 +2,7 @@
 title: Obsidian代码块语言自动填充插件 Code Lang Autofill
 published: 2026-08-18
 description: 一个 Obsidian 插件：自动识别没有语言标签的代码块并补上语言标签（python/java/c…），识别没把握的块一律跳过不填，还配了「记住上次语言」和代码块右下角的选语言按钮。
+image: https://img.tsh520.cn/file/blog/post-covers/tips-codelang.webp
 tags:
   - obsidian
   - 插件

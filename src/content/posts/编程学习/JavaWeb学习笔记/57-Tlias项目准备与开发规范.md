@@ -6,6 +6,7 @@ tags:
   - JavaWeb
   - 后端
   - 项目实战
+image: https://img.tsh520.cn/file/blog/post-covers/javaweb-57-tlias-project-prepare.webp
 order: 57
 ---
 

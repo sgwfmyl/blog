@@ -6,6 +6,7 @@ tags:
   - JavaWeb
   - JavaScript
   - 前端
+image: https://img.tsh520.cn/file/blog/post-covers/javaweb-13-js-intro.webp
 order: 13
 ---
 

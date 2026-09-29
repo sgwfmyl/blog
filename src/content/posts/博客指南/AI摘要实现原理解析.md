@@ -2,6 +2,7 @@
 title: AI摘要实现原理解析
 published: 2026-06-05
 description: 从零拆解博客AI摘要功能的完整实现：构建时调用千问API批量生成摘要、前端打字机动画组件、IntersectionObserver懒触发、以及标点停顿节奏控制，附全部源码。
+image: https://img.tsh520.cn/file/blog/post-covers/blogguide-ai-summary.webp
 tags:
   - 使用文档
   - Astro

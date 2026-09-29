@@ -5,6 +5,7 @@ tags:
   - 使用文档
 descriptionSource: manual
 description: 最近一直在折腾怎么把微信读书里的划线、笔记和书评，自然地“长”进自己的博客里——既不想手动复制粘贴丢掉上下文，也不愿让数据散落在各处变成数字孤岛。这篇文章就是我踩完坑后整理出的完整链路：从 Obsidian 用 Weread 插件自动同步读书数据，到 Astro 博客通过内容集合动态渲染成美观可交互的「阅读记录」页。整个过程不碰 API 密钥、不写爬虫、不依赖第三方服务，所有数据都在自己电脑上流转，安心又可控。
+image: https://img.tsh520.cn/file/blog/post-covers/blogguide-weread.webp
 ---
 
 

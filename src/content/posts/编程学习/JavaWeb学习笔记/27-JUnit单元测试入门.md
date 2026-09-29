@@ -6,6 +6,7 @@ tags:
   - JavaWeb
   - 测试
   - Maven
+image: https://img.tsh520.cn/file/blog/post-covers/javaweb-27-junit-intro.webp
 order: 27
 ---
 

@@ -7,6 +7,7 @@ tags:
   - 前端
   - 实战
   - AI辅助开发
+image: https://img.tsh520.cn/file/blog/post-covers/javaweb-12-case-tlias-page.webp
 order: 12
 ---
 

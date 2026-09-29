@@ -6,6 +6,7 @@ tags:
   - JavaWeb
   - Maven
   - 后端
+image: https://img.tsh520.cn/file/blog/post-covers/javaweb-23-maven-what-is.webp
 order: 23
 ---
 

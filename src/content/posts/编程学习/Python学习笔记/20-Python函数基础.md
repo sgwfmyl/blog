@@ -5,7 +5,7 @@ description: Python函数的定义、调用、参数、返回值及说明文档
 tags:
   - Python
   - 函数
-image: /assets/images/posts/python-20-function.png
+image: https://img.tsh520.cn/file/blog/post-covers/python-20-function.webp
 order: 20
 ---
 

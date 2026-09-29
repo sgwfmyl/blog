@@ -8,6 +8,7 @@ tags:
 updated: 2026-08-23
 descriptionSource: manual
 description: 腾讯云服务器直连 TMDB API 超时连不上，用 Cloudflare Worker 搭一个带缓存的反向代理，绑定自己的域名后五分钟恢复访问，微信机器人从此能稳定获取影视封面。
+image: https://img.tsh520.cn/file/blog/post-covers/blogguide-cf-worker.webp
 ---
 
 ## 背景

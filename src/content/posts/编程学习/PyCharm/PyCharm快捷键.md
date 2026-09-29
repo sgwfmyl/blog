@@ -4,6 +4,7 @@ published: 2026-09-14
 tags:
   - PyCharm
 description: ""
+image: https://img.tsh520.cn/file/blog/post-covers/tips-pycharm-hotkeys.webp
 ---
 
 ## 最高频快捷键（建议优先掌握）

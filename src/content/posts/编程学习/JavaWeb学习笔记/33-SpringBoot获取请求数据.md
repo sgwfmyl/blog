@@ -6,6 +6,7 @@ tags:
   - JavaWeb
   - SpringBoot
   - HTTP
+image: https://img.tsh520.cn/file/blog/post-covers/javaweb-33-springboot-request-data.webp
 order: 33
 ---
 

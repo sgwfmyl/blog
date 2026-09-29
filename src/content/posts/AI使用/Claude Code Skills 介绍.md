@@ -6,6 +6,7 @@ tags:
   - skills
   - AI工具
 description: 介绍我在 Claude Code 中安装和使用的 18 个 Skills，涵盖创意构思、代码审查、前端设计、Vercel 部署优化、系统化调试、并行开发等工作流，来自 Anthropic、Vercel 和 Superpowers 三个来源。
+image: https://img.tsh520.cn/file/blog/post-covers/ai-cc-skills.webp
 ---
 
 ## 什么是 Claude Code Skills？

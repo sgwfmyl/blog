@@ -5,6 +5,7 @@ description: VS Code 是微软的代码编辑器，前端开发主力工具；�
 tags:
   - JavaWeb
   - 前端
+image: https://img.tsh520.cn/file/blog/post-covers/javaweb-04-vscode-setup.webp
 order: 4
 ---
 

@@ -6,6 +6,7 @@ tags:
   - JavaWeb
   - CSS
   - 布局
+image: https://img.tsh520.cn/file/blog/post-covers/javaweb-09-flex-layout.webp
 order: 9
 ---
 

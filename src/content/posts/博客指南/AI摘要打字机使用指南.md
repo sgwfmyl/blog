@@ -2,6 +2,7 @@
 title: AI摘要打字机使用指南
 published: 2026-05-07
 description: 详细讲解文章页AI摘要打字机组件的工作原理、配置方式和补全脚本的使用方法，帮助你快速为博客文章生成自然、人味十足的摘要。
+image: https://img.tsh520.cn/file/blog/post-covers/blogguide-typewriter.webp
 tags:
   - 使用文档
 descriptionSource: manual

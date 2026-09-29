@@ -7,6 +7,7 @@ tags:
   - Vue
   - Ajax
   - 实战
+image: https://img.tsh520.cn/file/blog/post-covers/javaweb-22-case-vue-axios-emp.webp
 order: 22
 ---
 

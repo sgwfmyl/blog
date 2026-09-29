@@ -9,7 +9,7 @@ tags:
   - 图床
   - 插件
   - 教程
-image: /assets/images/posts/tech-09-imagemanager-imgbed.png
+image: https://img.tsh520.cn/file/blog/post-covers/tech-09-imagemanager-imgbed.webp
 description: 自制 Obsidian 插件 Image Manager 的完整使用文档——笔记图片一键直传 CloudFlare-ImgBed 图床、整个文件夹批量上传、文章封面图自动转 WebP 压缩上传、链接自动替换、本地图片安全清理。插件每次更新，这篇文档同步更新。
 ---
 

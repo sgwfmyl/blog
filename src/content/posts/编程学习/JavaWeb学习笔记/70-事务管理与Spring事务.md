@@ -6,6 +6,7 @@ tags:
   - JavaWeb
   - MySQL
   - SpringBoot
+image: https://img.tsh520.cn/file/blog/post-covers/javaweb-70-transaction-spring.webp
 order: 70
 ---
 

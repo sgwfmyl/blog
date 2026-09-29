@@ -8,6 +8,7 @@ tags:
   - hexo-circle-of-friends
   - EdgeOne
 description: 记录如何使用 hexo-circle-of-friends 项目为 Astro 博客搭建朋友圈功能，包括部署、踩坑和最终效果。
+image: https://img.tsh520.cn/file/blog/post-covers/blogguide-friend-circle.webp
 cover: ""
 pinned: false
 draft: false

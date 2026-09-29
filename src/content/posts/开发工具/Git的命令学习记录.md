@@ -4,6 +4,7 @@ published: 2026-08-15
 tags:
   - git
 description: 记录Git的命令使用的学习日常
+image: https://img.tsh520.cn/file/blog/post-covers/tips-git-commands.webp
 ---
 ## 本地文件夹上传 GitHub
 

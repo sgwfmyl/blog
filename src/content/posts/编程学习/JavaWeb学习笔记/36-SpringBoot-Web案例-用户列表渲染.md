@@ -6,6 +6,7 @@ tags:
   - JavaWeb
   - SpringBoot
   - 项目实战
+image: https://img.tsh520.cn/file/blog/post-covers/javaweb-36-springboot-web-case-user.webp
 order: 36
 ---
 

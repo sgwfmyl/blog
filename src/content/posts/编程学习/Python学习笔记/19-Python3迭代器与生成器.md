@@ -4,7 +4,7 @@ published: 2026-09-16
 description: Python3 迭代器、iter()、next() 和 yield 生成器
 tags:
   - Python
-image: /assets/images/posts/python-19-iterator.png
+image: https://img.tsh520.cn/file/blog/post-covers/python-19-iterator.webp
 order: 19
 ---
 ## 迭代器

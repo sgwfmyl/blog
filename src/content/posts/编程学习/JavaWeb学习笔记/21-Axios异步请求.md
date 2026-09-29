@@ -6,6 +6,7 @@ tags:
   - JavaWeb
   - Ajax
   - 前端
+image: https://img.tsh520.cn/file/blog/post-covers/javaweb-21-axios-request.webp
 order: 21
 ---
 

@@ -6,6 +6,7 @@ tags:
   - JavaWeb
   - MySQL
   - 后端
+image: https://img.tsh520.cn/file/blog/post-covers/javaweb-46-dql-basic-query.webp
 order: 46
 ---
 

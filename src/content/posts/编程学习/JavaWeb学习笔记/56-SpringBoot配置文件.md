@@ -6,6 +6,7 @@ tags:
   - JavaWeb
   - SpringBoot
   - MyBatis
+image: https://img.tsh520.cn/file/blog/post-covers/javaweb-56-springboot-config-file.webp
 order: 56
 ---
 

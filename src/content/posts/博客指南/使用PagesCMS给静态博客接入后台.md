@@ -2,6 +2,7 @@
 title: 使用 PagesCMS 给静态博客接入后台
 published: 2026-08-07
 description: 免费开源静态博客后台 PagesCMS 的完整接入指南：原理、配置文件、授权连接、踩坑记录
+image: https://img.tsh520.cn/file/blog/post-covers/blogguide-pagescms.webp
 tags:
   - 博客
   - 教程

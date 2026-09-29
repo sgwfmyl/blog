@@ -6,6 +6,7 @@ tags:
   - 博客
   - 教程
 description: 给 AstrBot BlogWriter 插件加了一条 /转载 命令——把公众号文章链接发过去，插件自动抓取正文、转存图片、生成博客文章并提交，全程一条命令。
+image: https://img.tsh520.cn/file/blog/post-covers/techshare-astrbot.webp
 ---
 
 > 看到好文章想收藏到自己博客，以前只能手动复制粘贴、一张张存图，现在一条命令搞定。

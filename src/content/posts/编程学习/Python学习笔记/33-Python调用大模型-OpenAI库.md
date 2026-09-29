@@ -5,7 +5,7 @@ description: 用 pip 安装 openai 库并调用 DeepSeek：客户端创建、请
 tags:
   - Python
   - DeepSeek
-image: /assets/images/posts/python-33-openai.png
+image: https://img.tsh520.cn/file/blog/post-covers/python-33-openai.webp
 order: 33
 ---
 

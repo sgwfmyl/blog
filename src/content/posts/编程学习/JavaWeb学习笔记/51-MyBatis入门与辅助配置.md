@@ -6,6 +6,7 @@ tags:
   - JavaWeb
   - MyBatis
   - SpringBoot
+image: https://img.tsh520.cn/file/blog/post-covers/javaweb-51-mybatis-intro.webp
 order: 51
 ---
 

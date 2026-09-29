@@ -6,6 +6,7 @@ tags:
   - JavaWeb
   - MyBatis
   - 后端
+image: https://img.tsh520.cn/file/blog/post-covers/javaweb-68-conditional-page-dynamic-sql.webp
 order: 68
 ---
 

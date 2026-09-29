@@ -6,6 +6,7 @@ tags:
   - JavaWeb
   - JDBC
   - MyBatis
+image: https://img.tsh520.cn/file/blog/post-covers/javaweb-52-jdbc-vs-mybatis.webp
 order: 52
 ---
 

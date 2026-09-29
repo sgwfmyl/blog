@@ -7,6 +7,7 @@ tags:
 updated: 2026-05-16
 descriptionSource: manual
 description: 最近整理博客的音乐收藏页，被手动扒歌词、下封面、写 Markdown 磨得没脾气……于是撸了个 Python 脚本，现在只要一条命令，就能自动从 M4A 文件里抽封面、调 API 下同步歌词、生成带评分和状态的博客用 Markdown——本地有文件就直接提，没文件也能搜歌名一键下载全包，连空格和特殊字符都帮你清理好，真的解放双手。
+image: https://img.tsh520.cn/file/blog/post-covers/blogguide-m4a-lrc.webp
 ---
 
 

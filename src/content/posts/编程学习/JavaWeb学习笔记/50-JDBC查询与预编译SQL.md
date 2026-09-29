@@ -6,6 +6,7 @@ tags:
   - JavaWeb
   - JDBC
   - 后端
+image: https://img.tsh520.cn/file/blog/post-covers/javaweb-50-jdbc-statement-prepared.webp
 order: 50
 ---
 
