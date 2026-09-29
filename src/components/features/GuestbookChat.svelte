@@ -1041,7 +1041,11 @@ onMount(() => {
 			</button>
 			<div class="guestbook-chat__desktop-channel-details">
 				<div class="guestbook-chat__title-row">
-					<span>{initialLoading ? "--" : totalCount} 条留言</span>
+					<div class="guestbook-chat__page-title">
+						<span class="guestbook-chat__eyebrow">Guestbook</span>
+						<h2>留言板</h2>
+					</div>
+					<span>· {initialLoading ? "--" : totalCount} 条留言</span>
 					<div class="guestbook-chat__sync">
 						<div
 							class:is-failed={Boolean(syncError)}

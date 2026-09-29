@@ -139,6 +139,23 @@ html:has(.guestbook-page) #main-grid > .footer {
 	gap: var(--space-1);
 }
 
+.guestbook-chat__page-title {
+	display: flex;
+	flex-direction: column;
+	gap: 0.05rem;
+	min-width: 0;
+}
+
+/* 英文小字：字号与颜色沿用组件头部的小字规格，避免把标题行整体撑高 */
+.guestbook-chat__eyebrow {
+	color: var(--guestbook-muted);
+	font-size: 0.6rem;
+	font-weight: 700;
+	letter-spacing: 0.14em;
+	line-height: 1.2;
+	text-transform: uppercase;
+}
+
 .guestbook-chat__title-row h2 {
 	margin: 0;
 	font-size: 1.5rem;
