@@ -267,8 +267,22 @@
 .nav-profile__heat-cell {
   width: 100%;
   aspect-ratio: 1;
+  padding: 0;
+  border: none;
   border-radius: 0.2rem;
   background: color-mix(in oklch, var(--deep-text) 10%, transparent);
+  cursor: pointer;
+  transition:
+    transform 120ms ease-out,
+    background-color 140ms ease-out;
+}
+
+/* 悬停只加描边与放大：不要改底色，否则看不出这一格原本的热度等级 */
+.nav-profile__heat-cell:hover,
+.nav-profile__heat-cell:focus-visible {
+  outline: 1px solid var(--deep-text);
+  outline-offset: 1px;
+  transform: scale(1.15);
 }
 
 .nav-profile__heat-cell.is-level-1 {
@@ -298,11 +312,19 @@
 .nav-profile__view {
   position: absolute;
   inset: 0;
-  display: flex;
+  display: none;
   flex-direction: column;
   gap: 0.6rem;
   overflow-y: auto;
   overscroll-behavior: contain;
+}
+
+/* 右栏三态：default（倒计时 + 事件）/ site（其他站点）/ posts（当月文章），
+   按 data-view 三选一 —— 隐藏的视图仍是绝对定位，不影响卡片高度 */
+.nav-profile__right[data-view="default"] .nav-profile__view--default,
+.nav-profile__right[data-view="site"] .nav-profile__view--site,
+.nav-profile__right[data-view="posts"] .nav-profile__view--posts {
+  display: flex;
 }
 
 /* ------------------------------- 倒计时 ------------------------------- */
@@ -392,6 +414,91 @@
   color: var(--content-meta);
   font-size: 0.66rem;
   font-variant-numeric: tabular-nums;
+}
+
+/* --------------------------- 当月文章列表（点热力格子） --------------------------- */
+
+.nav-profile__posts-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid
+    color-mix(in oklch, var(--deep-text) 14%, transparent);
+}
+
+.nav-profile__posts-title {
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.nav-profile__posts-back {
+  display: grid;
+  place-items: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  padding: 0;
+  border: none;
+  border-radius: 0.375rem;
+  background: transparent;
+  color: var(--content-meta);
+  cursor: pointer;
+  transition:
+    background-color 140ms ease-out,
+    color 140ms ease-out;
+}
+
+.nav-profile__posts-back:hover,
+.nav-profile__posts-back:focus-visible {
+  background: var(--btn-plain-bg-hover);
+  color: var(--deep-text);
+  outline: none;
+}
+
+.nav-profile__post-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.nav-profile__post-item {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.35rem 0.4rem;
+  border-radius: 0.375rem;
+  color: var(--deep-text);
+  font-size: 0.78rem;
+  text-decoration: none;
+  transition: background-color 140ms ease-out;
+}
+
+.nav-profile__post-item:hover,
+.nav-profile__post-item:focus-visible {
+  background: var(--btn-plain-bg-hover);
+  outline: none;
+}
+
+.nav-profile__post-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nav-profile__post-date {
+  flex: none;
+  color: var(--content-meta);
+  font-size: 0.66rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.nav-profile__post-empty {
+  padding: 0.5rem;
+  color: var(--content-meta);
+  font-size: 0.75rem;
 }
 
 @media (prefers-reduced-motion: reduce) {

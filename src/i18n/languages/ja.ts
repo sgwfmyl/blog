@@ -40,6 +40,8 @@ export const ja: Translation = {
 	[Key.profileEventSite]: "サイト開設日",
 	[Key.profileMonthWeek]: "{month} 第{week}週",
 	[Key.otherSites]: "その他のサイト",
+	[Key.profilePostsOfMonth]: "{month} · {count} 件",
+	[Key.profileNoPosts]: "今月の記事はまだありません",
 	[Key.music]: "音楽",
 	[Key.changelog]: "更新履歴",
 	[Key.changelogTitle]: "更新履歴",

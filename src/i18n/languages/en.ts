@@ -40,6 +40,8 @@ export const en: Translation = {
 	[Key.profileEventSite]: "Site launch",
 	[Key.profileMonthWeek]: "{month} · week {week}",
 	[Key.otherSites]: "Other sites",
+	[Key.profilePostsOfMonth]: "{month} · {count} posts",
+	[Key.profileNoPosts]: "No posts this month",
 	[Key.changelog]: "Changelog",
 	[Key.changelogTitle]: "Changelog",
 	[Key.changelogSubtitle]:

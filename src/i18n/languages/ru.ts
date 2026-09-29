@@ -40,6 +40,8 @@ export const ru: Translation = {
 	[Key.profileEventSite]: "День запуска сайта",
 	[Key.profileMonthWeek]: "{month}, неделя {week}",
 	[Key.otherSites]: "Другие сайты",
+	[Key.profilePostsOfMonth]: "{month} · {count} постов",
+	[Key.profileNoPosts]: "В этом месяце пока нет статей",
 	[Key.music]: "Музыка",
 	[Key.changelog]: "Журнал изменений",
 	[Key.changelogTitle]: "Журнал изменений",

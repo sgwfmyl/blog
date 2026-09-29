@@ -63,6 +63,8 @@ enum I18nKey {
 	profileEventSite = "profileEventSite",
 	profileMonthWeek = "profileMonthWeek",
 	otherSites = "otherSites",
+	profilePostsOfMonth = "profilePostsOfMonth",
+	profileNoPosts = "profileNoPosts",
 	music = "music",
 
 	// 公告栏

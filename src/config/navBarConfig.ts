@@ -166,69 +166,10 @@ const getDynamicNavBarConfig = (): NavBarConfig => {
 		],
 	});
 
-	// 「其他站点」：资料面板里点「其他站点」按钮后，右栏切换展示的链接列表。
-	// 这份列表取自导航页 /projects/ 的「我的网站」分类（src/content/daohang/我的网站/），
-	// 改那边之后记得同步这里；跨站链接标 external: true，列表项右侧会出现外链图标。
-	// icon 既可以是 iconify 名（material-symbols:xxx），也可以是图片 URL。
-	const personalSites: NavBarLink[] = [
-		{
-			name: "个人博客",
-			url: "https://blog.tsh520.cn/",
-			icon: "https://img.tsh520.cn/file/blog/daohang/blog.tsh520.cn-icon.webp",
-			external: true,
-		},
-		{
-			name: "团子的图床",
-			url: "https://img.tsh520.cn/",
-			icon: "https://img.tsh520.cn/file/blog/daohang/blog.tsh520.cn-icon.webp",
-			external: true,
-		},
-		{
-			name: "团子的邮箱",
-			url: "https://email.0824.uk/inbox",
-			icon: "https://img.tsh520.cn/file/blog/daohang/blog.tsh520.cn-icon.webp",
-			external: true,
-		},
-		{
-			name: "评论管理后台",
-			url: "https://waline.tsh520.cn/",
-			icon: "https://img.tsh520.cn/file/blog/daohang/blog.tsh520.cn-icon.webp",
-			external: true,
-		},
-		{
-			name: "AstrBot",
-			url: "https://astrbot.tsh520.cn/",
-			icon: "https://astrbot.tsh520.cn/favicon.svg",
-			external: true,
-		},
-		{
-			name: "NapCat",
-			url: "https://napcat.tsh520.cn/",
-			icon: "https://napcat.tsh520.cn/webui/favicon.ico",
-			external: true,
-		},
-		{
-			name: "PagesCMS",
-			url: "https://cms.tsh520.cn/tianshihao2003/dumplingandcakeblog/main/collection/posts",
-			icon: "https://app.pagescms.org/icon.svg",
-			external: true,
-		},
-		{
-			name: "COC 阵型库",
-			url: "https://coc.tsh520.cn/",
-			icon: "https://coc.tsh520.cn/favicon.png",
-			external: true,
-		},
-		{
-			name: "ZeppLife 刷步数",
-			url: "https://ze.tsh520.cn/",
-			icon: "https://img.tsh520.cn/file/blog/daohang/blog.tsh520.cn-icon.webp",
-			external: true,
-		},
-	];
-
-	// 仅返回链接，其它导航搜索相关配置在模块顶层常量中独立导出
-	return { links, personalSites } as NavBarConfig;
+	// 仅返回链接，其它导航搜索相关配置在模块顶层常量中独立导出。
+	// （个人资料面板的「其他站点」列表不在这里维护：构建时直接读 daohang 集合里
+	//  「我的网站」分类的条目，改 /projects/ 那边的站点即可，见 NavbarProfileCard.astro）
+	return { links } as NavBarConfig;
 };
 
 // 导航搜索配置

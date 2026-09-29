@@ -17,7 +17,7 @@
  */
 import { Icon } from "astro-icon/components";
 import { getCollection } from "astro:content";
-import { navBarConfig, profileConfig, siteConfig } from "@/config";
+import { profileConfig, siteConfig } from "@/config";
 import I18nKey from "@/i18n/i18nKey";
 import { i18n } from "@/i18n/translation";
 import { url } from "@/utils/url-utils";
@@ -26,17 +26,47 @@ import "@/styles/components/navbar-profile-card.css";
 const { avatar, name, occupation, links } = profileConfig;
 const avatarSrc = avatar ? (avatar.startsWith("/") ? url(avatar) : avatar) : "";
 const socialLinks = (links ?? []).filter((link) => link.icon && link.url);
-const personalSites = navBarConfig.personalSites ?? [];
 
-/* 热力图：今年每个「月 × 周段」的发文数（周段 1 = 1-7 日，…，周段 4 = 22 日往后） */
+/* 「其他站点」：直接读导航集合里「我的网站」这个分类（文件夹）的条目 ——
+   在 /projects/ 页面增删站点后这里自动跟着变，不用维护两份。
+   文件夹判定与 projects.astro 的 getFolderCategory 保持一致（取直接父目录）。 */
+const daohangEntries = await getCollection("daohang");
+const personalSites = daohangEntries
+	.filter((entry) => {
+		const normalized = entry.id.replace(/\\/g, "/").replace(/\.(md|mdx)$/i, "");
+		const slash = normalized.lastIndexOf("/");
+		return slash >= 0 && normalized.slice(0, slash) === "我的网站";
+	})
+	.map((entry) => ({
+		name: entry.data.name,
+		url: entry.data.url,
+		icon: entry.data.icon,
+		external: /^https?:\/\//.test(entry.data.url),
+	}))
+	.sort((a, b) => a.name.localeCompare(b.name, "zh-CN"));
+
+/* 热力图：今年每个「月 × 周段」的发文数；同时把今年的文章按月份存一份，
+   给「点格子看当月文章列表」用（只带今年的，控制内联 JSON 的体积） */
 const posts = await getCollection("posts");
 const thisYear = new Date().getFullYear();
 const heat: number[][] = Array.from({ length: 12 }, () => [0, 0, 0, 0]);
+const postsByMonth: { title: string; url: string; date: string }[][] =
+	Array.from({ length: 12 }, () => []);
 for (const post of posts) {
 	const date = post.data.published;
 	if (date.getFullYear() !== thisYear) continue;
 	const week = Math.min(3, Math.floor((date.getDate() - 1) / 7));
 	heat[date.getMonth()][week] += 1;
+	postsByMonth[date.getMonth()].push({
+		title: post.data.title,
+		url: url(`/posts/${post.id}/`),
+		date: `${date.getMonth() + 1}/${date.getDate()}`,
+	});
+}
+for (const list of postsByMonth) {
+	list.sort(
+		(a, b) => Number.parseInt(b.date, 10) - Number.parseInt(a.date, 10),
+	);
 }
 const maxCount = Math.max(1, ...heat.flat());
 const heatLevel = (count: number): number => {
@@ -78,6 +108,9 @@ const events = [
 	data-nav-profile
 	data-events={JSON.stringify(events)}
 	data-day-suffix={i18n(I18nKey.dayShort)}
+	data-posts={JSON.stringify(postsByMonth)}
+	data-posts-title={i18n(I18nKey.profilePostsOfMonth)}
+	data-no-posts={i18n(I18nKey.profileNoPosts)}
 >
 	<!-- 触发按钮由 Navbar 提供（左段的站点名按钮带 data-nav-profile-trigger）；
 	     悬浮交互不需要遮罩层——它反而会拦住「站点名 → 面板」的鼠标路径 -->
@@ -152,11 +185,13 @@ const events = [
 								const count = heat[month][week];
 								const label = `${monthWeekLabel(month, week)} · ${count}`;
 								return (
-									<span
+									<button
+										type="button"
 										class:list={[
 											"nav-profile__heat-cell",
 											count > 0 && `is-level-${heatLevel(count)}`,
 										]}
+										data-nav-profile-cell={month}
 										title={label}
 										aria-label={label}
 									/>
@@ -219,6 +254,24 @@ const events = [
 
 			</div>
 
+			<!-- posts 态：点热力图格子后展示当月文章 -->
+			<div class="nav-profile__view nav-profile__view--posts">
+				<div class="nav-profile__posts-head">
+					<strong class="nav-profile__posts-title" data-nav-profile-posts-title
+					></strong>
+					<button
+						type="button"
+						class="nav-profile__posts-back"
+						data-nav-profile-posts-back
+						title={i18n(I18nKey.close)}
+						aria-label={i18n(I18nKey.close)}
+					>
+						<Icon name="material-symbols:arrow-back-rounded" class="h-4 w-4" />
+					</button>
+				</div>
+				<div class="nav-profile__post-list" data-nav-profile-post-list></div>
+			</div>
+
 			<!-- site 态：其他站点列表 -->
 			<div class="nav-profile__view nav-profile__view--site">
 				{
@@ -268,6 +321,12 @@ const events = [
 	const events: { key: string; month: number; day: number }[] = JSON.parse(
 		root?.dataset.events ?? "[]",
 	);
+	/** 今年的文章（按月份分组），给「点格子看当月文章列表」用 */
+	const postsByMonth: { title: string; url: string; date: string }[][] = JSON.parse(
+		root?.dataset.posts ?? "[]",
+	);
+	const postsTitleTemplate = root?.dataset.postsTitle ?? "{month} · {count}";
+	const noPostsText = root?.dataset.noPosts ?? "";
 
 	const startOfDay = (date: Date): Date =>
 		new Date(date.getFullYear(), date.getMonth(), date.getDate());
@@ -343,9 +402,48 @@ const events = [
 		"[data-nav-profile-site-trigger]",
 	);
 	const rightPane = root?.querySelector<HTMLElement>("[data-nav-profile-right]");
-	function showView(view: "default" | "site"): void {
+	function showView(view: "default" | "site" | "posts"): void {
 		if (rightPane) rightPane.dataset.view = view;
 		siteTrigger?.setAttribute("aria-pressed", String(view === "site"));
+	}
+
+	const postsTitleEl = card?.querySelector<HTMLElement>(
+		"[data-nav-profile-posts-title]",
+	);
+	const postListEl = card?.querySelector<HTMLElement>(
+		"[data-nav-profile-post-list]",
+	);
+
+	/** 把某个月的文章列表渲染进 posts 视图 */
+	function renderPosts(month: number): void {
+		const list = postsByMonth[month] ?? [];
+		if (postsTitleEl) {
+			postsTitleEl.textContent = postsTitleTemplate
+				.replace("{month}", `${month + 1}月`)
+				.replace("{count}", String(list.length));
+		}
+		if (!postListEl) return;
+		postListEl.replaceChildren();
+		if (list.length === 0) {
+			const empty = document.createElement("p");
+			empty.className = "nav-profile__post-empty";
+			empty.textContent = noPostsText;
+			postListEl.appendChild(empty);
+			return;
+		}
+		for (const post of list) {
+			const link = document.createElement("a");
+			link.className = "nav-profile__post-item";
+			link.href = post.url;
+			const title = document.createElement("span");
+			title.className = "nav-profile__post-name";
+			title.textContent = post.title;
+			const date = document.createElement("span");
+			date.className = "nav-profile__post-date";
+			date.textContent = post.date;
+			link.append(title, date);
+			postListEl.appendChild(link);
+		}
 	}
 
 	function positionCard(): void {
@@ -394,6 +492,24 @@ const events = [
 				siteTrigger.getAttribute("aria-pressed") === "true" ? "default" : "site",
 			);
 		});
+
+		/* 点热力图格子 → 右栏切到「当月文章列表」 */
+		card.addEventListener("click", (event) => {
+			const cell = (event.target as HTMLElement | null)?.closest<HTMLElement>(
+				"[data-nav-profile-cell]",
+			);
+			if (!cell) return;
+			event.stopPropagation();
+			renderPosts(Number(cell.dataset.navProfileCell));
+			showView("posts");
+		});
+
+		card
+			.querySelector("[data-nav-profile-posts-back]")
+			?.addEventListener("click", (event) => {
+				event.stopPropagation();
+				showView("default");
+			});
 		// 触屏 / 键盘：点到别处也收起（悬浮模式下没有遮罩可用）
 		document.addEventListener("click", (event) => {
 			if (!root.classList.contains("is-open")) return;

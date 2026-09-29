@@ -399,8 +399,9 @@ Layout.astro          ← HTML 骨架：<html>, <head>, <body>, 全局组件, �
   - ⚠️ **不要给它加遮罩层**：悬浮交互下遮罩会拦住「站点名 → 面板」的鼠标路径，还会触发自身 mouseenter 把面板关掉（这个坑踩过一次）。
   - 面板两栏（照参考站）：左栏 18.5rem = 身份 + 社交 + 文章热力图（12 月 × 月内 4 周段），右栏自适应 = 三个倒计时 + 两个事件进度条；卡片 min 33.5rem / max 38rem。
   - 数据：热力图在**构建期** `getCollection("posts")` 统计当年发文量（跨年后需重新构建）；倒计时与事件进度在客户端按当天算，事件日期（国庆节 10/1、建站日取 `siteConfig.siteStartDate`）通过 `data-events` JSON 传入。
-  - 「其他站点」：列表来自 `NavBarConfig.personalSites`（在 `src/config/navBarConfig.ts` 里维护，跨站链接要标 `external: true` 才显示外链图标）；左栏按钮把右栏从「倒计时 + 事件」切成站点列表，靠 `data-view` + `.nav-profile__view--default / --site` 两态类名切换（不重建 DOM），每次打开面板回到默认态。
-  - 仍未移植：参考站「点热力图格子看当月文章列表」与它的节假日 / 文章元数据 API。
+  - 「其他站点」：列表在**构建时**直接读 `daohang` 集合里**直接父目录为「我的网站」**的条目（文件夹判定与 `projects.astro` 的 `getFolderCategory` 一致），所以在 `/projects/` 增删站点后这里自动跟着变 —— **不要再回到 navBarConfig 里手抄一份**（`personalSites` 字段已删除）。面板显示的名字取导航 md 的 `name`。
+  - **点热力图格子看当月文章**：格子是 `<button>`，构建期把「今年的文章」按月份存成 JSON 内联在组件上（标题 + 链接 + 日期），点格子切到 `posts` 态渲染；返回按钮回 default。右栏三态（default / site / posts）都用 `data-view` + `.nav-profile__view--*` 切换，卡片高度始终锚在左栏、切换不跳动。
+  - 仍未移植：参考站的节假日 / 文章元数据 API（本项目不需要，热力图与文章列表都在构建期算好了）。
 
 ---
 
