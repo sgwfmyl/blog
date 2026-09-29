@@ -18,6 +18,7 @@ description: 文章页新增信息面板组（过期提示/AI摘要/封面图）
 - **② AI 摘要**：内容即 frontmatter 的 `description`（参考站也是这个字段，并没有真的调用 AI，模型名是写死的），用原生 `<details>` 展开/收起，箭头 0.2s 旋转。
 - **③ 封面图**：把文章封面收进可折叠面板（此前详情页根本不显示封面），展开后最大高度 480px（≥768px 为 560px）。
 - 三个面板的底板用新变量 `--intro-surface-bg`（亮 `oklch(0.965 0 0)` / 暗 `oklch(0.14 0 0)`）——项目的 `--card-bg` 是 transparent（极简风），不能直接复用。
+- 面板组上方顺带收紧了留白：面包屑 `margin-bottom` 1rem→0.5rem、hero 内容区 `padding-top` 桌面 2rem→1.25rem（移动 1.25rem→1rem），面包屑到文章标题的间距由 48px 收到 28px。
 
 ### 二、右侧文章目录（完整复刻）
 
