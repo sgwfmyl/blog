@@ -119,8 +119,7 @@ const formatTimeAgo = (date: Date): string => {
 ---
 
 <div id={moment.id} class="moment-card group">
-		<div class="card-accent-bar"></div>
-	<!-- 卡片头部：头像 + 用户信息 -->
+		<!-- 卡片头部：头像 + 用户信息 -->
 	<div class="card-header">
 		<div class="card-avatar">
 			{avatar ? (
@@ -305,16 +304,6 @@ const formatTimeAgo = (date: Date): string => {
 		border-color: oklch(0.85 0 0);
 	}
 
-	.card-accent-bar {
-		position: absolute;
-		left: 0;
-		top: 0;
-		bottom: 0;
-		width: 4px;
-		background: var(--primary);
-		opacity: 0.35;
-		border-radius: 0 2px 2px 0;
-	}
 
 	.moment-card:hover {
 		border-color: var(--primary);
