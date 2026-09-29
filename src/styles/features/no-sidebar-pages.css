@@ -80,10 +80,18 @@
 	}
 }
 
-/* 说说 /moments/ */
+/* 说说 /moments/ —— 左栏筛选 + 时间线的两栏布局。
+   宽度取**视口的 4/5**（站长要求「整体占 4/5 就行」）；窄屏不加这道限制，
+   否则小屏会被压得过窄。用 vw 而不是 %，因为 % 会相对上一级容器算、实际只有 70%。 */
 @media (min-width: 768px) {
 	html:has(#content-wrapper[data-no-sidebar="moments"]) #content-wrapper {
-		max-width: 932px;
+		max-width: 100%;
+	}
+}
+
+@media (min-width: 1280px) {
+	html:has(#content-wrapper[data-no-sidebar="moments"]) #content-wrapper {
+		max-width: 80vw;
 	}
 }
 

@@ -2,7 +2,6 @@
 import { Image } from "astro:assets";
 import { getCollection } from "astro:content";
 import { Icon } from "astro-icon/components";
-import PageTitle from "@/components/common/PageTitle.astro";
 import MomentCard from "@/components/moments/MomentCard.astro";
 import MomentCommentChat from "@/components/moments/MomentCommentChat.svelte";
 import MomentsCover from "@/components/moments/MomentsCover.astro";
@@ -221,43 +220,19 @@ const filterMeta = {
         </summary>
         <div class="wx-tags" data-moments-tags>
           {
-            tagStats.map((tag, i) => (
-              <button
-                type="button"
-                class:list={["wx-tag", i >= 10 && "wx-tag--extra"]}
-                data-moments-tag={tag.name}
-                hidden={i >= 10}
-              >
+            tagStats.map((tag) => (
+              <button type="button" class="wx-tag" data-moments-tag={tag.name}>
                 <span class="wx-tag__name">{tag.name}</span>
                 <span class="wx-tag__count">{tag.count}</span>
               </button>
             ))
           }
         </div>
-        {
-          tagStats.length > 10 && (
-            <button
-              type="button"
-              class="wx-tags__more"
-              data-moments-tags-more
-            >
-              展开全部（{tagStats.length}）
-            </button>
-          )
-        }
       </details>
     </aside>
 
-    <!-- 右侧：标题 / 封面 / 置顶 / 时间线 -->
+    <!-- 右侧：封面 / 置顶 / 时间线 -->
     <div class="wx-main">
-      <div class="mb-6">
-        <PageTitle
-          title="动态"
-          eyebrow="Moments"
-          description="记录生活中的点点滴滴"
-        />
-      </div>
-
       <!-- 微信朋友圈风格封面 -->
       <MomentsCover />
 
@@ -711,14 +686,6 @@ const filterMeta = {
         apply();
       });
     }
-    var tagsMore = document.querySelector("[data-moments-tags-more]");
-    if (tagsMore) {
-      tagsMore.addEventListener("click", function () {
-        Array.prototype.forEach.call(document.querySelectorAll(".wx-tag--extra"), function (btn) { btn.hidden = false; });
-        tagsMore.hidden = true;
-      });
-    }
-
     /* ---------- 清空 ---------- */
     function clearAll() {
       state = { q: "", tag: "", date: "", month: "" };

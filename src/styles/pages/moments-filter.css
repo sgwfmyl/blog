@@ -8,6 +8,15 @@
  * 三者才不会互相打架 —— 调整时别把优先级降下去。
  */
 
+/* ⚠️ 左栏 sticky 生效的前提：
+   祖先 `#main-content-wrapper` 是 `overflow: hidden`，这会让它成为 sticky 的
+   「滚动容器」—— 而它本身不滚动，于是 `.wx-filter` 的 sticky 完全失效、跟着页面滚走。
+   这里在说说页把它换成 `overflow: clip`：裁剪行为一样，但**不产生滚动容器**，
+   sticky 于是相对视口生效。（只在本页生效，不动其他页面的布局。） */
+html:has(#content-wrapper[data-no-sidebar="moments"]) #main-content-wrapper {
+	overflow: clip;
+}
+
 /* ------------------------------- 布局 ------------------------------- */
 
 .wx-layout {
