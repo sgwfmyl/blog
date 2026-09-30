@@ -86,9 +86,9 @@ export const ru: Translation = {
 	[Key.friends]: "Ссылки",
 	[Key.friendsDescription]:
 		"Вот мои друзья, добро пожаловать посетить и общаться друг с другом",
-	[Key.friendsLatestTitle]: "✨ Новые друзья · Недавно присоединившиеся!",
-	[Key.friendsMyFriendsTitle]: "🤪 Друзья · Те, кто всегда рядом!",
-	[Key.friendsMoreTitle]: "🤤 Дружеские ссылки · Те люди, те истории~",
+	[Key.friendsLatestTitle]: "Новые друзья · Недавно присоединившиеся!",
+	[Key.friendsMyFriendsTitle]: "Друзья · Те, кто всегда рядом!",
+	[Key.friendsMoreTitle]: "Дружеские ссылки · Те люди, те истории~",
 	[Key.friendsShiningDesc]: "Здесь {n} сияющих маленьких сайтов.",
 	[Key.friendsSites]: "сайтов",
 	[Key.friendsTombstone]:

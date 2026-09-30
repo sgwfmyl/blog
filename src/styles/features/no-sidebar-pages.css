@@ -124,9 +124,15 @@ html:has(#content-wrapper[data-no-sidebar="projects"]) #main-content-wrapper {
 	}
 }
 
-/* 友链 /friends/ */
+/* 友链 /friends/ —— 卡片改成「头像 + 名字」一行后要更宽才排得下多列，
+   站长要求从 932px 放宽到**视口的 4/5**（与导航站同一套写法） */
 @media (min-width: 768px) {
 	html:has(#content-wrapper[data-no-sidebar="friends"]) #content-wrapper {
-		max-width: 932px;
+		max-width: 100%;
+	}
+}
+@media (min-width: 1280px) {
+	html:has(#content-wrapper[data-no-sidebar="friends"]) #content-wrapper {
+		max-width: 80vw;
 	}
 }

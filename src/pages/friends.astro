@@ -2,7 +2,6 @@
 import { getCollection, getEntry, render } from "astro:content";
 import fs from "node:fs";
 import path from "node:path";
-import { domainToUnicode } from "node:url";
 import Comment from "@components/comment/index.astro";
 import Markdown from "@components/common/Markdown.astro";
 import FriendCard from "@components/features/FriendCard.astro";
@@ -61,21 +60,11 @@ const hasTombstones = fs
 	.some((f) => f.endsWith(".md"));
 const tombstoneEntries = hasTombstones ? await getCollection("tombstones") : [];
 
-// 站点截图：public/assets/friends-shots/{contentId}.webp，不存在则不传（卡片退化为纯头像卡）
+// 站点截图：public/assets/friends-shots/{contentId}.webp。
+// 卡片本身不展示它 —— 只作为 data-screenshot 喂给悬浮预览（#friend-preview）。
 const shotsDir = path.join(process.cwd(), "public", "assets", "friends-shots");
 const shotExists = (id: string) =>
 	fs.existsSync(path.join(shotsDir, `${id}.webp`));
-
-// 域名（还原为 Unicode 显示，避免 IDN 域名显示成 xn-- punycode；取不到时回退空串）
-const hostOf = (siteurl: string) => {
-	try {
-		const url = new URL(siteurl);
-		const hostname = domainToUnicode(url.hostname);
-		return url.port ? `${hostname}:${url.port}` : hostname;
-	} catch {
-		return "";
-	}
-};
 
 // 页面标题和描述
 const title = i18n(I18nKey.friends);
@@ -103,13 +92,6 @@ const description = i18n(I18nKey.friendsDescription);
             添加友链
           </button>
         </div>
-        {
-          description && (
-            <p class="text-base text-neutral-600 dark:text-neutral-400 leading-relaxed mb-4">
-              {description}
-            </p>
-          )
-        }
       </div>
 
       <!-- 新朋友：最近添加的 3 个 -->
@@ -121,9 +103,7 @@ const description = i18n(I18nKey.friendsDescription);
                 <h2 class="friend-group-title">
                   {i18n(I18nKey.friendsLatestTitle)}
                 </h2>
-                <p class="friend-group-desc">{i18n(I18nKey.friendsShiningDesc).replace("{n}", String(latestItems.length))}</p>
               </div>
-              <span class="friend-group-badge">{latestItems.length} {i18n(I18nKey.friendsSites)}</span>
             </div>
             <div class="friends-grid" data-friends-grid>
               {
@@ -134,7 +114,6 @@ const description = i18n(I18nKey.friendsDescription);
                     imgurl={item.data.imgurl}
                     desc={item.data.desc}
                     screenshot={shotExists(item.id) ? `/assets/friends-shots/${item.id}.webp` : undefined}
-                    host={hostOf(item.data.siteurl)}
                   />
                 ))
               }
@@ -152,9 +131,7 @@ const description = i18n(I18nKey.friendsDescription);
                 <h2 class="friend-group-title">
                   {i18n(I18nKey.friendsMyFriendsTitle)}
                 </h2>
-                <p class="friend-group-desc">{i18n(I18nKey.friendsShiningDesc).replace("{n}", String(myFriends.length))}</p>
               </div>
-              <span class="friend-group-badge">{myFriends.length} {i18n(I18nKey.friendsSites)}</span>
             </div>
             <div class="friends-grid" data-friends-grid>
               {
@@ -165,7 +142,6 @@ const description = i18n(I18nKey.friendsDescription);
                     imgurl={item.data.imgurl}
                     desc={item.data.desc}
                     screenshot={shotExists(item.id) ? `/assets/friends-shots/${item.id}.webp` : undefined}
-                    host={hostOf(item.data.siteurl)}
                   />
                 ))
               }
@@ -183,9 +159,7 @@ const description = i18n(I18nKey.friendsDescription);
                 <h2 class="friend-group-title">
                   {i18n(I18nKey.friendsMoreTitle)}
                 </h2>
-                <p class="friend-group-desc">{i18n(I18nKey.friendsShiningDesc).replace("{n}", String(moreFriends.length))}</p>
               </div>
-              <span class="friend-group-badge">{moreFriends.length} {i18n(I18nKey.friendsSites)}</span>
             </div>
             <div class="friends-grid" data-friends-grid>
               {
@@ -196,7 +170,6 @@ const description = i18n(I18nKey.friendsDescription);
                     imgurl={item.data.imgurl}
                     desc={item.data.desc}
                     screenshot={shotExists(item.id) ? `/assets/friends-shots/${item.id}.webp` : undefined}
-                    host={hostOf(item.data.siteurl)}
                   />
                 ))
               }

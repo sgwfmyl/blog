@@ -86,9 +86,9 @@ export const ja: Translation = {
 	[Key.friends]: "友達",
 	[Key.friendsDescription]:
 		"ここは私の友達です、お互いに訪問して交流することを歓迎します",
-	[Key.friendsLatestTitle]: "✨ 新しい友達 · 最近参加した仲間たち！",
-	[Key.friendsMyFriendsTitle]: "🤪 仲間たち · いつも遊びに来てくれる！",
-	[Key.friendsMoreTitle]: "🤤 リンク · あの人たち、あの話~",
+	[Key.friendsLatestTitle]: "新しい友達 · 最近参加した仲間たち！",
+	[Key.friendsMyFriendsTitle]: "仲間たち · いつも遊びに来てくれる！",
+	[Key.friendsMoreTitle]: "リンク · あの人たち、あの話~",
 	[Key.friendsShiningDesc]: "ここには {n} 個の輝く小さなサイトがあります。",
 	[Key.friendsSites]: "サイト",
 	[Key.friendsTombstone]: "🪵 リンク墓碑 · 出会いはなぜ偶然",

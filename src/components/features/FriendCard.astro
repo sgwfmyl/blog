@@ -4,18 +4,27 @@ export interface Props {
 	href: string;
 	imgurl: string;
 	desc: string;
+	/** 站点截图（public/assets/friends-shots/{id}.webp）：只喂给悬浮预览用，卡片本身不展示 */
 	screenshot?: string;
-	host?: string;
 }
 
-const { title, href, imgurl, desc, screenshot, host = "" } = Astro.props;
+const { title, href, imgurl, desc, screenshot } = Astro.props;
 
 // 头像加载失败 / 骨架占位使用的首字
 const initial = title.trim().slice(0, 1);
 ---
 
+{/*
+  「头像 + 名字」一行（2026-09-30 改版）。
+  ⚠️ 下面这几个类名与 data-* 属性被依赖，别改名：
+     .friend-card / data-href（friends.astro 脚本：点击与键盘 Enter 打开）
+     .friend-card-avatar / __img / __face / data-src（IntersectionObserver 懒加载 + 涂鸦 fallback）
+     .friend-card / data-screenshot（同一个脚本：悬浮时在卡旁浮出站点截图预览 #friend-preview）
+  ⚠️ 另外 `.friend-card` 的 data-title / data-siteurl 是「朋友圈 /circle/」抓取程序的取值点，
+     改结构时必须保留（见 CLAUDE.md，2026-08 曾因改 class 导致朋友圈停更 6 天）。
+*/}
 <div
-  class={"friend-card" + (screenshot ? "" : " friend-card--no-shot")}
+  class="friend-card"
   role="link"
   tabindex="0"
   data-href={href}
@@ -24,52 +33,9 @@ const initial = title.trim().slice(0, 1);
   data-screenshot={screenshot || undefined}
   title={desc}
 >
-  {/* 鼠标跟随光晕 */}
-  <div class="friend-card-glow" aria-hidden="true"></div>
-
-  {/* 整卡背景：站点截图，下缘白色渐变遮罩渐隐（无截图时不渲染此层） */}
-  {screenshot && (
-    <div class="friend-siteshot" aria-hidden="true">
-      <img src={screenshot} alt="" loading="lazy" />
-    </div>
-  )}
-
-  <div class="friend-body">
-    {/* 头像 + 名字 + 域名：叠在截图渐隐区（无截图时移到顶部） */}
-    <div class="friend-main">
-      {/* 头像（沿用 data-src 懒加载 + 涂鸦 fallback 机制） */}
-      <div class="friend-avatar-wrap">
-        <div class="friend-card-avatar" data-initial={initial}>
-          <span class="friend-card-avatar__face" aria-hidden="true"></span>
-          <img
-            alt={title}
-            class="friend-card-avatar__img"
-            data-src={imgurl}
-          />
-        </div>
-        <a
-          class="friend-avatar-overlay"
-          href={href}
-          target="_blank"
-          rel="noopener noreferrer"
-          aria-label={title}
-        >
-          <span class="friend-avatar-overlay__icon" aria-hidden="true">↗</span>
-        </a>
-      </div>
-      <div class="friend-name-wrap">
-        <span class="friend-name">{title}</span>
-        {host && <span class="friend-host">{host}</span>}
-      </div>
-    </div>
-
-    {/* 描述：底部黑字，无框（参考站同款） */}
-    <p class="friend-desc">{desc}</p>
-
-    {/* 访问状态徽标：页面 JS 注入，无数据时隐藏 */}
-    <span class="friend-status-tag" data-siteurl={href} hidden>
-      <span class="friend-status-dot" aria-hidden="true"></span>
-      <span class="friend-status-text"></span>
-    </span>
+  <div class="friend-card-avatar" data-initial={initial}>
+    <span class="friend-card-avatar__face" aria-hidden="true"></span>
+    <img alt={title} class="friend-card-avatar__img" data-src={imgurl} />
   </div>
+  <span class="friend-name">{title}</span>
 </div>

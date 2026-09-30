@@ -85,9 +85,9 @@ export const en: Translation = {
 	[Key.friends]: "Friends",
 	[Key.friendsDescription]:
 		"Here are my friends, welcome to visit and communicate with each other",
-	[Key.friendsLatestTitle]: "✨ New Friends · The latest to join!",
-	[Key.friendsMyFriendsTitle]: "🤪 Best Buddies · Always around!",
-	[Key.friendsMoreTitle]: "🤤 Friend Links · Those people, those stories~",
+	[Key.friendsLatestTitle]: "New Friends · The latest to join!",
+	[Key.friendsMyFriendsTitle]: "Best Buddies · Always around!",
+	[Key.friendsMoreTitle]: "Friend Links · Those people, those stories~",
 	[Key.friendsShiningDesc]: "Here are {n} shining little sites.",
 	[Key.friendsSites]: "sites",
 	[Key.friendsTombstone]:
