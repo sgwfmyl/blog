@@ -867,11 +867,17 @@ const hostOf = (url: string): string => {
     font-size: 1rem;
     font-weight: 700;
     color: var(--deep-text);
+    /* 标题与条数不参与压缩、永不折行（窄屏时被那排子标签挤成两行过一次）；
+       要挤就让子标签自己横向滚动 */
+    white-space: nowrap;
+    flex: 0 0 auto;
   }
 
   .nav-section__count {
     font-size: 0.75rem;
     color: var(--content-meta);
+    white-space: nowrap;
+    flex: 0 0 auto;
   }
 
   /* 分类名与子标签之间的竖分隔条（参考站 2.5px×12px） */
