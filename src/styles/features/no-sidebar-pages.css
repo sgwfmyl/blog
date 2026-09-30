@@ -154,3 +154,19 @@ html:has(#content-wrapper[data-no-sidebar="projects"]) #main-content-wrapper {
 html:has(#content-wrapper[data-no-sidebar="movies-games"]) #main-content-wrapper {
 	overflow: clip;
 }
+
+/* 相册 /album/ —— 一整面照片墙，左右小组件去掉，整页占视口 4/5（与导航站/影视页同一套写法） */
+@media (min-width: 768px) {
+	html:has(#content-wrapper[data-no-sidebar="album-list"]) #content-wrapper {
+		max-width: 100%;
+	}
+}
+@media (min-width: 1280px) {
+	html:has(#content-wrapper[data-no-sidebar="album-list"]) #content-wrapper {
+		max-width: 80vw;
+	}
+}
+/* 顶部筛选条要 sticky —— 祖先 #main-content-wrapper 是 overflow: hidden 会吃掉 sticky，本页换 clip */
+html:has(#content-wrapper[data-no-sidebar="album-list"]) #main-content-wrapper {
+	overflow: clip;
+}

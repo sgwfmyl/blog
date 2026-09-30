@@ -1,700 +1,574 @@
 ---
-import type { CollectionEntry } from "astro:content";
 import { getCollection } from "astro:content";
 import { Icon } from "astro-icon/components";
 import PageTitle from "@/components/common/PageTitle.astro";
-import BounceCards from "@/components/features/BounceCards.astro";
 import MainGridLayout from "@/layouts/MainGridLayout.astro";
+import { formatDateI18n } from "@/utils/date-utils";
+
+// 2026-09-30 改版：整页变成「一整面照片墙」（所有相册的照片拆开铺满整个内容区），
+// 顶部一条细线筛选（搜索 / 相册 / 标签），点照片开灯箱。
+// 单相册页 /album/<id>/ 已删除；所有照片都走图床（imgbedFolder），客户端并行拉取。
+
+const albums = (await getCollection("album"))
+	.filter((a) => import.meta.env.PROD === false || a.data.draft !== true)
+	.sort((a, b) => new Date(b.data.date).getTime() - new Date(a.data.date).getTime());
 
 const imgbedUrl = import.meta.env.PUBLIC_IMAGEBED_URL || "";
 const imgbedToken = import.meta.env.PUBLIC_IMAGEBED_API_TOKEN || "";
 
-// 从图床获取预览图片
-async function fetchImgbedPreview(folder: string): Promise<string[]> {
-	if (!imgbedUrl || !imgbedToken || !folder) return [];
-	try {
-		const resp = await fetch(
-			`${imgbedUrl}/api/manage/list?dir=${encodeURIComponent(folder)}&count=4`,
-			{ headers: { Authorization: `Bearer ${imgbedToken}` } },
-		);
-		if (!resp.ok) return [];
-		const data = (await resp.json()) as {
-			files?: { name: string; metadata?: { FileType?: string } }[];
-		};
-		return (data.files || [])
-			.filter((f) => f.metadata?.FileType?.startsWith("image/"))
-			.map((f) => `${imgbedUrl}/file/${f.name}`);
-	} catch {
-		return [];
-	}
+// 给前端：每个相册的元数据（照片由前端去图床拉）
+const albumMeta = albums.map((a) => ({
+	id: a.id,
+	title: a.data.title,
+	subtitle: a.data.subtitle || "",
+	date: new Date(a.data.date).toISOString().slice(0, 10),
+	dateText: formatDateI18n(new Date(a.data.date)),
+	location: a.data.location || "",
+	tags: a.data.tags || [],
+	folder: a.data.imgbedFolder || "",
+}));
+
+const tagCounts = new Map<string, number>();
+for (const a of albums) {
+	for (const t of a.data.tags || []) tagCounts.set(t, (tagCounts.get(t) || 0) + 1);
 }
+const tags = [...tagCounts.entries()]
+	.sort((x, y) => y[1] - x[1] || x[0].localeCompare(y[0], "zh-CN"))
+	.map(([name, count]) => ({ name, count }));
 
-const albums = await getCollection("album", ({ data }) => {
-	return import.meta.env.PROD ? data.draft !== true : true;
-});
-
-const sortedAlbums = albums.sort(
-	(a, b) => b.data.date.getTime() - a.data.date.getTime(),
-);
-
-// 为图床相册获取预览图（并行请求，避免串行等待）
-const imgbedPreviewCache = new Map<string, string[]>();
-const imgbedAlbums = sortedAlbums.filter((a) => a.data.imgbedFolder);
-if (imgbedAlbums.length > 0) {
-	const results = await Promise.all(
-		imgbedAlbums.map((a) =>
-			a.data.imgbedFolder ? fetchImgbedPreview(a.data.imgbedFolder) : [],
-		),
-	);
-	imgbedAlbums.forEach((a, i) => {
-		if (results[i].length > 0) imgbedPreviewCache.set(a.id, results[i]);
-	});
-}
-
-const allTags = [
-	...new Set(sortedAlbums.flatMap((a) => a.data.tags || [])),
-].sort();
-
-const earliestDate =
-	sortedAlbums.length > 0
-		? sortedAlbums[sortedAlbums.length - 1].data.date
-		: new Date();
-const latestDate =
-	sortedAlbums.length > 0 ? sortedAlbums[0].data.date : new Date();
-
-const formatDateRange = (start: Date, end: Date) => {
-	const format = (d: Date) =>
-		`${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, "0")}`;
-	return `${format(start)} - ${format(end)}`;
-};
-
-function getPreviewPhotos(album: CollectionEntry<"album">) {
-	if (album.data.imgbedFolder) {
-		return imgbedPreviewCache.get(album.id) || [];
-	}
-	const photos = album.data.photos || [];
-	return photos.slice(0, 4);
-}
+const albumCount = albums.length;
 ---
 
-<MainGridLayout title="相册" description="记录生活中的美好瞬间">
-  <div class="flex w-full rounded-(--radius-large) overflow-hidden relative min-h-32">
-    <div class="card-base z-10 px-4 py-6 md:px-9 relative w-full">
-    <!-- 头部横幅 -->
-    <div class="relative w-full mb-10">
-      <PageTitle
-        title="相册"
-        eyebrow="Album"
-        description="照片里的生活"
-      />
+<MainGridLayout
+	title="相册"
+	description="所有相册的照片都在这一面墙上"
+>
+	<div class="flex w-full rounded-(--radius-large) overflow-clip relative min-h-32">
+		<div class="card-base z-10 px-4 py-6 md:px-9 relative w-full">
+			<div class="mb-6">
+				<PageTitle title="相册" eyebrow="Album" description="所有相册的照片都拆开铺在这一面墙上" />
+			</div>
 
-      <!-- 统计信息 -->
-      <div class="flex items-center gap-3 mt-5">
-        <div class="stat-pill">
-          <Icon name="material-symbols:photo-album" class="text-sm" />
-          <span class="font-semibold">{sortedAlbums.length}</span>
-          <span class="text-neutral-500 dark:text-neutral-400">相册</span>
-        </div>
-        <div class="stat-pill">
-          <Icon name="material-symbols:calendar-month" class="text-sm" />
-          <span class="text-neutral-400 dark:text-neutral-500">{formatDateRange(earliestDate, latestDate)}</span>
-        </div>
-      </div>
+			<!-- 顶部筛选条：细线语言、无底色块；选中靠主题色下划线（不是胶囊） -->
+			<div class="alb-bar" id="alb-bar">
+				<div class="alb-bar__row">
+					<label class="alb-search">
+						<Icon name="material-symbols:search-rounded" is:inline class="text-[1.05rem]" />
+						<input type="search" placeholder="搜索照片 / 相册 / 地点…" aria-label="搜索" id="alb-search" />
+						<button type="button" class="alb-search__clear" id="alb-search-clear" hidden aria-label="清空搜索">
+							<Icon name="material-symbols:close-rounded" is:inline />
+						</button>
+					</label>
+					<span class="alb-count" id="alb-count">{albumCount} 个相册</span>
+					<button type="button" class="alb-clear" id="alb-clear" hidden>清空</button>
+				</div>
+				<div class="alb-bar__row alb-bar__row--tabs">
+					<div class="alb-tabs" id="alb-tabs" role="group" aria-label="按相册筛选">
+						<button type="button" class="alb-tab is-active" data-album-id="">全部</button>
+						{
+							albumMeta.map((a) => (
+								<button type="button" class="alb-tab" data-album-id={a.id}>
+									{a.title}
+								</button>
+							))
+						}
+					</div>
+					</div>
+				</div>
 
-    </div>
+			<!-- 照片墙：CSS columns 瀑布流，照片由脚本铺进来 -->
+			<div class="alb-wall" id="alb-wall" data-url={imgbedUrl} data-token={imgbedToken}>
+				<div class="alb-loading" id="alb-loading">
+					<div class="alb-spinner"></div>
+					<span id="alb-status">正在从图床加载照片…</span>
+				</div>
+			</div>
+			<p class="alb-empty" id="alb-empty" hidden>没有符合条件的内容</p>
+		</div>
+	</div>
 
-    <!-- 标签筛选 -->
-    {sortedAlbums.length > 0 && allTags.length > 0 && (
-      <div class="tools-tab-wrapper">
-        <div class="tools-tab-pill" data-album-filter>
-          <div class="tools-tab-indicator album-filter-indicator" style="opacity:0;"></div>
-          <button data-tag="all" class="tools-tab-btn tools-tab-btn-active">全部</button>
-          {allTags.map((tag) => (
-            <button data-tag={tag} class="tools-tab-btn tools-tab-btn-inactive">{tag}</button>
-          ))}
-        </div>
-      </div>
-    )}
+	<!-- 灯箱（自研，无第三方库）：跨整面墙切换 -->
+	<div class="lightbox" id="lightbox" role="dialog" aria-label="图片查看器">
+		<div class="lightbox-backdrop" id="lightbox-backdrop"></div>
+		<button class="lightbox-close" id="lightbox-close" aria-label="关闭">
+			<Icon name="material-symbols:close-rounded" is:inline />
+		</button>
+		<button class="lightbox-nav lightbox-prev" id="lightbox-prev" aria-label="上一张">
+			<Icon name="material-symbols:chevron-left-rounded" is:inline />
+		</button>
+		<button class="lightbox-nav lightbox-next" id="lightbox-next" aria-label="下一张">
+			<Icon name="material-symbols:chevron-right-rounded" is:inline />
+		</button>
+		<div class="lightbox-img-wrap" id="lightbox-img-wrap">
+			<img id="lightbox-img" src="" alt="" />
+			<div class="lightbox-meta" id="lightbox-meta"></div>
+		</div>
+		<div class="lightbox-counter" id="lightbox-counter"></div>
+	</div>
 
-    <!-- 相册网格 -->
-    <div class="albums-grid">
-      {sortedAlbums.length > 0 ? (
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
-          {sortedAlbums.map((album, index) => {
-            const previewPhotos = getPreviewPhotos(album);
-            const photoCount = album.data.photos?.length || 0;
-            const photoUrls = previewPhotos.map((p: any) => typeof p === 'string' ? p : p.src);
-            // 根据照片数量生成散开样式（卡片 120px，容器 340px）
-            const cardTransforms = photoUrls.length === 1
-              ? ["rotate(-2deg)"]
-              : photoUrls.length === 2
-                ? ["rotate(-4deg) translate(-40px)", "rotate(4deg) translate(40px)"]
-                : photoUrls.length === 3
-                  ? ["rotate(-5deg) translate(-70px)", "rotate(0deg)", "rotate(5deg) translate(70px)"]
-                  : photoUrls.length === 4
-                    ? ["rotate(5deg) translate(-90px)", "rotate(0deg) translate(-30px)", "rotate(-5deg) translate(30px)", "rotate(-5deg) translate(90px)"]
-                    : ["rotate(8deg) translate(-110px)", "rotate(4deg) translate(-55px)", "rotate(-2deg)", "rotate(-8deg) translate(55px)", "rotate(3deg) translate(110px)"];
-            return (
-              <a
-                href={`/album/${album.id}/`}
-                class="album-card group onload-animation"
-                data-tags={(album.data.tags || []).join(",")}
-                data-album-card
-                style={`animation-delay: calc(var(--content-delay) + ${index * 80}ms)`}
-              >
-                <!-- BounceCards 照片展示 -->
-                <div class="bounce-stack">
-                  {photoUrls.length > 0 ? (
-                    <BounceCards
-                      id={`bounce-${album.id}`}
-                      images={photoUrls}
-                      containerWidth={340}
-                      containerHeight={190}
-                      animationDelay={0.3 + index * 0.1}
-                      animationStagger={0.08}
-                      enableHover={true}
-                      transformStyles={cardTransforms}
-                    />
-                  ) : (
-                    <div class="empty-placeholder">
-                      <Icon name="material-symbols:add-photo-alternate-outline" class="text-4xl" />
-                    </div>
-                  )}
-                  {photoCount > 4 && !album.data.imgbedFolder && (
-                    <div class="photo-badge">+{photoCount - 4}</div>
-                  )}
-                  {album.data.imgbedFolder && (
-                    <div class="photo-badge"><Icon name="material-symbols:cloud" class="text-xs" /> 图床</div>
-                  )}
-                </div>
+	<script is:inline define:vars={{ ALBUMS: albumMeta }}>
+	(function () {
+		var BED = document.getElementById("alb-wall");
+		if (!BED) return;
+		var BED_URL = BED.getAttribute("data-url") || "";
+		var BED_TOKEN = BED.getAttribute("data-token") || "";
+		var wall = BED;
+		var loading = document.getElementById("alb-loading");
+		var statusEl = document.getElementById("alb-status");
+		var emptyEl = document.getElementById("alb-empty");
+		var countEl = document.getElementById("alb-count");
+		var searchInput = document.getElementById("alb-search");
+		var searchClear = document.getElementById("alb-search-clear");
+		var clearBtn = document.getElementById("alb-clear");
 
-                <!-- 相册信息 -->
-                <div class="card-body">
-                  <h3 class="card-title">{album.data.title}</h3>
-                  <div class="card-meta">
-                    <span class="meta-item">
-                      <Icon name="material-symbols:calendar-today" class="text-xs" />
-                      {album.data.date.toLocaleDateString('zh-CN', { year: 'numeric', month: 'long' })}
-                    </span>
-                    <span class="meta-item">
-                      <Icon name="material-symbols:imagesmode" class="text-xs" />
-                      {album.data.imgbedFolder ? "图床相册" : `${photoCount} 张`}
-                    </span>
-                  </div>
-                </div>
-              </a>
-            );
-          })}
-        </div>
-      ) : (
-        <div class="w-full p-12 text-center">
-          <Icon name="material-symbols:photo-album-outline" class="text-6xl text-neutral-300 dark:text-neutral-600 mb-4" />
-          <p class="text-neutral-500 dark:text-neutral-400">还没有创建任何相册哦~</p>
-          <p class="text-sm text-neutral-400 dark:text-neutral-500 mt-2">快去记录生活中的美好瞬间吧！</p>
-        </div>
-      )}
-    </div>
+		var state = { q: "", album: "", tag: "" };
+		var photos = [];       // { src, albumId, albumTitle, date, dateText, location, tags[] }
+		var visible = [];      // 当前可见（筛选后）的照片，灯箱按它切换
+		var albumTitle = {};
+		ALBUMS.forEach(function (a) { albumTitle[a.id] = a; });
 
-    <!-- 分页控件（统一样式 3/9 虚线） -->
-    <nav class="album-pagination" data-album-pagination hidden aria-label="相册分页">
-      <button type="button" class="album-page-btn" data-page-prev aria-label="上一页">
-        <Icon name="material-symbols:chevron-left-rounded" class="text-[1.75rem]" />
-      </button>
-      <div class="bg-[var(--card-bg)] flex items-center rounded-lg px-3.5 h-11 gap-1.5 border border-dashed border-[var(--line-divider)] shadow-sm">
-        <span class="album-current-page text-sm font-bold text-[var(--primary)] tabular-nums">1</span>
-        <span class="text-sm text-[var(--content-meta)]">/</span>
-        <span class="album-total-pages text-sm font-bold text-[var(--content-meta)] tabular-nums">1</span>
-      </div>
-      <button type="button" class="album-page-btn" data-page-next aria-label="下一页">
-        <Icon name="material-symbols:chevron-right-rounded" class="text-[1.75rem]" />
-      </button>
-    </nav>
+		/* ---------- 拉图床：每个相册一个文件夹，并行 ---------- */
+		function listFolder(folder) {
+			var out = [], start = 0;
+			function step() {
+				return fetch(
+					BED_URL + "/api/manage/list?dir=" + encodeURIComponent(folder) + "&start=" + start + "&count=100",
+					{ headers: { Authorization: "Bearer " + BED_TOKEN } },
+				)
+					.then(function (r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
+					.then(function (data) {
+						var files = (data.files || []).filter(function (f) {
+							return f.metadata && f.metadata.FileType && f.metadata.FileType.indexOf("image/") === 0;
+						});
+						out = out.concat(files);
+						if (statusEl) statusEl.textContent = "正在从图床加载照片… " + (window.__albLoaded = out.length) + " 张";
+						if (!data.files || data.files.length < 100) return out;
+						start += 100;
+						return step();
+					});
+			}
+			return step();
+		}
 
-    </div>
-  </div>
+		function buildItems() {
+			var tasks = ALBUMS.filter(function (a) { return a.folder; }).map(function (a) {
+				return listFolder(a.folder)
+					.then(function (files) {
+						return files.map(function (f) {
+							return {
+								src: BED_URL + "/file/" + f.name,
+								albumId: a.id,
+								albumTitle: a.title,
+								date: a.date,
+								dateText: a.dateText,
+								location: a.location,
+								tags: a.tags,
+							};
+						});
+					})
+					.catch(function () { return []; });
+			});
+			return Promise.all(tasks).then(function (lists) {
+				photos = [];
+				lists.forEach(function (l) { photos = photos.concat(l); });
+				photos.sort(function (x, y) { return (x.date < y.date ? 1 : x.date > y.date ? -1 : 0); });
+			});
+		}
 
-  <!-- 标签筛选 + 分页 -->
-  <script is:inline>
-  (function() {
-    if (window.__albumFilterReady) return;
-    window.__albumFilterReady = true;
+		/* ---------- 渲染 ---------- */
+		function itemEl(p, index) {
+			var btn = document.createElement("button");
+			btn.type = "button";
+			btn.className = "alb-photo";
+			btn.setAttribute("data-album-id", p.albumId);
+			btn.setAttribute("data-album-tag", (p.tags || []).join(","));
+			btn.setAttribute("data-search", [p.albumTitle, p.location, (p.tags || []).join(" ")].join(" ").toLowerCase());
+			btn.setAttribute("data-index", String(index));
+			btn.setAttribute(
+				"data-meta",
+				[(p.albumTitle || ""), (p.dateText || p.date || ""), (p.location || "")].filter(Boolean).join(" · "),
+			);
+			btn.innerHTML = '<img loading="lazy" decoding="async" alt="' + (p.albumTitle || "") + '">';
+			btn.querySelector("img").src = p.src;
+			btn.addEventListener("click", function () { openLightbox(btn); });
+			return btn;
+		}
 
-    var PAGE_SIZE = 6;
-    var currentTag = "all";
-    var currentPage = 1;
+		function render() {
+			wall.querySelectorAll(".alb-photo").forEach(function (el) { el.remove(); });
+			var frag = document.createDocumentFragment();
+			photos.forEach(function (p, i) { frag.appendChild(itemEl(p, i)); });
+			wall.appendChild(frag);
+			if (loading) loading.remove();
+			loading = null;
+			applyFilters();
+		}
 
-    function getCards() {
-      return Array.prototype.slice.call(document.querySelectorAll("[data-album-card]"));
-    }
+		/* ---------- 筛选 ---------- */
+		function match(el) {
+			if (state.album && el.getAttribute("data-album-id") !== state.album) return false;
+			if (state.tag && (el.getAttribute("data-album-tag") || "").split(",").indexOf(state.tag) < 0) return false;
+			if (state.q && (el.getAttribute("data-search") || "").indexOf(state.q) < 0) return false;
+			return true;
+		}
+		function applyFilters() {
+			var els = Array.prototype.slice.call(wall.querySelectorAll(".alb-photo"));
+			visible = [];
+			els.forEach(function (el) {
+				var ok = match(el);
+				el.classList.toggle("is-hide", !ok);
+				if (ok) visible.push(el);
+			});
+			var filtering = !!(state.q || state.album || state.tag);
+			if (countEl) countEl.textContent = filtering ? "已筛 " + visible.length + " 张" : photos.length + " 张照片";
+			if (clearBtn) clearBtn.hidden = !filtering;
+			if (emptyEl) emptyEl.hidden = !(filtering && visible.length === 0);
+		}
+		function syncTabs() {
+			Array.prototype.forEach.call(document.querySelectorAll(".alb-tab[data-album-id]"), function (b) {
+				b.classList.toggle("is-active", (b.getAttribute("data-album-id") || "") === state.album);
+			});
+			Array.prototype.forEach.call(document.querySelectorAll(".alb-tab[data-album-tag]"), function (b) {
+				b.classList.toggle("is-active", (b.getAttribute("data-album-tag") || "") === state.tag);
+			});
+		}
+		function syncSearchClear() { if (searchClear && searchInput) searchClear.hidden = !searchInput.value; }
 
-    function getFiltered() {
-      return getCards().filter(function(card) {
-        if (currentTag === "all") return true;
-        var tags = (card.getAttribute("data-tags") || "").split(",").filter(Boolean);
-        return tags.indexOf(currentTag) !== -1;
-      });
-    }
+		var searchTimer = null;
+		if (searchInput) {
+			searchInput.addEventListener("input", function () {
+				syncSearchClear();
+				if (searchTimer) clearTimeout(searchTimer);
+				searchTimer = setTimeout(function () {
+					state.q = searchInput.value.trim().toLowerCase();
+					applyFilters();
+				}, 150);
+			});
+		}
+		if (searchClear) {
+			searchClear.addEventListener("click", function () {
+				if (searchInput) searchInput.value = "";
+				state.q = "";
+				syncSearchClear();
+				applyFilters();
+			});
+		}
+		Array.prototype.forEach.call(document.querySelectorAll(".alb-tab[data-album-id]"), function (b) {
+			b.addEventListener("click", function () {
+				var id = b.getAttribute("data-album-id") || "";
+				state.album = state.album === id ? "" : id;
+				syncTabs();
+				applyFilters();
+			});
+		});
+		Array.prototype.forEach.call(document.querySelectorAll(".alb-tab[data-album-tag]"), function (b) {
+			b.addEventListener("click", function () {
+				var tag = b.getAttribute("data-album-tag") || "";
+				state.tag = state.tag === tag ? "" : tag;
+				syncTabs();
+				applyFilters();
+			});
+		});
+		if (clearBtn) {
+			clearBtn.addEventListener("click", function () {
+				state = { q: "", album: "", tag: "" };
+				if (searchInput) searchInput.value = "";
+				syncSearchClear();
+				syncTabs();
+				applyFilters();
+			});
+		}
 
-    function render() {
-      var filtered = getFiltered();
-      var totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-      if (currentPage > totalPages) currentPage = totalPages;
+		/* ---------- 灯箱 ---------- */
+		var lb = document.getElementById("lightbox");
+		var lbImg = document.getElementById("lightbox-img");
+		var lbMeta = document.getElementById("lightbox-meta");
+		var lbCounter = document.getElementById("lightbox-counter");
+		var current = -1;
+		function openLightbox(el) {
+			current = visible.indexOf(el);
+			if (current < 0) return;
+			showCurrent();
+			lb.classList.add("is-open");
+			document.documentElement.style.overflow = "hidden";
+		}
+		function closeLightbox() {
+			lb.classList.remove("is-open");
+			document.documentElement.style.overflow = "";
+		}
+		function showCurrent() {
+			var el = visible[current];
+			if (!el || !lbImg) return;
+			var img = el.querySelector("img");
+			lbImg.src = img ? img.src : "";
+			if (lbMeta) lbMeta.textContent = el.getAttribute("data-meta") || "";
+			if (lbCounter) lbCounter.textContent = (current + 1) + " / " + visible.length;
+		}
+		function step(delta) {
+			if (!visible.length) return;
+			current = (current + delta + visible.length) % visible.length;
+			showCurrent();
+		}
+		var lbClose = document.getElementById("lightbox-close");
+		var lbPrev = document.getElementById("lightbox-prev");
+		var lbNext = document.getElementById("lightbox-next");
+		var lbBackdrop = document.getElementById("lightbox-backdrop");
+		if (lbClose) lbClose.addEventListener("click", closeLightbox);
+		if (lbBackdrop) lbBackdrop.addEventListener("click", closeLightbox);
+		if (lbPrev) lbPrev.addEventListener("click", function () { step(-1); });
+		if (lbNext) lbNext.addEventListener("click", function () { step(1); });
+		document.addEventListener("keydown", function (ev) {
+			if (!lb.classList.contains("is-open")) return;
+			if (ev.key === "Escape") closeLightbox();
+			else if (ev.key === "ArrowLeft") step(-1);
+			else if (ev.key === "ArrowRight") step(1);
+		});
+		var touchStartX = null;
+		if (lb) {
+			lb.addEventListener("touchstart", function (ev) { touchStartX = ev.touches[0].clientX; }, { passive: true });
+			lb.addEventListener("touchend", function (ev) {
+				if (touchStartX === null) return;
+				var dx = ev.changedTouches[0].clientX - touchStartX;
+				if (Math.abs(dx) > 40) step(dx < 0 ? 1 : -1);
+				touchStartX = null;
+			});
+		}
 
-      var start = (currentPage - 1) * PAGE_SIZE;
-      var end = start + PAGE_SIZE;
-      var visibleSet = new Set(filtered.slice(start, end));
+		/* ---------- 启动 ---------- */
+		function init() {
+			if (!document.getElementById("alb-wall")) return;
+			if (photos.length) { applyFilters(); return; }
+			if (!BED_URL || !BED_TOKEN) {
+				if (statusEl) statusEl.textContent = "未配置图床 API Token";
+				return;
+			}
+			buildItems().then(function () {
+				if (!photos.length) {
+					if (statusEl) statusEl.textContent = "图床里没有照片";
+					return;
+				}
+				render();
+			});
+		}
+		init();
+	})();
+	</script>
 
-      getCards().forEach(function(card) {
-        if (visibleSet.has(card)) {
-          card.style.display = "";
-          card.classList.remove("album-card-fade-in");
-          void card.offsetHeight;
-          card.classList.add("album-card-fade-in");
-        } else {
-          card.style.display = "none";
-          card.classList.remove("album-card-fade-in");
-        }
-      });
+	{/* 照片是脚本动态创建的，Astro 默认作用域样式（带 data-astro-cid）套不到它们身上
+	   —— .alb-photo.is-hide 会失效。这里必须用 is:global（所有规则都带 alb- 前缀，不会外溢）。 */}
+	<style is:global>
+		/* ---------- 顶部筛选条：细线、无底色块，选中 = 主题色下划线 ---------- */
+		.alb-bar {
+			position: static;
+			margin-bottom: 1rem;
+			padding: 0.5rem 0 0.5rem;
+			background: var(--page-bg);
+			border-bottom: 1px solid var(--line-divider);
+		}
+		.alb-bar__row {
+			display: flex;
+			align-items: center;
+			gap: 0.75rem;
+		}
+		.alb-bar__row--tabs {
+			display: block;
+			margin-top: 0.5rem;
+		}
+		.alb-search {
+			display: flex;
+			align-items: center;
+			gap: 0.4rem;
+			flex: 1;
+			max-width: 22rem;
+			padding: 0.4rem 0.6rem;
+			border: 1px solid var(--line-divider);
+			border-radius: 0.5rem;
+			color: var(--content-meta);
+			transition: border-color 150ms ease;
+		}
+		.alb-search:focus-within { border-color: var(--deep-text); }
+		.alb-search input {
+			flex: 1;
+			min-width: 0;
+			border: none;
+			background: transparent;
+			color: var(--deep-text);
+			font-family: inherit;
+			font-size: 0.82rem;
+			outline: none;
+		}
+		.alb-search__clear {
+			display: grid;
+			place-items: center;
+			width: 1.25rem;
+			height: 1.25rem;
+			padding: 0;
+			border: none;
+			border-radius: 9999px;
+			background: transparent;
+			color: var(--content-meta);
+			cursor: pointer;
+		}
+		.alb-search__clear:hover { background: var(--btn-plain-bg-hover); color: var(--deep-text); }
+		.alb-search__clear[hidden] { display: none; }
+		.alb-count { font-size: 0.8rem; color: var(--content-meta); white-space: nowrap; }
+		.alb-clear {
+			margin-left: auto;
+			padding: 0;
+			border: none;
+			background: transparent;
+			color: var(--primary);
+			font-family: inherit;
+			font-size: 0.8rem;
+			font-weight: 600;
+			cursor: pointer;
+		}
+		.alb-clear[hidden] { display: none; }
+		.alb-tabs {
+			display: flex;
+			align-items: center;
+			gap: 0.25rem;
+			overflow-x: auto;
+			scrollbar-width: none;
+			overscroll-behavior-x: contain;
+		}
+		.alb-tabs::-webkit-scrollbar { display: none; }
+		.alb-tab {
+			position: relative;
+			flex: 0 0 auto;
+			padding: 0.25rem 0.5rem 0.4rem;
+			border: none;
+			background: transparent;
+			color: var(--content-meta);
+			font-family: inherit;
+			font-size: 0.82rem;
+			white-space: nowrap;
+			cursor: pointer;
+			transition: color 150ms ease;
+		}
+		.alb-tab:hover { color: var(--deep-text); }
+		.alb-tab.is-active { color: var(--primary); font-weight: 600; }
+		.alb-tab.is-active::after {
+			content: "";
+			position: absolute;
+			left: 0.5rem;
+			right: 0.5rem;
+			bottom: 0.15rem;
+			height: 2px;
+			border-radius: 2px;
+			background: var(--primary);
+		}
 
-      renderPagination(totalPages);
-    }
+		/* ---------- 照片墙：CSS columns 瀑布流 ---------- */
+		.alb-wall {
+			columns: 5;
+			column-gap: 0.1875rem;
+		}
+		@media (max-width: 1280px) { .alb-wall { columns: 4; } }
+		@media (max-width: 1023px) { .alb-wall { columns: 3; } }
+		@media (max-width: 768px) { .alb-wall { columns: 2; column-gap: 0.125rem; } }
+		.alb-photo {
+			position: relative;
+			display: block;
+			width: 100%;
+			margin: 0 0 0.1875rem;
+			padding: 0;
+			border: none;
+			border-radius: 0;
+			overflow: hidden;
+			background: var(--btn-regular-bg);
+			cursor: zoom-in;
+			break-inside: avoid;
+			transition: transform 200ms cubic-bezier(0.23, 1, 0.32, 1), box-shadow 200ms ease;
+		}
+		.alb-photo:hover { transform: translateY(-2px); box-shadow: 0 8px 24px -8px rgba(0, 0, 0, 0.25); }
+		.alb-photo.is-hide { display: none; }
+		.alb-photo img { display: block; width: 100%; height: auto; }
+		.alb-tabs--tags { margin-top: 0.4rem; }
+		.alb-tabs__label {
+			flex: 0 0 auto;
+			margin-right: 0.25rem;
+			color: var(--content-meta);
+			font-size: 0.72rem;
+			letter-spacing: 0.08em;
+		}
+		.alb-loading {
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			gap: 0.5rem;
+			padding: 4rem 1rem;
+			color: var(--content-meta);
+			font-size: 0.85rem;
+			column-span: all;
+		}
+		.alb-spinner {
+			width: 1.1rem;
+			height: 1.1rem;
+			border: 2px solid var(--line-divider);
+			border-top-color: var(--primary);
+			border-radius: 50%;
+			animation: alb-spin 0.8s linear infinite;
+		}
+		@keyframes alb-spin { to { transform: rotate(360deg); } }
+		.alb-empty {
+			padding: 3rem 1rem;
+			text-align: center;
+			color: var(--content-meta);
+			font-size: 0.875rem;
+		}
+		.alb-empty[hidden] { display: none; }
 
-    function renderPagination(totalPages) {
-      var nav = document.querySelector("[data-album-pagination]");
-      if (!nav) return;
-      if (totalPages <= 1) { nav.hidden = true; return; }
-      nav.hidden = false;
+		/* ---------- 灯箱 ---------- */
+		.lightbox { position: fixed; inset: 0; z-index: 100; display: none; }
+		.lightbox.is-open { display: block; }
+		.lightbox-backdrop { position: absolute; inset: 0; background: rgba(0, 0, 0, 0.88); }
+		.lightbox-img-wrap { position: absolute; inset: 6.5rem 3rem 3rem; display: flex; align-items: center; justify-content: center; }
+		.lightbox-img-wrap img { max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 0.5rem; }
+		.lightbox-meta {
+			position: absolute;
+			bottom: -0.25rem;
+			left: 50%;
+			transform: translateX(-50%);
+			color: rgba(255, 255, 255, 0.85);
+			font-size: 0.8rem;
+			white-space: nowrap;
+		}
+		.lightbox-close,
+		.lightbox-nav {
+			position: absolute;
+			z-index: 2;
+			display: grid;
+			place-items: center;
+			width: 2.75rem;
+			height: 2.75rem;
+			border: none;
+			border-radius: 9999px;
+			background: rgba(255, 255, 255, 0.12);
+			color: #fff;
+			font-size: 1.4rem;
+			cursor: pointer;
+			transition: background 150ms ease;
+		}
+		.lightbox-close:hover,
+		.lightbox-nav:hover { background: rgba(255, 255, 255, 0.24); }
+		.lightbox-close { top: 5rem; right: 1rem; }
+		.lightbox-prev { left: 1rem; top: 50%; transform: translateY(-50%); }
+		.lightbox-next { right: 1rem; top: 50%; transform: translateY(-50%); }
+		.lightbox-counter {
+			position: absolute;
+			top: 5.35rem;
+			left: 50%;
+			transform: translateX(-50%);
+			color: rgba(255, 255, 255, 0.7);
+			font-size: 0.8rem;
+			letter-spacing: 0.05em;
+		}
 
-      var prev = nav.querySelector("[data-page-prev]");
-      var next = nav.querySelector("[data-page-next]");
-      if (prev) prev.disabled = currentPage <= 1;
-      if (next) next.disabled = currentPage >= totalPages;
-
-      var curEl = nav.querySelector(".album-current-page");
-      var totalEl = nav.querySelector(".album-total-pages");
-      if (curEl) curEl.textContent = String(currentPage);
-      if (totalEl) totalEl.textContent = String(totalPages);
-    }
-
-    function updateIndicator(container, button) {
-      var indicator = container.querySelector(".album-filter-indicator");
-      if (!indicator || !button) return;
-      var parentRect = container.getBoundingClientRect();
-      var btnRect = button.getBoundingClientRect();
-      indicator.style.left = (btnRect.left - parentRect.left) + "px";
-      indicator.style.top = (btnRect.top - parentRect.top) + "px";
-      indicator.style.width = btnRect.width + "px";
-      indicator.style.height = btnRect.height + "px";
-      indicator.style.opacity = "1";
-    }
-
-    // 标签筛选点击
-    document.addEventListener("click", function(e) {
-      var btn = e.target.closest("[data-album-filter] .tools-tab-btn");
-      if (!btn) return;
-      var container = btn.closest("[data-album-filter]");
-      if (!container) return;
-
-      var filters = container.querySelectorAll(".tools-tab-btn");
-      filters.forEach(function(f) {
-        f.classList.remove("tools-tab-btn-active");
-        f.classList.add("tools-tab-btn-inactive");
-      });
-      btn.classList.remove("tools-tab-btn-inactive");
-      btn.classList.add("tools-tab-btn-active");
-
-      currentTag = btn.getAttribute("data-tag") || "all";
-      currentPage = 1;
-      updateIndicator(container, btn);
-      render();
-    });
-
-    // 分页点击
-    document.addEventListener("click", function(e) {
-      var nav = e.target.closest("[data-album-pagination]");
-      if (!nav) return;
-
-      var go = e.target.closest("[data-page-go]");
-      if (go) {
-        currentPage = parseInt(go.dataset.pageGo, 10) || 1;
-      } else if (e.target.closest("[data-page-prev]")) {
-        currentPage = Math.max(1, currentPage - 1);
-      } else if (e.target.closest("[data-page-next]")) {
-        currentPage = currentPage + 1;
-      } else {
-        return;
-      }
-
-      render();
-      document.querySelector(".albums-grid")?.scrollIntoView({ behavior: "smooth", block: "start" });
-    });
-
-    function init() {
-      var container = document.querySelector("[data-album-filter]");
-      if (container) {
-        var activeBtn = container.querySelector(".tools-tab-btn-active") || container.querySelector('[data-tag="all"]');
-        requestAnimationFrame(function() {
-          requestAnimationFrame(function() {
-            if (activeBtn) updateIndicator(container, activeBtn);
-          });
-        });
-      }
-      currentPage = 1;
-      render();
-    }
-
-    init();
-    document.addEventListener("astro:page-load", init);
-    window.addEventListener("resize", function() {
-      var container = document.querySelector("[data-album-filter]");
-      if (!container) return;
-      var activeBtn = container.querySelector(".tools-tab-btn-active");
-      if (activeBtn) updateIndicator(container, activeBtn);
-    });
-  })();
-  </script>
+		@media (max-width: 768px) {
+			.alb-bar__row--tabs { flex-wrap: nowrap; }
+			.lightbox-img-wrap { inset: 3.5rem 0.5rem 3.5rem; }
+			.lightbox-meta { white-space: normal; text-align: center; }
+		}
+	</style>
 </MainGridLayout>
-
-<style>
-  .albums-grid {
-    animation: fadeIn 0.5s ease-out;
-  }
-
-  @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-
-  /* 统计胶囊 */
-  .stat-pill {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 8px 16px;
-    background: var(--page-bg);
-    border: 1px solid var(--line-divider);
-    border-radius: 50px;
-    font-size: 13px;
-    color: var(--deep-text);
-    transition: border-color 0.2s ease;
-  }
-  .stat-pill:hover {
-    border-color: var(--primary);
-  }
-  .stat-pill :global(svg) {
-    color: var(--primary);
-  }
-
-  /* ============================================
-     相册卡片 — 画廊墙风格
-     灵感来源：美术馆挂画 + 照片墙
-     特点：厚画框 + 投影 + 标签胶带 + 铭牌式标题
-     ============================================ */
-  .album-card {
-    --ac-frame: var(--deep-text);
-    --ac-mat: var(--page-bg);
-    --ac-shadow: color-mix(in srgb, var(--deep-text) 12%, transparent);
-
-    display: flex;
-    flex-direction: column;
-    background: var(--ac-mat);
-    /* 厚画框效果：双层边框模拟画框切面 */
-    border: 3px solid var(--ac-frame);
-    outline: 1px solid color-mix(in srgb, var(--ac-frame) 15%, transparent);
-    outline-offset: 4px;
-    border-radius: 6px;
-    overflow: visible;
-    position: relative;
-    /* 画框投影：右下偏移 + 扩散 */
-    box-shadow:
-      5px 5px 0 0 var(--ac-shadow),
-      5px 5px 0 1px color-mix(in srgb, var(--ac-frame) 8%, transparent);
-    transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1),
-                box-shadow 0.4s ease;
-  }
-
-  :root.dark .album-card {
-    --ac-shadow: color-mix(in srgb, var(--deep-text) 25%, transparent);
-  }
-
-  .album-card:hover {
-    /* 悬停：画框微微抬起，投影拉远 */
-    transform: translateY(-8px) rotate(-0.5deg);
-    box-shadow:
-      8px 10px 0 0 var(--ac-shadow),
-      8px 10px 0 1px color-mix(in srgb, var(--ac-frame) 8%, transparent),
-      0 20px 40px color-mix(in srgb, var(--deep-text) 8%, transparent);
-  }
-
-  /* BounceCards 堆叠区域 — 画框内的衬板 */
-  .bounce-stack {
-    position: relative;
-    height: 210px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    overflow: visible;
-    /* 衬板纹理：极淡的十字纹 */
-    background:
-      linear-gradient(90deg, color-mix(in srgb, var(--line-divider) 8%, transparent) 1px, transparent 1px),
-      linear-gradient(color-mix(in srgb, var(--line-divider) 8%, transparent) 1px, transparent 1px);
-    background-size: 20px 20px;
-    border-radius: 3px 3px 0 0;
-  }
-
-  @media (max-width: 640px) {
-    .bounce-stack { height: 150px; }
-  }
-
-  .bounce-stack :global(.bounce-card) {
-    width: 100px;
-    border-width: 3px;
-    border-radius: 14px;
-  }
-
-  /* 照片数量徽章 — 胶片卷标签 */
-  .photo-badge {
-    position: absolute;
-    bottom: 12px;
-    right: 14px;
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    background: var(--ac-frame);
-    color: var(--ac-mat);
-    font-size: 10px;
-    font-weight: 700;
-    padding: 3px 10px;
-    border-radius: 3px;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    z-index: 10;
-  }
-
-  .empty-placeholder {
-    position: absolute;
-    top: 50%; left: 50%;
-    transform: translate(-50%, -50%);
-    color: var(--content-meta);
-    opacity: 0.15;
-  }
-
-  /* 信息区域 — 画框下方的铭牌 */
-  .card-body {
-    padding: 14px 16px 18px;
-    /* 顶部分割线模拟画框底边 */
-    border-top: 1px solid color-mix(in srgb, var(--line-divider) 40%, transparent);
-    margin-top: 2px;
-  }
-
-  .card-title {
-    font-size: 15px;
-    font-weight: 700;
-    color: var(--deep-text);
-    margin-bottom: 8px;
-    line-height: 1.3;
-    letter-spacing: 0.01em;
-    transition: color 0.2s ease;
-  }
-
-  .album-card:hover .card-title {
-    color: var(--primary);
-  }
-
-  .card-meta {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    font-size: 11px;
-    color: var(--content-meta);
-    letter-spacing: 0.02em;
-  }
-
-  .meta-item {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    font-weight: 500;
-  }
-
-  .meta-item :global(svg) {
-    opacity: 0.5;
-    font-size: 13px;
-  }
-
-  .card-meta {
-    display: flex; align-items: center; gap: 14px;
-    font-size: 12px; color: var(--content-meta);
-  }
-
-  .meta-item {
-    display: flex; align-items: center; gap: 4px;
-  }
-
-  @media (max-width: 640px) {
-    .polaroid-stack { height: 180px; }
-    .stat-pill { padding: 6px 12px; font-size: 12px; }
-  }
-
-  /* --- 标签筛选胶囊 --- */
-  .tools-tab-wrapper {
-    margin-bottom: 1.5rem;
-  }
-
-  .tools-tab-pill {
-    position: relative;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.375rem;
-    padding: 0.375rem;
-    border-radius: 1rem;
-    border: 2px solid var(--deep-text);
-  }
-  :root.dark .tools-tab-pill {
-    border-color: var(--deep-text);
-  }
-
-  .tools-tab-indicator {
-    position: absolute;
-    border-radius: 9999px;
-    background: var(--deep-text);
-    transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-                top 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-                width 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-                height 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    opacity: 0;
-    pointer-events: none;
-    z-index: 0;
-  }
-  :root.dark .tools-tab-indicator {
-    background: var(--deep-text);
-  }
-
-  .tools-tab-btn {
-    position: relative;
-    z-index: 1;
-    display: flex;
-    align-items: center;
-    gap: 0.375rem;
-    padding: 0.375rem 0.875rem;
-    border: none;
-    border-radius: 9999px;
-    font-size: 0.8125rem;
-    font-weight: 500;
-    white-space: nowrap;
-    cursor: pointer;
-    background: transparent;
-    transition: color 0.2s;
-    flex-shrink: 0;
-    font-family: inherit;
-    color: var(--deep-text);
-  }
-  :root.dark .tools-tab-btn {
-    color: var(--deep-text);
-  }
-
-  .tools-tab-btn-active {
-    color: var(--page-bg);
-    cursor: default;
-  }
-  :root.dark .tools-tab-btn-active {
-    color: var(--page-bg);
-  }
-
-  .tools-tab-btn-inactive:hover {
-    opacity: 0.7;
-  }
-
-  /* 筛选动画 */
-  .album-card-fade-in {
-    animation: albumFadeInUp 0.35s ease-out both;
-  }
-  @keyframes albumFadeInUp {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-
-  /* --- 分页控件 --- */
-  .album-pagination {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 1rem;
-    padding: 1.5rem 0 0.5rem;
-  }
-
-  .album-page-btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 2.75rem;
-    height: 2.75rem;
-    border: 1px solid var(--line-divider);
-    border-radius: 0.5rem;
-    background: var(--card-bg);
-    color: var(--primary);
-    font-weight: 700;
-    cursor: pointer;
-    transition: background 0.2s, color 0.2s, transform 0.15s;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.04);
-  }
-  .album-page-btn:hover:not(:disabled) {
-    background: var(--btn-card-bg-hover);
-    color: var(--primary);
-    transform: none;
-  }
-  .album-page-btn:active {
-    transform: scale(0.95);
-  }
-  .album-page-btn:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
-  }
-
-  .album-page-nums {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    background: transparent;
-    border: none;
-    border-radius: 0;
-    padding: 0;
-    box-shadow: none;
-  }
-
-  .album-page-num {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 2.75rem;
-    width: 2.75rem;
-    height: 2.75rem;
-    padding: 0;
-    border: 1px solid var(--line-divider);
-    border-radius: 0.5rem;
-    background: var(--card-bg);
-    color: var(--content-meta);
-    font-size: 0.875rem;
-    font-weight: 700;
-    cursor: pointer;
-    transition: background 0.2s, color 0.2s, transform 0.15s;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.04);
-  }
-  .album-page-num:hover {
-    background: var(--btn-card-bg-hover);
-    color: var(--content-meta);
-    transform: none;
-  }
-  .album-page-num:active {
-    transform: scale(0.95);
-  }
-  .album-page-num.is-active {
-    background: var(--primary);
-    border-color: var(--primary);
-    color: white;
-    cursor: default;
-    transform: none;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.12);
-  }
-  :root.dark .album-page-num.is-active { color: rgba(0,0,0,0.7); }
-</style>

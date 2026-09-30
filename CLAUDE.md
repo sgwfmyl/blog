@@ -432,6 +432,23 @@ Layout.astro          ← HTML 骨架：<html>, <head>, <body>, 全局组件, �
 - ⚠️ **手机底部那条浮岛（`MobileDock` + `src/styles/components/mobile-dock.css`）不在这次统一范围内，保持原样**（透明按钮 + 中间凸出的黑色圆钮 + 胶囊圆角）—— 站长 2026-09-30 明确要求改回来，别再顺手「统一规格」。它的总高 `4.25rem`（按钮 3.25rem + 上下留白 0.5rem）被 `dock-drawer`、动态页那 3 个按钮的 `bottom` 偏移按写死的值引用，**改它高度要同步改那两处**。
 - ⚠️ **图标空白 = sprite 丢符号**（本次踩到）：页面里的 `<Icon>` 默认走 astro-icon 的 sprite（`<use href="#ai:…">`），这份 sprite 有已知的丢符号问题（`src/components/common/Icon.astro` 就是为绕开它而写的包装组件）。症状是图标**整块空白**而不报错，`document.querySelector("symbol#ai:…")` 能确认缺没缺。判断/修复：给那个 `<Icon>` 加 `is:inline`（路径直接内联），或改用 `@/components/common/Icon.astro`。
 
+### 5.12 相册页（/album/）整面照片墙（2026-09-30）
+
+- **一个页面装所有照片**：11 个相册（约 238 张）全部走图床 `imgbedFolder`，客户端并行拉每个文件夹的
+  `/api/manage/list`（Bearer Token，见 `.env` 的 PUBLIC_IMAGEBED_URL / PUBLIC_IMAGEBED_API_TOKEN），
+  铺进 CSS columns 瀑布流（5/4/3/2 列）。单相册页 `/album/<id>/` 与 `BounceCards` **已删除**。
+- **顶部筛选条**：搜索 + 计数 + 清空（第 1 行）、相册名（第 2 行，选中 = 主题色 + 2px 下划线）。
+  **按要求不吸顶**（position: static）。标签行已按要求删除，只留相册名。
+- **图片上不放任何文字**；相册名/日期/地点只在灯箱说明里用（地点取自相册 md 的 `location`）。
+- 灯箱是页内自研的（跨整面墙切换、键盘左右/Esc、触摸滑动）。
+- ⚠️ **本页 `<style>` 必须是 `is:global`**：照片由 JS 动态创建，Astro 默认作用域样式（选择器带
+  `data-astro-cid`）套不到它们身上，`.alb-photo.is-hide` 会直接失效（站长报的「点相册图不变」就是这个）。
+  规则都带 `alb-` 前缀，全局也不会外溢。**以后凡是「SSR 只出容器、内容由 JS 建」的页面都要注意这条。**
+- ⚠️ 改完 `.astro` 样式在 dev 看不到效果 = Vite 样式模块缓存（见 §5.10 末尾那条），重写文件即可；
+  真假以 `pnpm build` 产物为准。
+- 布局：`album-list` 已在 `NO_SIDEBAR_PAGE_TYPES` 里，宽度 4/5 与 sticky 无关的规则写在
+  `no-sidebar-pages.css` 的 album 段。
+
 ### 5.11 影视与游戏页（/movies-games/）左栏筛选（2026-09-30）
 
 页面自包含在 `src/pages/movies-games/index.astro`（数据来自 bangumi 集合里 anime/game/real 三类，78 条），布局 CSS 追加在 `src/styles/features/movies-games.css` 末尾。
