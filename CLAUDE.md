@@ -432,6 +432,17 @@ Layout.astro          ← HTML 骨架：<html>, <head>, <body>, 全局组件, �
 - ⚠️ **手机底部那条浮岛（`MobileDock` + `src/styles/components/mobile-dock.css`）不在这次统一范围内，保持原样**（透明按钮 + 中间凸出的黑色圆钮 + 胶囊圆角）—— 站长 2026-09-30 明确要求改回来，别再顺手「统一规格」。它的总高 `4.25rem`（按钮 3.25rem + 上下留白 0.5rem）被 `dock-drawer`、动态页那 3 个按钮的 `bottom` 偏移按写死的值引用，**改它高度要同步改那两处**。
 - ⚠️ **图标空白 = sprite 丢符号**（本次踩到）：页面里的 `<Icon>` 默认走 astro-icon 的 sprite（`<use href="#ai:…">`），这份 sprite 有已知的丢符号问题（`src/components/common/Icon.astro` 就是为绕开它而写的包装组件）。症状是图标**整块空白**而不报错，`document.querySelector("symbol#ai:…")` 能确认缺没缺。判断/修复：给那个 `<Icon>` 加 `is:inline`（路径直接内联），或改用 `@/components/common/Icon.astro`。
 
+### 5.11 影视与游戏页（/movies-games/）左栏筛选（2026-09-30）
+
+页面自包含在 `src/pages/movies-games/index.astro`（数据来自 bangumi 集合里 anime/game/real 三类，78 条），布局 CSS 追加在 `src/styles/features/movies-games.css` 末尾。
+
+- **左栏六块**（sticky，顺序站长指定）：搜索 → 观看日期（月历，按条目的 `published`）→ 排序（日期↑↓ / 评分↑↓）→ 类型（原页面上方那排 tab）→ 观看状态（原那排筛选）→ 标签（条目 `tags` 的并集）。排序/类型/观看状态**默认收起**（details），观看日期与标签默认展开。
+- **全部纯前端**：不命中加 `.mg-item.is-hide` 隐藏；排序按顺序重新 append 回网格。数据属性是契约：`data-type` / `data-status` / `data-tags` / `data-date` / `data-month` / `data-score` / `data-search`。
+- **移动端**（≤768px）：左栏整块收进右下角按钮（`[data-mg-tools]` 六个按钮），与动态页 /moments/ 完全同一套行为（浮岛在时不显示、浮岛收起时与 FloatingDock 同列出现、点谁弹谁）。本页手机档还额外藏掉了 FloatingDock 的「展开」按钮与展开列（会和这排按钮叠在一起）。
+- ⚠️ **类名撞车（踩过）**：左栏标签块最初也叫 `.mg-tags` / `.mg-tag`，和**卡片封面上的标签胶囊同名**，把卡片胶囊覆盖成透明底 + 深色字，压在封面上等于没字。已把左栏那组规则限定到 `.mg-side` 前缀下。加组件前先搜类名是否被卡片占用（卡片用的是 `.mg-card` / `.mg-cover` / `.mg-img` / `.mg-gradient` / `.mg-status` / `.mg-score` / `.mg-info` / `.mg-title` / `.mg-tags` / `.mg-tag` / `.mg-overlay` / `.mg-comment`）。
+- **卡片圆角只改 `.mg-card`**（0.75rem），**不要动全局 `--radius-large`**（它是 0，全站其它卡片靠它保持直角）。
+- 本页在 `NO_SIDEBAR_PAGE_TYPES` 里（左右小组件全去掉），整页宽度 4/5 与左栏 sticky 的 `overflow: clip` 都写在 `src/styles/features/no-sidebar-pages.css` 的 movies-games 段。
+
 ### 5.10 导航页（/projects/）左栏 + 搜索 + 卡片动效（2026-09-30，参照 kulayu.com）
 
 页面自包含在 `src/pages/projects.astro`（markup + `<style>` + head 槽内联脚本），只有宽度与 sticky 前提两条规则在 `src/styles/features/no-sidebar-pages.css` 的 projects 段。

@@ -2,20 +2,17 @@
 import { getCollection } from "astro:content";
 import Comment from "@components/comment/index.astro";
 import { Icon } from "astro-icon/components";
-import ClientPagination from "@/components/common/ClientPagination.astro";
 import PageTitle from "@/components/common/PageTitle.astro";
 import MovieGameCard from "@/components/pages/movies-games/MovieGameCard.astro";
-import { siteConfig } from "@/config";
-import { externalBangumiConfig } from "@/config/externalBangumiConfig";
 import I18nKey from "@/i18n/i18nKey";
 import { i18n } from "@/i18n/translation";
 import MainGridLayout from "@/layouts/MainGridLayout.astro";
 import { formatDateI18nWithTime } from "@/utils/date-utils";
 import { removeFileExtension } from "@/utils/url-utils";
 
-if (!siteConfig.pages.moviesGames) {
-	return Astro.redirect("/404/");
-}
+// 2026-09-30 改版：左栏筛选（搜索 / 排序 / 类型 / 观看状态 / 标签 / 日历）+ 卡片网格。
+// 「类型」与「观看状态」两组选项就是原来页面上方那两条分类筛选，搬进左栏。
+// 筛选与排序全部在前端完成：条目本来就整页渲染，不发请求。
 
 const buildTime = formatDateI18nWithTime(new Date());
 
@@ -39,6 +36,8 @@ interface MgItem {
 	ep_status: number;
 	vol_status: number;
 	updated_at: string;
+	/** 播出/发布日（ISO，可能为空）—— 排序与日历用 */
+	date: string;
 	private: boolean;
 	link: string;
 	subject: {
@@ -79,8 +78,6 @@ const mgItems: MgItem[] = customBangumi
 			real: 6,
 		};
 
-		const subcategory = data.subcategory;
-
 		return {
 			subject_id: 0,
 			subject_type: subjectTypeMap[data.category] || 2,
@@ -90,10 +87,11 @@ const mgItems: MgItem[] = customBangumi
 			tags: data.tags || [],
 			ep_status: 0,
 			vol_status: 0,
-			updated_at: data.published?.toISOString() || new Date().toISOString(),
+			updated_at: data.published?.toISOString() || "",
+			date: data.published?.toISOString() || "",
 			private: false,
 			link: finalLink,
-			_subcategory: subcategory,
+			_subcategory: data.subcategory,
 			subject: {
 				id: 0,
 				type: subjectTypeMap[data.category] || 2,
@@ -117,8 +115,7 @@ const mgItems: MgItem[] = customBangumi
 		};
 	})
 	.sort(
-		(a, b) =>
-			new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime(),
+		(a, b) => new Date(b.date || 0).getTime() - new Date(a.date || 0).getTime(),
 	);
 
 function getItemSubcategory(item: MgItem): string {
@@ -132,92 +129,78 @@ function getItemSubcategory(item: MgItem): string {
 	return "movie";
 }
 
-type TabKey = "all" | "movie" | "tv" | "anime" | "documentary" | "game";
+/** 类型键：游戏看 subject_type，其余看子分类（与原页面上方 tab 的判定完全一致） */
+function typeKeyOf(item: MgItem): string {
+	return item.subject_type === 4 ? "game" : getItemSubcategory(item);
+}
 
-const tabConfig: { key: TabKey; i18nKey: I18nKey }[] = [
-	{ key: "all", i18nKey: I18nKey.moviesGamesTabAll },
-	{ key: "movie", i18nKey: I18nKey.moviesGamesTabMovie },
-	{ key: "tv", i18nKey: I18nKey.moviesGamesTabTV },
-	{ key: "anime", i18nKey: I18nKey.moviesGamesTabAnime },
-	{ key: "documentary", i18nKey: I18nKey.moviesGamesTabDocumentary },
-	{ key: "game", i18nKey: I18nKey.moviesGamesTabGame },
+const TYPE_OPTIONS: { value: string; label: string }[] = [
+	{ value: "all", label: i18n(I18nKey.moviesGamesTabAll) },
+	{ value: "movie", label: i18n(I18nKey.moviesGamesTabMovie) },
+	{ value: "tv", label: i18n(I18nKey.moviesGamesTabTV) },
+	{ value: "anime", label: i18n(I18nKey.moviesGamesTabAnime) },
+	{ value: "documentary", label: i18n(I18nKey.moviesGamesTabDocumentary) },
+	{ value: "game", label: i18n(I18nKey.moviesGamesTabGame) },
 ];
 
-interface SectionData {
-	tabKey: string;
-	tabName: string;
-	tabCount: number;
-	items: MgItem[];
-	filters: { value: string; label: string; count: number }[];
-}
+const STATUS_OPTIONS: { value: string; label: string }[] = [
+	{ value: "all", label: i18n(I18nKey.bangumiFilterAll) },
+	{ value: "collect", label: i18n(I18nKey.bangumiFilterWatched) },
+	{ value: "doing", label: i18n(I18nKey.bangumiFilterWatching) },
+	{ value: "wish", label: i18n(I18nKey.bangumiFilterWish) },
+	{ value: "on_hold", label: i18n(I18nKey.bangumiFilterOnHold) },
+	{ value: "dropped", label: i18n(I18nKey.bangumiFilterDropped) },
+];
 
-const sections: SectionData[] = [];
+// 统计：类型 / 观看状态 / 标签 / 每天条数（日历用）
+const typeCounts: Record<string, number> = { all: mgItems.length };
+const statusCounts: Record<string, number> = {};
+const tagCounts = new Map<string, number>();
+const countByDate: Record<string, number> = {};
 
-for (const tc of tabConfig) {
-	const items =
-		tc.key === "all"
-			? mgItems
-			: mgItems.filter((item) => {
-					if (tc.key === "game") return item.subject_type === 4;
-					if (item.subject_type === 4) return false;
-					return getItemSubcategory(item) === tc.key;
-				});
+for (const item of mgItems) {
+	const tk = typeKeyOf(item);
+	typeCounts[tk] = (typeCounts[tk] || 0) + 1;
 
-	// 移除 items.length === 0 的过滤，确保后台数据能显示
+	const sk = statusMap[item.type] || "unknown";
+	statusCounts[sk] = (statusCounts[sk] || 0) + 1;
 
-	const statusCounts: Record<string, number> = {};
-	for (const item of items) {
-		const s = statusMap[item.type] || "unknown";
-		statusCounts[s] = (statusCounts[s] || 0) + 1;
+	for (const tag of item.tags || []) {
+		tagCounts.set(tag, (tagCounts.get(tag) || 0) + 1);
 	}
 
-	const filters = [
-		{
-			value: "all",
-			label: i18n(I18nKey.bangumiFilterAll),
-			count: items.length,
-		},
-		{
-			value: "collect",
-			label: i18n(I18nKey.bangumiFilterWatched),
-			count: statusCounts.collect || 0,
-		},
-		{
-			value: "doing",
-			label: i18n(I18nKey.bangumiFilterWatching),
-			count: statusCounts.doing || 0,
-		},
-		{
-			value: "wish",
-			label: i18n(I18nKey.bangumiFilterWish),
-			count: statusCounts.wish || 0,
-		},
-		{
-			value: "on_hold",
-			label: i18n(I18nKey.bangumiFilterOnHold),
-			count: statusCounts.on_hold || 0,
-		},
-		{
-			value: "dropped",
-			label: i18n(I18nKey.bangumiFilterDropped),
-			count: statusCounts.dropped || 0,
-		},
-	];
-
-	sections.push({
-		tabKey: tc.key,
-		tabName: i18n(tc.i18nKey),
-		tabCount: items.length,
-		items,
-		filters,
-	});
+	if (item.date) {
+		const day = item.date.slice(0, 10);
+		countByDate[day] = (countByDate[day] || 0) + 1;
+	}
 }
 
-const activeTab = sections[0]?.tabKey || "all";
+const tags = [...tagCounts.entries()]
+	.sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], "zh-CN"))
+	.map(([name, count]) => ({ name, count }));
+
+const now = new Date();
+const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+
+const filterMeta = { countByDate, currentMonth };
+
+/** 卡片搜索用的纯文本（中文名 + 原名 + 标签 + 短评） */
+const searchTextOf = (item: MgItem) =>
+	[
+		item.subject.name_cn || item.subject.name,
+		item.subject.name,
+		...(item.tags || []),
+		item.comment || "",
+	]
+		.join(" ")
+		.toLowerCase();
 ---
 
-<MainGridLayout title={i18n(I18nKey.moviesGamesTitle)} description={i18n(I18nKey.moviesGamesSubtitle)}>
-	<div class="mg-page-wrapper flex w-full rounded-(--radius-large) overflow-hidden relative min-h-32">
+<MainGridLayout
+	title={i18n(I18nKey.moviesGamesTitle)}
+	description={i18n(I18nKey.moviesGamesSubtitle)}
+>
+	<div class="mg-page-wrapper flex w-full rounded-(--radius-large) overflow-clip relative min-h-32">
 		<div data-pagefind-body class="card-base z-10 px-4 py-6 md:px-9 relative w-full">
 			<!-- Page header -->
 			<header class="mg-header relative w-full mb-8">
@@ -231,597 +214,605 @@ const activeTab = sections[0]?.tabKey || "all";
 				</p>
 			</header>
 
-			{mgItems.length > 0 ? (
-				<>
-					<!-- Tab Navigation -->
-					<div class="mg-tabs-wrapper mb-6">
-						<nav class="tools-tab-pill" data-mg-tab-nav aria-label="Tabs">
-							<div class="tools-tab-indicator" data-mg-tab-indicator></div>
-							{sections.map((sec) => (
-								<button
-									class:list={[
-										"tools-tab-btn",
-										sec.tabKey === activeTab
-											? "tools-tab-btn-active"
-											: "tools-tab-btn-inactive",
-									]}
-									data-tab={sec.tabKey}
-									type="button"
-								>
-									<span>{sec.tabName}</span>
-									<span class="tools-tab-badge">{sec.tabCount}</span>
-								</button>
-							))}
-						</nav>
-					</div>
-
-					<!-- Sections -->
-					{sections.map((sec) => (
-						<div class:list={["mg-section", { "hidden": sec.tabKey !== activeTab }]} data-section={sec.tabKey}>
-							{sec.items.length > 0 ? (
-								<>
-									<!-- Filters -->
-									<div class="mg-filter-wrapper tools-tab-pill mb-5" data-mg-filter-nav={sec.tabKey}>
-										<div class="tools-tab-indicator" data-mg-filter-indicator={sec.tabKey}></div>
-										{sec.filters.map((filter) => (
-											<button
-												class:list={[
-													"tools-tab-btn mg-filter-btn",
-													filter.value === "all"
-														? "tools-tab-btn-active"
-														: "tools-tab-btn-inactive",
-												]}
-												data-filter={filter.value}
-												data-section={sec.tabKey}
-												type="button"
-											>
-												<span>{filter.label}</span>
-												<span class="tools-tab-badge">{filter.count}</span>
-											</button>
-										))}
-									</div>
-
-									<!-- Grid -->
-									<div class="mg-grid grid grid-cols-3 sm:grid-cols-4 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-5">
-										{sec.items.map((item: MgItem) => (
-											<div
-												class="mg-item"
-												data-item-section={sec.tabKey}
-												data-item-status={statusMap[item.type] || "unknown"}
-											>
-												<MovieGameCard item={item as any} link={item.link} />
-											</div>
-										))}
-									</div>
-
-									<ClientPagination
-										totalItems={sec.items.length}
-										itemsPerPage={12}
-										itemsPerPageMobile={6}
-										currentPage={1}
-										sectionId={sec.tabKey}
+			{
+				mgItems.length > 0 ? (
+					<div class="mg-layout">
+						{/* 左栏：搜索 / 排序 / 类型 / 观看状态 / 标签 / 日历 */}
+						<aside class="mg-side" data-mg-side aria-label="筛选">
+							<div class="mg-block" data-mg-block="search">
+								<label class="mg-search">
+									<Icon name="material-symbols:search-rounded" is:inline class="text-[1.05rem]" />
+									<input
+										type="search"
+										placeholder="搜索影视 / 游戏…"
+										aria-label="搜索"
+										data-mg-search
 									/>
-								</>
-							) : (
-								<div class="flex flex-col items-center justify-center py-16 text-center">
-									<p class="text-sm text-[var(--content-meta)]">{i18n(I18nKey.moviesGamesNoData)}</p>
+									<button
+										type="button"
+										class="mg-search__clear"
+										data-mg-search-clear
+										hidden
+										aria-label="清空搜索"
+									>
+										<Icon name="material-symbols:close-rounded" is:inline />
+									</button>
+								</label>
+							</div>
+
+							<details class="mg-block mg-details" data-mg-block="calendar" open>
+								<summary class="mg-summary">
+									<Icon name="material-symbols:calendar-month-outline" is:inline class="text-[1.05rem]" />
+									<span>观看日期</span>
+								</summary>
+								<div class="mg-cal">
+									<div class="mg-cal__head">
+										<button type="button" class="mg-cal__nav" data-mg-cal-prev aria-label="上个月">
+											<Icon name="material-symbols:chevron-left-rounded" is:inline />
+										</button>
+										<button
+											type="button"
+											class="mg-cal__title"
+											data-mg-cal-title
+											title="点击筛选整月"
+										>
+										</button>
+										<button type="button" class="mg-cal__nav" data-mg-cal-next aria-label="下个月">
+											<Icon name="material-symbols:chevron-right-rounded" is:inline />
+										</button>
+									</div>
+									<div class="mg-cal__week">
+										<span>日</span><span>一</span><span>二</span><span>三</span><span>四</span
+										><span>五</span><span>六</span>
+									</div>
+									<div class="mg-cal__grid" data-mg-cal-grid />
+									<div class="mg-cal__foot">
+										<button type="button" class="mg-cal__today" data-mg-cal-today>回到本月</button>
+									</div>
 								</div>
+							</details>
+
+							<details class="mg-block mg-details" data-mg-block="sort">
+								<summary class="mg-summary">
+									<Icon name="material-symbols:sort-rounded" is:inline class="text-[1.05rem]" />
+									<span>排序</span>
+								</summary>
+								<div class="mg-sort">
+									<button
+										type="button"
+										class="mg-sort__btn is-active"
+										data-mg-sort-by="date"
+										data-mg-sort-dir="desc"
+									>
+										日期 ↓
+									</button>
+									<button
+										type="button"
+										class="mg-sort__btn"
+										data-mg-sort-by="date"
+										data-mg-sort-dir="asc"
+									>
+										日期 ↑
+									</button>
+									<button
+										type="button"
+										class="mg-sort__btn"
+										data-mg-sort-by="score"
+										data-mg-sort-dir="desc"
+									>
+										评分 ↓
+									</button>
+									<button
+										type="button"
+										class="mg-sort__btn"
+										data-mg-sort-by="score"
+										data-mg-sort-dir="asc"
+									>
+										评分 ↑
+									</button>
+								</div>
+							</details>
+
+							<details class="mg-block mg-details" data-mg-block="type">
+								<summary class="mg-summary">
+									<Icon name="material-symbols:category-outline" is:inline class="text-[1.05rem]" />
+									<span>类型</span>
+								</summary>
+								<div class="mg-list">
+									{
+										TYPE_OPTIONS.map((opt) => (
+											<button
+												type="button"
+												class:list={["mg-opt", opt.value === "all" && "is-active"]}
+												data-mg-type={opt.value}
+											>
+												<span>{opt.label}</span>
+												<span class="mg-opt__count">{typeCounts[opt.value] || 0}</span>
+											</button>
+										))
+									}
+								</div>
+							</details>
+
+							<details class="mg-block mg-details" data-mg-block="status">
+								<summary class="mg-summary">
+									<Icon name="material-symbols:visibility-outline" is:inline class="text-[1.05rem]" />
+									<span>观看状态</span>
+								</summary>
+								<div class="mg-list">
+									{
+										STATUS_OPTIONS.map((opt) => (
+											<button
+												type="button"
+												class:list={["mg-opt", opt.value === "all" && "is-active"]}
+												data-mg-status={opt.value}
+											>
+												<span>{opt.label}</span>
+												<span class="mg-opt__count">{statusCounts[opt.value] || 0}</span>
+											</button>
+										))
+									}
+								</div>
+							</details>
+
+							{
+								tags.length > 0 && (
+									<details class="mg-block mg-details" data-mg-block="tags" open>
+										<summary class="mg-summary">
+											<Icon name="material-symbols:tag-outline" is:inline class="text-[1.05rem]" />
+											<span>标签</span>
+										</summary>
+										<div class="mg-tags">
+											{tags.map((tag) => (
+												<button type="button" class="mg-tag" data-mg-tag={tag.name}>
+													{tag.name}
+													<span class="mg-opt__count">{tag.count}</span>
+												</button>
+											))}
+										</div>
+									</details>
+								)
+							}
+
+						</aside>
+
+						{/* 右栏：筛选状态条 + 卡片网格 */}
+						<div class="mg-main">
+							<div class="mg-statusbar" data-mg-statusbar hidden>
+								<span class="mg-statusbar__label">筛选</span>
+								<span data-mg-chips></span>
+								<span class="mg-statusbar__count" data-mg-count></span>
+								<button type="button" class="mg-statusbar__clear" data-mg-clear>清空</button>
+							</div>
+
+							<div class="mg-grid" data-mg-grid>
+								{
+									mgItems.map((item) => (
+										<div
+											class="mg-item"
+											data-type={typeKeyOf(item)}
+											data-status={statusMap[item.type] || "unknown"}
+											data-tags={(item.tags || []).join(",")}
+											data-date={item.date ? item.date.slice(0, 10) : ""}
+											data-month={item.date ? item.date.slice(0, 7) : ""}
+											data-score={item.subject.score || 0}
+											data-search={searchTextOf(item)}
+										>
+											<MovieGameCard item={item as any} link={item.link} />
+										</div>
+									))
+								}
+							</div>
+
+							<div class="mg-filter-empty" data-mg-empty hidden>没有符合条件的内容</div>
+						</div>
+
+						{/* 移动端（≤768px）：左栏收进右下角这排按钮，点谁弹谁（与动态页同一套行为） */}
+						<div class="mg-mobile-tools" data-mg-tools>
+							<button type="button" class="mg-mobile-tool" data-mg-tool="search" aria-label="搜索" aria-expanded="false">
+								<Icon name="material-symbols:search-rounded" is:inline />
+							</button>
+							<button type="button" class="mg-mobile-tool" data-mg-tool="calendar" aria-label="观看日期" aria-expanded="false">
+								<Icon name="material-symbols:calendar-month-outline" is:inline />
+							</button>
+							<button type="button" class="mg-mobile-tool" data-mg-tool="sort" aria-label="排序" aria-expanded="false">
+								<Icon name="material-symbols:sort-rounded" is:inline />
+							</button>
+							<button type="button" class="mg-mobile-tool" data-mg-tool="type" aria-label="类型" aria-expanded="false">
+								<Icon name="material-symbols:category-outline" is:inline />
+							</button>
+							<button type="button" class="mg-mobile-tool" data-mg-tool="status" aria-label="观看状态" aria-expanded="false">
+								<Icon name="material-symbols:visibility-outline" is:inline />
+							</button>
+							{tags.length > 0 && (
+								<button type="button" class="mg-mobile-tool" data-mg-tool="tags" aria-label="标签" aria-expanded="false">
+									<Icon name="material-symbols:tag-outline" is:inline />
+								</button>
 							)}
 						</div>
-					))}
-				</>
-			) : (
-				<div class="flex flex-col items-center justify-center py-20 text-center">
-					<div class="inline-flex items-center justify-center w-14 h-14 bg-[var(--btn-regular-bg)] rounded-2xl mb-4 border border-[var(--line-divider)]">
-						<Icon name="material-symbols:movie-outline" class="w-7 h-7 text-[var(--content-meta)]" />
 					</div>
-					<h3 class="text-base font-medium text-[var(--deep-text)] dark:text-[var(--title-active)] mb-1.5">
-						{i18n(I18nKey.moviesGamesNoData)}
-					</h3>
-				</div>
-			)}
+				) : (
+					<div class="flex flex-col items-center justify-center py-20 text-center">
+						<div class="inline-flex items-center justify-center w-14 h-14 bg-[var(--btn-regular-bg)] rounded-2xl mb-4 border border-[var(--line-divider)]">
+							<Icon
+								name="material-symbols:movie-outline"
+								is:inline
+								class="w-7 h-7 text-[var(--content-meta)]"
+							/>
+						</div>
+						<h3 class="text-base font-medium text-[var(--deep-text)] dark:text-[var(--title-active)] mb-1.5">
+							{i18n(I18nKey.moviesGamesNoData)}
+						</h3>
+					</div>
+				)
+			}
 		</div>
 	</div>
-<Comment customPath="/movies-games/" />
 
-<script is:inline>
-	(function() {
-		function updateIndicator(indicator, btn) {
-			if (!indicator || !btn) return;
-			indicator.style.left = btn.offsetLeft + 'px';
-			indicator.style.top = btn.offsetTop + 'px';
-			indicator.style.width = btn.offsetWidth + 'px';
-			indicator.style.height = btn.offsetHeight + 'px';
-			indicator.style.opacity = '1';
+	<Comment customPath="/movies-games/" />
+
+	<!-- 左栏筛选：全部纯前端（类型 / 观看状态 / 标签 / 日历 / 搜索 / 排序） -->
+	<script is:inline define:vars={{ filterMeta }}>
+	(function () {
+		var META = filterMeta;
+		var state = { q: "", type: "all", status: "all", tag: "", date: "", month: "" };
+		var sort = { by: "date", dir: "desc" };
+		var calCursor = META.currentMonth;
+		var searchTimer = null;
+
+		function items() {
+			var grid = document.querySelector("[data-mg-grid]");
+			return grid ? Array.prototype.slice.call(grid.querySelectorAll(".mg-item")) : [];
+		}
+		function filtering() {
+			return !!(state.q || state.type !== "all" || state.status !== "all" || state.tag || state.date || state.month);
+		}
+		function matches(el) {
+			if (state.type !== "all" && el.getAttribute("data-type") !== state.type) return false;
+			if (state.status !== "all" && el.getAttribute("data-status") !== state.status) return false;
+			if (state.tag && (el.getAttribute("data-tags") || "").split(",").indexOf(state.tag) < 0) return false;
+			if (state.date && el.getAttribute("data-date") !== state.date) return false;
+			if (state.month && el.getAttribute("data-month") !== state.month) return false;
+			if (state.q && (el.getAttribute("data-search") || "").indexOf(state.q) < 0) return false;
+			return true;
 		}
 
-		function activateBtn(btns, target, indicator) {
-			btns.forEach(function(btn) {
-				btn.classList.remove('tools-tab-btn-active');
-				btn.classList.add('tools-tab-btn-inactive');
-				btn.disabled = false;
-			});
-			target.classList.remove('tools-tab-btn-inactive');
-			target.classList.add('tools-tab-btn-active');
-			target.disabled = true;
-			if (indicator) {
-				requestAnimationFrame(function() { updateIndicator(indicator, target); });
-			}
-		}
-
-		function initIndicators() {
-			var tabNav = document.querySelector('[data-mg-tab-nav]');
-			var tabIndicator = document.querySelector('[data-mg-tab-indicator]');
-			if (tabNav && tabIndicator) {
-				var activeTab = tabNav.querySelector('.tools-tab-btn-active');
-				if (activeTab) requestAnimationFrame(function() { updateIndicator(tabIndicator, activeTab); });
-			}
-			document.querySelectorAll('[data-mg-filter-indicator]').forEach(function(indicator) {
-				var section = indicator.getAttribute('data-mg-filter-indicator');
-				var nav = document.querySelector('[data-mg-filter-nav="' + section + '"]');
-				if (nav) {
-					var activeFilter = nav.querySelector('.tools-tab-btn-active');
-					if (activeFilter) requestAnimationFrame(function() { updateIndicator(indicator, activeFilter); });
+		/* ---------- 排序：按顺序重新 append 回网格（DOM 顺序 = 视觉顺序） ---------- */
+		function applySort() {
+			var grid = document.querySelector("[data-mg-grid]");
+			if (!grid) return;
+			var list = items();
+			list.sort(function (a, b) {
+				var av, bv;
+				if (sort.by === "score") {
+					av = parseFloat(a.getAttribute("data-score")) || 0;
+					bv = parseFloat(b.getAttribute("data-score")) || 0;
+				} else {
+					av = a.getAttribute("data-date") || "";
+					bv = b.getAttribute("data-date") || "";
 				}
+				var cmp = av < bv ? -1 : av > bv ? 1 : 0;
+				return sort.dir === "asc" ? cmp : -cmp;
+			});
+			list.forEach(function (el) {
+				grid.appendChild(el);
 			});
 		}
 
-		initIndicators();
-		document.addEventListener('astro:page-load', initIndicators);
-		document.addEventListener('swup:content:replace', function() { setTimeout(initIndicators, 50); });
-		window.addEventListener('resize', initIndicators);
+		/* ---------- 应用筛选 ---------- */
+		function apply() {
+			var list = items();
+			var bar = document.querySelector("[data-mg-statusbar]");
+			var chips = document.querySelector("[data-mg-chips]");
+			var countEl = document.querySelector("[data-mg-count]");
+			var empty = document.querySelector("[data-mg-empty]");
 
-		document.addEventListener('click', function(e) {
-			var tab = e.target.closest('[data-tab]');
-			if (tab) {
-				var targetTab = tab.dataset.tab;
-				var tabNav = tab.closest('[data-mg-tab-nav]');
-				var tabIndicator = tabNav ? tabNav.querySelector('[data-mg-tab-indicator]') : null;
-				activateBtn(Array.from(tabNav.querySelectorAll('[data-tab]')), tab, tabIndicator);
-				document.querySelectorAll('[data-section]').forEach(function(section) {
-					section.classList.toggle('hidden', section.dataset.section !== targetTab);
-				});
-				// 初始化新 section 的筛选指示器
-				var newFilterIndicator = document.querySelector('[data-mg-filter-indicator="' + targetTab + '"]');
-				var newFilterNav = document.querySelector('[data-mg-filter-nav="' + targetTab + '"]');
-				if (newFilterIndicator && newFilterNav) {
-					var activeFilter = newFilterNav.querySelector('.tools-tab-btn-active');
-					if (activeFilter) {
-						// 强制重置指示器位置
-						newFilterIndicator.style.opacity = '0';
-						requestAnimationFrame(function() {
-							updateIndicator(newFilterIndicator, activeFilter);
-						});
-					}
-				}
+			if (!filtering()) {
+				list.forEach(function (el) { el.classList.remove("is-hide"); });
+				if (bar) bar.hidden = true;
+				if (empty) empty.hidden = true;
 				return;
 			}
 
-			var filterBtn = e.target.closest('.mg-filter-btn');
-			if (filterBtn) {
-				var filter = filterBtn.dataset.filter;
-				var sid = filterBtn.dataset.section;
-				var filterNav = filterBtn.closest('[data-mg-filter-nav]');
-				var filterIndicator = filterNav ? filterNav.querySelector('[data-mg-filter-indicator]') : null;
-				activateBtn(Array.from(filterNav.querySelectorAll('.mg-filter-btn')), filterBtn, filterIndicator);
-				document.querySelectorAll('[data-item-section="' + sid + '"]').forEach(function(item) {
-					var match = filter === 'all' || item.dataset.itemStatus === filter;
-					item.classList.toggle('hidden', !match);
-					item.style.display = match ? 'block' : 'none';
-				});
-				var pagination = document.querySelector('[data-pagination-section="' + sid + '"]');
-				if (pagination) {
-					var visibleItems = document.querySelectorAll('[data-item-section="' + sid + '"]:not(.hidden)');
-					pagination.dispatchEvent(new CustomEvent('updatePagination', {
-						detail: { visibleCount: visibleItems.length }
-					}));
+			var shown = 0;
+			list.forEach(function (el) {
+				var ok = matches(el);
+				el.classList.toggle("is-hide", !ok);
+				if (ok) shown++;
+			});
+
+			if (bar && chips && countEl) {
+				chips.replaceChildren();
+				var parts = [];
+				if (state.q) {
+					parts.push({ label: "搜索：" + state.q, reset: function () {
+						state.q = "";
+						var input = document.querySelector("[data-mg-search]");
+						if (input) input.value = "";
+						syncSearchClear();
+					} });
 				}
+				if (state.type !== "all") {
+					parts.push({ label: typeLabel(state.type), reset: function () { state.type = "all"; syncOptionActive(); } });
+				}
+				if (state.status !== "all") {
+					parts.push({ label: statusLabel(state.status), reset: function () { state.status = "all"; syncOptionActive(); } });
+				}
+				if (state.tag) parts.push({ label: state.tag, reset: function () { state.tag = ""; syncTagActive(); } });
+				if (state.date) parts.push({ label: state.date, reset: function () { state.date = ""; } });
+				if (state.month) parts.push({ label: state.month, reset: function () { state.month = ""; } });
+
+				parts.forEach(function (part) {
+					var chip = document.createElement("button");
+					chip.type = "button";
+					chip.className = "mg-chip";
+					chip.textContent = part.label + " ×";
+					chip.addEventListener("click", function () { part.reset(); apply(); renderCalendar(); });
+					chips.appendChild(chip);
+				});
+				countEl.textContent = shown + " 条";
+				bar.hidden = false;
 			}
+			if (empty) empty.hidden = shown > 0;
+		}
+
+		function typeLabel(key) {
+			var btn = document.querySelector('[data-mg-type="' + key + '"]');
+			return btn ? btn.querySelector("span").textContent : key;
+		}
+		function statusLabel(key) {
+			var btn = document.querySelector('[data-mg-status="' + key + '"]');
+			return btn ? btn.querySelector("span").textContent : key;
+		}
+		function syncOptionActive() {
+			Array.prototype.forEach.call(document.querySelectorAll("[data-mg-type]"), function (b) {
+				b.classList.toggle("is-active", b.getAttribute("data-mg-type") === state.type);
+			});
+			Array.prototype.forEach.call(document.querySelectorAll("[data-mg-status]"), function (b) {
+				b.classList.toggle("is-active", b.getAttribute("data-mg-status") === state.status);
+			});
+		}
+		function syncTagActive() {
+			Array.prototype.forEach.call(document.querySelectorAll("[data-mg-tag]"), function (b) {
+				b.classList.toggle("is-active", b.getAttribute("data-mg-tag") === state.tag);
+			});
+		}
+
+		/* ---------- 搜索（输入即筛，150ms 防抖） ---------- */
+		var searchInput = document.querySelector("[data-mg-search]");
+		var searchClear = document.querySelector("[data-mg-search-clear]");
+		function syncSearchClear() {
+			if (searchClear && searchInput) searchClear.hidden = !searchInput.value;
+		}
+		if (searchInput) {
+			searchInput.addEventListener("input", function () {
+				syncSearchClear();
+				if (searchTimer) clearTimeout(searchTimer);
+				searchTimer = setTimeout(function () {
+					state.q = searchInput.value.trim().toLowerCase();
+					apply();
+				}, 150);
+			});
+		}
+		if (searchClear) {
+			searchClear.addEventListener("click", function () {
+				if (!searchInput) return;
+				searchInput.value = "";
+				state.q = "";
+				syncSearchClear();
+				apply();
+			});
+		}
+
+		/* ---------- 排序按钮 ---------- */
+		Array.prototype.forEach.call(document.querySelectorAll("[data-mg-sort-by]"), function (btn) {
+			btn.addEventListener("click", function () {
+				sort.by = btn.getAttribute("data-mg-sort-by") || "date";
+				sort.dir = btn.getAttribute("data-mg-sort-dir") || "desc";
+				Array.prototype.forEach.call(document.querySelectorAll("[data-mg-sort-by]"), function (b) {
+					b.classList.toggle("is-active", b === btn);
+				});
+				applySort();
+			});
 		});
+
+		/* ---------- 类型 / 观看状态 / 标签 ---------- */
+		Array.prototype.forEach.call(document.querySelectorAll("[data-mg-type]"), function (btn) {
+			btn.addEventListener("click", function () {
+				state.type = btn.getAttribute("data-mg-type") || "all";
+				syncOptionActive();
+				apply();
+			});
+		});
+		Array.prototype.forEach.call(document.querySelectorAll("[data-mg-status]"), function (btn) {
+			btn.addEventListener("click", function () {
+				state.status = btn.getAttribute("data-mg-status") || "all";
+				syncOptionActive();
+				apply();
+			});
+		});
+		Array.prototype.forEach.call(document.querySelectorAll("[data-mg-tag]"), function (btn) {
+			btn.addEventListener("click", function () {
+				var tag = btn.getAttribute("data-mg-tag");
+				state.tag = state.tag === tag ? "" : tag;
+				syncTagActive();
+				apply();
+			});
+		});
+
+		/* ---------- 日历（按观看日期） ---------- */
+		var calTitle = document.querySelector("[data-mg-cal-title]");
+		var calGrid = document.querySelector("[data-mg-cal-grid]");
+		function shiftMonth(key, delta) {
+			var y = parseInt(key.slice(0, 4), 10);
+			var m = parseInt(key.slice(5, 7), 10) - 1 + delta;
+			var d = new Date(y, m, 1);
+			return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0");
+		}
+		function renderCalendar() {
+			if (!calGrid || !calTitle) return;
+			var y = parseInt(calCursor.slice(0, 4), 10);
+			var m = parseInt(calCursor.slice(5, 7), 10);
+			calTitle.textContent = y + " 年 " + m + " 月";
+			calTitle.classList.toggle("is-active", state.month === calCursor);
+
+			var startDow = new Date(y, m - 1, 1).getDay();
+			var daysInMonth = new Date(y, m, 0).getDate();
+			var today = new Date();
+			var todayKey =
+				today.getFullYear() + "-" +
+				String(today.getMonth() + 1).padStart(2, "0") + "-" +
+				String(today.getDate()).padStart(2, "0");
+
+			calGrid.replaceChildren();
+			for (var i = 0; i < startDow; i++) {
+				var pad = document.createElement("span");
+				pad.className = "mg-cal__cell is-empty";
+				calGrid.appendChild(pad);
+			}
+			for (var day = 1; day <= daysInMonth; day++) {
+				var key = calCursor + "-" + String(day).padStart(2, "0");
+				var cnt = META.countByDate[key] || 0;
+				var cell = document.createElement("button");
+				cell.type = "button";
+				cell.className = "mg-cal__cell";
+				cell.textContent = String(day);
+				if (cnt > 0) {
+					cell.classList.add("has-items");
+					cell.title = key + " · " + cnt + " 条";
+					cell.addEventListener("click", function (k) {
+						return function () {
+							state.date = state.date === k ? "" : k;
+							apply();
+							renderCalendar();
+						};
+					}(key));
+				}
+				if (key === todayKey) cell.classList.add("is-today");
+				if (key === state.date) cell.classList.add("is-active");
+				calGrid.appendChild(cell);
+			}
+		}
+		var calPrev = document.querySelector("[data-mg-cal-prev]");
+		var calNext = document.querySelector("[data-mg-cal-next]");
+		var calToday = document.querySelector("[data-mg-cal-today]");
+		if (calPrev) calPrev.addEventListener("click", function () { calCursor = shiftMonth(calCursor, -1); renderCalendar(); });
+		if (calNext) calNext.addEventListener("click", function () { calCursor = shiftMonth(calCursor, 1); renderCalendar(); });
+		if (calToday) calToday.addEventListener("click", function () { calCursor = META.currentMonth; renderCalendar(); });
+		if (calTitle) {
+			calTitle.addEventListener("click", function () {
+				state.month = state.month === calCursor ? "" : calCursor;
+				state.date = "";
+				apply();
+				renderCalendar();
+			});
+		}
+
+		/* ---------- 清空 ---------- */
+		function clearAll() {
+			state = { q: "", type: "all", status: "all", tag: "", date: "", month: "" };
+			if (searchInput) searchInput.value = "";
+			syncSearchClear();
+			syncOptionActive();
+			syncTagActive();
+			calCursor = META.currentMonth;
+			renderCalendar();
+			apply();
+		}
+		Array.prototype.forEach.call(document.querySelectorAll("[data-mg-clear]"), function (btn) {
+			btn.addEventListener("click", clearAll);
+		});
+
+		/* ---------- 移动端：左栏收成右下角按钮（与动态页 /moments/ 同一套行为） ----------
+		   按钮只在浮岛收起（右下角冒出 FloatingDock）时出现，并与它同一列；点谁弹谁。 */
+		var mobileView = "";
+		var observedIsland = null;
+		function setMobileView(view) {
+			mobileView = view;
+			var side = document.querySelector("[data-mg-side]");
+			var tools = document.querySelector("[data-mg-tools]");
+			if (!side) return;
+			if (view) {
+				side.setAttribute("data-mg-view", view);
+				side.classList.add("is-mobile-open");
+				/* 面板里点开就是要看内容，折叠块一律展开 */
+				Array.prototype.forEach.call(side.querySelectorAll("details"), function (d) { d.open = true; });
+			} else {
+				side.removeAttribute("data-mg-view");
+				side.classList.remove("is-mobile-open");
+			}
+			if (tools) {
+				Array.prototype.forEach.call(tools.querySelectorAll("[data-mg-tool]"), function (b) {
+					var on = b.getAttribute("data-mg-tool") === view;
+					b.classList.toggle("is-active", on);
+					b.setAttribute("aria-expanded", on ? "true" : "false");
+				});
+			}
+		}
+		function syncWithIsland() {
+			var tools = document.querySelector("[data-mg-tools]");
+			var island = document.getElementById("mobile-dock");
+			if (!tools || !island) return;
+			if (island !== observedIsland) {
+				observedIsland = island;
+				new MutationObserver(syncWithIsland).observe(island, { attributes: true, attributeFilter: ["class"] });
+			}
+			var lifted = island.classList.contains("is-hidden");
+			tools.classList.toggle("is-island-hidden", lifted);
+			if (!lifted && mobileView) setMobileView("");
+		}
+		function bindMobileTools() {
+			if (!window.__mgToolsBound) {
+				window.__mgToolsBound = true;
+				document.addEventListener("click", function (ev) {
+					var btn = ev.target.closest && ev.target.closest("[data-mg-tool]");
+					if (btn) {
+						var v = btn.getAttribute("data-mg-tool") || "";
+						setMobileView(mobileView === v ? "" : v);
+						return;
+					}
+					var side = document.querySelector("[data-mg-side]");
+					if (mobileView && side && !side.contains(ev.target)) setMobileView("");
+				});
+				document.addEventListener("keydown", function (ev) {
+					if (ev.key === "Escape" && mobileView) setMobileView("");
+				});
+				window.addEventListener("scroll", syncWithIsland, { passive: true });
+				document.addEventListener("swup:content:replaced", syncWithIsland);
+				document.addEventListener("astro:page-load", syncWithIsland);
+			}
+			syncWithIsland();
+		}
+
+		/* ---------- 初始化（Swup 换页后回到默认视图：日期倒序、无筛选） ---------- */
+		function init() {
+			state = { q: "", type: "all", status: "all", tag: "", date: "", month: "" };
+			sort = { by: "date", dir: "desc" };
+			calCursor = META.currentMonth;
+			if (searchInput) searchInput.value = "";
+			syncSearchClear();
+			syncOptionActive();
+			syncTagActive();
+			Array.prototype.forEach.call(document.querySelectorAll("[data-mg-sort-by]"), function (b) {
+				b.classList.toggle(
+					"is-active",
+					b.getAttribute("data-mg-sort-by") === "date" && b.getAttribute("data-mg-sort-dir") === "desc",
+				);
+			});
+			renderCalendar();
+			items().forEach(function (el) { el.classList.remove("is-hide"); });
+			var bar = document.querySelector("[data-mg-statusbar]");
+			if (bar) bar.hidden = true;
+			var empty = document.querySelector("[data-mg-empty]");
+			if (empty) empty.hidden = true;
+			applySort();
+			mobileView = "";
+			bindMobileTools();
+			setMobileView("");
+		}
+		init();
+		document.addEventListener("swup:content:replaced", init);
+		document.addEventListener("astro:page-load", init);
 	})();
-</script>
-
-<!-- 从 Gist 加载外部影视数据 -->
-<script is:inline
-  data-gist={externalBangumiConfig.gistId || ""}
-  data-file={externalBangumiConfig.fileName || "bangumi.json"}>
-  (function() {
-    var _s = document.currentScript;
-    var GIST_ID = _s.getAttribute("data-gist");
-    var FILE_NAME = _s.getAttribute("data-file");
-    if (!GIST_ID) return;
-
-    var cacheKey = "__externalBangumiCache";
-
-    var statusMap = { 1: "wish", 2: "collect", 3: "doing", 4: "on_hold", 5: "dropped" };
-    var statusText = { 1: "想看", 2: "看过", 3: "在看", 4: "搁置", 5: "抛弃" };
-    var statusColor = { 1: "bg-sky-500/80", 2: "bg-emerald-500/80", 3: "bg-amber-500/80", 4: "bg-violet-500/80", 5: "bg-rose-400/80" };
-
-    // 分类映射：Gist 中的 category → 页面中的 section key
-    function getSectionKey(item) {
-      var cat = item.category || "movie";
-      var validSections = ["movie", "tv", "anime", "documentary", "game"];
-      return validSections.indexOf(cat) !== -1 ? cat : "movie";
-    }
-
-    function esc(t) { var d = document.createElement("div"); d.textContent = t; return d.innerHTML; }
-
-    function createCard(item) {
-      var title = item.name_cn || item.title || "";
-      var image = item.image || "";
-      var score = item.score || 0;
-      var status = item.status || 2;
-      var tags = item.tags || [];
-      var comment = item.comment || "";
-
-      var imgHtml = image
-        ? '<img src="' + esc(image) + '" alt="' + esc(title) + '" class="mg-img" loading="lazy" />'
-        : '<div class="mg-img" style="background:var(--btn-regular-bg);display:flex;align-items:center;justify-content:center;font-size:2rem;">🎬</div>';
-
-      var scoreHtml = score > 0
-        ? '<span class="mg-score"><svg class="mg-star" viewBox="0 0 20 20" fill="currentColor"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>' + score + '</span>'
-        : '';
-
-      var tagsHtml = '';
-      if (tags.length > 0) {
-        tagsHtml = '<div class="mg-tags">';
-        tags.slice(0, 3).forEach(function(t) { tagsHtml += '<span class="mg-tag">' + esc(t) + '</span>'; });
-        tagsHtml += '</div>';
-      }
-
-      var commentHtml = comment
-        ? '<div class="mg-overlay"><p class="mg-comment">' + esc(comment) + '</p></div>'
-        : '';
-
-      var a = document.createElement("a");
-      a.href = "#";
-      a.className = "mg-card group";
-      a.setAttribute("data-ext-bangumi", "1");
-
-      a.innerHTML =
-        '<div class="mg-cover">' +
-        imgHtml +
-        '<div class="mg-gradient"></div>' +
-        '<span class="mg-status ' + (statusColor[status] || 'bg-gray-500/80') + '">' + esc(statusText[status] || '未知') + '</span>' +
-        scoreHtml +
-        '<div class="mg-info"><h3 class="mg-title">' + esc(title) + '</h3>' + tagsHtml + '</div>' +
-        commentHtml +
-        '</div>';
-
-      return a;
-    }
-
-    function insertBangumi(items) {
-      // 全局标记防止重复插入（Swup 可能多次触发）
-      if (window.__bangumiInserted) return;
-      if (document.querySelector('[data-ext-bangumi]')) return;
-      window.__bangumiInserted = true;
-
-      var enabledItems = items;
-      if (!enabledItems.length) return;
-
-      // 按更新时间排序（新的在前）
-      enabledItems.sort(function(a, b) {
-        return new Date(b.updated_at || 0) - new Date(a.updated_at || 0);
-      });
-
-      // 按分类分组
-      var groups = {};
-      enabledItems.forEach(function(item) {
-        var key = getSectionKey(item);
-        if (!groups[key]) groups[key] = [];
-        groups[key].push(item);
-      });
-
-      // 获取本地卡片的更新时间用于排序插入
-      function getLocalCardDate(card) {
-        var dateAttr = card.getAttribute("data-ext-date");
-        if (dateAttr) return new Date(dateAttr);
-        return new Date(0);
-      }
-
-      // 插入到对应的 section grid 中（按时间排序）
-      Object.keys(groups).forEach(function(sectionKey) {
-        var section = document.querySelector('[data-section="' + sectionKey + '"]');
-        if (!section) return;
-        var grid = section.querySelector('.mg-grid');
-        if (!grid) return;
-
-        var localCards = Array.from(grid.querySelectorAll('.mg-item'));
-
-        groups[sectionKey].forEach(function(item) {
-          var extDate = new Date(item.updated_at || 0);
-          var wrapper = document.createElement("div");
-          wrapper.className = "mg-item";
-          wrapper.setAttribute("data-item-section", sectionKey);
-          wrapper.setAttribute("data-item-status", statusMap[item.status] || "unknown");
-          wrapper.setAttribute("data-ext-bangumi", "1");
-          wrapper.appendChild(createCard(item));
-
-          var inserted = false;
-          for (var i = 0; i < localCards.length; i++) {
-            var localDate = getLocalCardDate(localCards[i]);
-            if (extDate > localDate) {
-              grid.insertBefore(wrapper, localCards[i]);
-              inserted = true;
-              break;
-            }
-          }
-          if (!inserted) {
-            grid.appendChild(wrapper);
-          }
-        });
-
-        // 更新该 section 的 tab 计数
-        var tabBtn = document.querySelector('[data-tab="' + sectionKey + '"] .tools-tab-badge');
-        if (tabBtn) {
-          var currentCount = parseInt(tabBtn.textContent) || 0;
-          tabBtn.textContent = currentCount + groups[sectionKey].length;
-        }
-
-        // 更新该 section 的筛选按钮计数
-        var filterBtns = section.querySelectorAll('.mg-filter-btn');
-        var statusCounts = { all: groups[sectionKey].length };
-        groups[sectionKey].forEach(function(item) {
-          var s = statusMap[item.status] || "unknown";
-          statusCounts[s] = (statusCounts[s] || 0) + 1;
-        });
-        filterBtns.forEach(function(btn) {
-          var filterVal = btn.getAttribute("data-filter");
-          var badge = btn.querySelector('.tools-tab-badge');
-          if (badge && statusCounts[filterVal]) {
-            var cur = parseInt(badge.textContent) || 0;
-            badge.textContent = cur + statusCounts[filterVal];
-          }
-        });
-      });
-
-      // 也插入到 "all" section
-      var allSection = document.querySelector('[data-section="all"]');
-      if (allSection) {
-        var allGrid = allSection.querySelector('.mg-grid');
-        if (allGrid) {
-          var allLocalCards = Array.from(allGrid.querySelectorAll('.mg-item'));
-
-          enabledItems.forEach(function(item) {
-            var extDate = new Date(item.updated_at || 0);
-            var wrapper = document.createElement("div");
-            wrapper.className = "mg-item";
-            wrapper.setAttribute("data-item-section", "all");
-            wrapper.setAttribute("data-item-status", statusMap[item.status] || "unknown");
-            wrapper.setAttribute("data-ext-bangumi", "1");
-            wrapper.appendChild(createCard(item));
-
-            var inserted = false;
-            for (var i = 0; i < allLocalCards.length; i++) {
-              var localDate = getLocalCardDate(allLocalCards[i]);
-              if (extDate > localDate) {
-                allGrid.insertBefore(wrapper, allLocalCards[i]);
-                inserted = true;
-                break;
-              }
-            }
-            if (!inserted) {
-              allGrid.appendChild(wrapper);
-            }
-          });
-
-          // 更新 "all" tab 计数
-          var allTabBtn = document.querySelector('[data-tab="all"] .tools-tab-badge');
-          if (allTabBtn) {
-            var currentAllCount = parseInt(allTabBtn.textContent) || 0;
-            allTabBtn.textContent = currentAllCount + enabledItems.length;
-          }
-
-          // 更新 "all" section 的筛选按钮计数
-          var allFilterBtns = allSection.querySelectorAll('.mg-filter-btn');
-          var allStatusCounts = { all: enabledItems.length };
-          enabledItems.forEach(function(item) {
-            var s = statusMap[item.status] || "unknown";
-            allStatusCounts[s] = (allStatusCounts[s] || 0) + 1;
-          });
-          allFilterBtns.forEach(function(btn) {
-            var filterVal = btn.getAttribute("data-filter");
-            var badge = btn.querySelector('.tools-tab-badge');
-            if (badge && allStatusCounts[filterVal]) {
-              var cur = parseInt(badge.textContent) || 0;
-              badge.textContent = cur + allStatusCounts[filterVal];
-            }
-          });
-        }
-      }
-    }
-
-    function fetchBangumi() {
-      if (window[cacheKey] && window[cacheKey].time > Date.now() - 300000) {
-        insertBangumi(window[cacheKey].data);
-        return;
-      }
-
-      fetch("https://api.github.com/gists/" + GIST_ID, {
-        headers: { "Accept": "application/vnd.github+json" }
-      })
-        .then(function(r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
-        .then(function(gist) {
-          var file = gist.files[FILE_NAME];
-          if (!file) return;
-          var data = [];
-          try { data = JSON.parse(file.content || "[]"); } catch(e) { return; }
-          if (!Array.isArray(data) || !data.length) return;
-          window[cacheKey] = { data: data, time: Date.now() };
-          insertBangumi(data);
-        })
-        .catch(function(e) { console.warn("[外部影视] 加载失败:", e.message); });
-    }
-
-    fetchBangumi();
-    document.addEventListener("swup:content:replace", function() { setTimeout(fetchBangumi, 50); });
-    document.addEventListener("astro:page-load", function() { fetchBangumi(); });
-  })();
-</script>
+	</script>
 </MainGridLayout>
-
-<style>
-	.mg-page-wrapper {
-		border-radius: var(--radius-large);
-	}
-
-	.mg-header {
-		animation: fadeSlideIn 0.4s ease-[var(--ease-standard)] both;
-	}
-
-	.mg-icon {
-		transition: transform 0.2s ease-[var(--ease-standard)];
-	}
-	.mg-icon:hover {
-		transform: scale(1.05);
-	}
-
-	@keyframes fadeSlideIn {
-		from { opacity: 0; transform: translateY(8px); }
-		to { opacity: 1; transform: translateY(0); }
-	}
-
-	.mg-section {
-		animation: fadeIn 0.3s ease-[var(--ease-standard)] both;
-	}
-
-	@keyframes fadeIn {
-		from { opacity: 0; }
-		to { opacity: 1; }
-	}
-
-	/* 胶囊按钮样式（复用 changelog 风格，边框 1.5px 略细于原版 2px，与书架页一致） */
-	.tools-tab-pill {
-		position: relative;
-		display: flex;
-		flex-wrap: wrap;
-		gap: 0.375rem;
-		padding: 0.375rem;
-		border-radius: 1rem;
-		border: 1.5px solid #000;
-	}
-	:root.dark .tools-tab-pill {
-		border-color: #fff;
-	}
-
-	.tools-tab-indicator {
-		position: absolute;
-		border-radius: 9999px;
-		background: #000;
-		transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-					top 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-					width 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-					height 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-		opacity: 0;
-		pointer-events: none;
-		z-index: 0;
-	}
-	:root.dark .tools-tab-indicator {
-		background: #fff;
-	}
-
-	.tools-tab-btn {
-		position: relative;
-		z-index: 1;
-		display: flex;
-		align-items: center;
-		gap: 0.375rem;
-		padding: 0.375rem 0.875rem;
-		border: none;
-		border-radius: 9999px;
-		font-size: 0.8125rem;
-		font-weight: 500;
-		white-space: nowrap;
-		cursor: pointer;
-		background: transparent;
-		transition: color 0.2s;
-		flex-shrink: 0;
-		font-family: inherit;
-	}
-
-	.tools-tab-btn-active {
-		color: #fff;
-		cursor: default;
-	}
-	:root.dark .tools-tab-btn-active {
-		color: #000;
-	}
-
-	.tools-tab-btn-inactive {
-		color: #000;
-	}
-	.tools-tab-btn-inactive:hover {
-		opacity: 0.7;
-	}
-	:root.dark .tools-tab-btn-inactive {
-		color: #fff;
-	}
-
-	.tools-tab-badge {
-		font-size: 0.65rem;
-		padding: 0.0625rem 0.375rem;
-		border-radius: 9999px;
-		background: oklch(0.92 0 0);
-		color: oklch(0.35 0 0);
-		line-height: 1.4;
-	}
-	:root.dark .tools-tab-badge {
-		background: oklch(0.25 0 0);
-		color: oklch(0.65 0 0);
-	}
-
-	.tools-tab-btn-active .tools-tab-badge {
-		background: rgba(255, 255, 255, 0.25);
-		color: #fff;
-	}
-	:root.dark .tools-tab-btn-active .tools-tab-badge {
-		background: rgba(0, 0, 0, 0.2);
-		color: #000;
-	}
-
-	.scrollbar-hide {
-		-ms-overflow-style: none;
-		scrollbar-width: none;
-	}
-	.scrollbar-hide::-webkit-scrollbar {
-		display: none;
-	}
-
-	@media (max-width: 640px) {
-		.card-base {
-			padding-left: 1rem;
-			padding-right: 1rem;
-			padding-top: 1.5rem;
-			padding-bottom: 1.5rem;
-		}
-	}
-
-	/* 影视分页强制 3/9 简化样式（桌面/移动同款，对齐图片） */
-	.mg-page-wrapper [data-pagination-section] .desktop-pagination { display: none !important; }
-	.mg-page-wrapper [data-pagination-section] .mobile-pagination { display: flex !important; }
-	.mg-page-wrapper [data-pagination-section] .mobile-pagination { justify-content: center; }
-
-	/* 海报网格：黑色线框包裹（书架页同款，1.5px 略细于胶囊原版 2px） */
-	.mg-grid {
-		border: 1.5px solid #000;
-		border-radius: 1rem;
-		padding: 20px 16px;
-		gap: 24px 16px;
-	}
-	:root.dark .mg-grid {
-		border-color: #fff;
-	}
-	@media (max-width: 768px) {
-		.mg-grid {
-			padding: 16px 12px;
-			gap: 20px 10px;
-		}
-	}
-
-	/* 首屏防闪：SSR 全量渲染时仅显第一页（12/6），JS 分页接管后按需显示 */
-	.mg-grid .mg-item:nth-child(n+13) { display: none; }
-	@media (max-width: 768px) {
-		.mg-grid .mg-item:nth-child(n+7) { display: none; }
-	}
-</style>

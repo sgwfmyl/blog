@@ -136,3 +136,21 @@ html:has(#content-wrapper[data-no-sidebar="projects"]) #main-content-wrapper {
 		max-width: 80vw;
 	}
 }
+
+/* 影视与游戏 /movies-games/ —— 改成「左栏筛选 + 卡片网格」两栏布局，
+   左右小组件去掉、整页占视口 4/5（站长 2026-09-30 要求，与导航站同一套写法） */
+@media (min-width: 768px) {
+	html:has(#content-wrapper[data-no-sidebar="movies-games"]) #content-wrapper {
+		max-width: 100%;
+	}
+}
+@media (min-width: 1280px) {
+	html:has(#content-wrapper[data-no-sidebar="movies-games"]) #content-wrapper {
+		max-width: 80vw;
+	}
+}
+/* 左栏要 position: sticky —— 祖先 #main-content-wrapper 是 overflow: hidden 会成为
+   「滚动容器」而自身不滚，sticky 直接失效（动态页/导航页踩过同一个坑），本页换 clip */
+html:has(#content-wrapper[data-no-sidebar="movies-games"]) #main-content-wrapper {
+	overflow: clip;
+}

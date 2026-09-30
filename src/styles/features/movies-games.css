@@ -177,3 +177,502 @@ html.dark .mg-card:hover {
     padding: 1px 6px;
   }
 }
+
+/* ============================================================
+   2026-09-30 改版：左栏筛选（搜索 / 排序 / 类型 / 状态 / 标签 / 日历）+ 卡片网格
+   站长参考动态页那一列的思路，并把原本在页面上方的「类型 + 观看状态」筛选搬进左栏。
+   ============================================================ */
+
+/* 卡片：直角 → 圆角。
+   ⚠️ 只改本页卡片，不动全局 `--radius-large`（它是 0，全站其它卡片靠它保持直角）。 */
+.mg-card {
+  border-radius: 0.75rem;
+}
+
+.mg-layout {
+  display: grid;
+  grid-template-columns: 15.5rem minmax(0, 1fr);
+  gap: 1.25rem;
+  align-items: start;
+}
+
+.mg-main {
+  min-width: 0;
+}
+
+/* 左栏：粘住、自身可滚（滚动时旁边内容跟着走） */
+.mg-side {
+  position: sticky;
+  top: 5.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  max-height: calc(100vh - 7rem);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-right: 0.125rem;
+}
+
+.mg-block {
+  padding: 0.875rem;
+  border: 1px solid var(--line-divider);
+  border-radius: 0.75rem;
+  background: var(--card-bg, transparent);
+}
+
+/* 搜索 */
+.mg-search {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.45rem 0.65rem;
+  border: 1px solid var(--line-divider);
+  border-radius: 0.5rem;
+  color: var(--content-meta);
+  transition: border-color 150ms ease;
+}
+.mg-search:focus-within {
+  border-color: var(--deep-text);
+}
+.mg-search input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  background: transparent;
+  color: var(--deep-text);
+  font-family: inherit;
+  font-size: 0.82rem;
+  outline: none;
+}
+.mg-search__clear {
+  display: grid;
+  place-items: center;
+  width: 1.25rem;
+  height: 1.25rem;
+  padding: 0;
+  border: none;
+  border-radius: 9999px;
+  background: transparent;
+  color: var(--content-meta);
+  cursor: pointer;
+}
+.mg-search__clear:hover {
+  background: var(--btn-plain-bg-hover);
+  color: var(--deep-text);
+}
+.mg-search__clear[hidden] {
+  display: none;
+}
+
+/* 折叠块（排序 / 类型 / 状态 / 标签 / 日历） */
+.mg-details > summary {
+  cursor: pointer;
+  list-style: none;
+}
+.mg-details > summary::-webkit-details-marker {
+  display: none;
+}
+.mg-summary {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--deep-text);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+.mg-details[open] .mg-summary {
+  margin-bottom: 0.6rem;
+}
+
+/* 选项列表（类型 / 状态） */
+.mg-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+.mg-opt {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  width: 100%;
+  padding: 0.45rem 0.55rem;
+  border: none;
+  border-radius: 0.5rem;
+  background: transparent;
+  color: var(--deep-text);
+  font-family: inherit;
+  font-size: 0.82rem;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 150ms ease;
+}
+.mg-opt:hover {
+  background: var(--btn-plain-bg-hover);
+}
+.mg-opt.is-active {
+  background: var(--deep-text);
+  color: var(--page-bg);
+  font-weight: 600;
+}
+.mg-opt__count {
+  margin-left: auto;
+  font-size: 0.72rem;
+  opacity: 0.65;
+}
+
+/* 排序：四个按钮 2×2 */
+.mg-sort {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.375rem;
+}
+.mg-sort__btn {
+  padding: 0.45rem 0.5rem;
+  border: 1px solid var(--line-divider);
+  border-radius: 0.5rem;
+  background: transparent;
+  color: var(--deep-text);
+  font-family: inherit;
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition: background-color 150ms ease, color 150ms ease, border-color 150ms ease;
+}
+.mg-sort__btn:hover {
+  border-color: var(--deep-text);
+}
+.mg-sort__btn.is-active {
+  background: var(--deep-text);
+  color: var(--page-bg);
+  border-color: var(--page-bg);
+}
+
+/* 标签 —— ⚠️ 类名必须加 .mg-side 前缀：卡片上那排标签胶囊也叫 .mg-tags/.mg-tag，
+   不加前缀会把卡片胶囊的配色覆盖掉（2026-09-30 踩过：胶囊变成透明底 + 深色字，压在封面图上没字） */
+.mg-side .mg-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+.mg-side .mg-tag {
+  padding: 0.2rem 0.5rem;
+  border: 1px solid var(--line-divider);
+  border-radius: 9999px;
+  background: transparent;
+  color: var(--deep-text);
+  font-family: inherit;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: background-color 150ms ease, color 150ms ease, border-color 150ms ease;
+}
+.mg-side .mg-tag:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+.mg-side .mg-tag.is-active {
+  background: var(--deep-text);
+  color: var(--page-bg);
+  border-color: var(--page-bg);
+}
+
+/* 日历（按播出/发布日期） */
+.mg-cal__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.25rem;
+  margin-bottom: 0.4rem;
+}
+.mg-cal__nav {
+  display: grid;
+  place-items: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  padding: 0;
+  border: none;
+  border-radius: 0.375rem;
+  background: transparent;
+  color: var(--content-meta);
+  cursor: pointer;
+}
+.mg-cal__nav:hover {
+  background: var(--btn-plain-bg-hover);
+  color: var(--deep-text);
+}
+.mg-cal__title {
+  flex: 1;
+  padding: 0.15rem 0.25rem;
+  border: none;
+  border-radius: 0.375rem;
+  background: transparent;
+  color: var(--deep-text);
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.mg-cal__title:hover {
+  background: var(--btn-plain-bg-hover);
+}
+.mg-cal__title.is-active {
+  background: var(--deep-text);
+  color: var(--page-bg);
+}
+.mg-cal__week,
+.mg-cal__grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 0.125rem;
+}
+.mg-cal__week {
+  margin-bottom: 0.15rem;
+  color: var(--content-meta);
+  font-size: 0.65rem;
+  text-align: center;
+}
+.mg-cal__cell {
+  position: relative;
+  display: grid;
+  place-items: center;
+  height: 1.5rem;
+  border: none;
+  border-radius: 0.375rem;
+  background: transparent;
+  color: var(--deep-text);
+  font-family: inherit;
+  font-size: 0.72rem;
+  cursor: pointer;
+}
+.mg-cal__cell.is-empty {
+  pointer-events: none;
+}
+.mg-cal__cell.has-items {
+  font-weight: 700;
+}
+.mg-cal__cell.has-items::after {
+  content: "";
+  position: absolute;
+  bottom: 0.1rem;
+  width: 0.2rem;
+  height: 0.2rem;
+  border-radius: 9999px;
+  background: var(--primary);
+}
+.mg-cal__cell:hover {
+  background: var(--btn-plain-bg-hover);
+}
+.mg-cal__cell.is-active {
+  background: var(--deep-text);
+  color: var(--page-bg);
+}
+.mg-cal__cell.is-today {
+  outline: 1px solid var(--line-divider);
+}
+.mg-cal__foot {
+  margin-top: 0.35rem;
+  text-align: center;
+}
+.mg-cal__today {
+  border: none;
+  background: transparent;
+  color: var(--content-meta);
+  font-family: inherit;
+  font-size: 0.72rem;
+  cursor: pointer;
+}
+.mg-cal__today:hover {
+  color: var(--primary);
+}
+
+/* 筛选状态条 */
+.mg-statusbar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--line-divider);
+  border-radius: 0.75rem;
+  font-size: 0.8rem;
+}
+.mg-statusbar[hidden] {
+  display: none;
+}
+.mg-statusbar__label {
+  color: var(--content-meta);
+}
+.mg-chip {
+  padding: 0.15rem 0.5rem;
+  border: none;
+  border-radius: 9999px;
+  background: var(--btn-plain-bg-hover);
+  color: var(--deep-text);
+  font-family: inherit;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+.mg-chip:hover {
+  background: var(--deep-text);
+  color: var(--page-bg);
+}
+.mg-statusbar__count {
+  margin-left: auto;
+  color: var(--content-meta);
+}
+.mg-statusbar__clear {
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--primary);
+  font-family: inherit;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* 空态 */
+.mg-filter-empty {
+  padding: 2.5rem 1rem;
+  border: 1px dashed var(--line-divider);
+  border-radius: 0.75rem;
+  text-align: center;
+  color: var(--content-meta);
+  font-size: 0.875rem;
+}
+.mg-filter-empty[hidden] {
+  display: none;
+}
+
+/* 网格：改成按卡片最小宽度自适应（原先是 Tailwind 固定列数） */
+.mg-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr));
+  gap: 1rem;
+}
+
+/* 窄屏：左栏不再粘住，块依次叠在网格上方（块本身可以折叠） */
+@media (max-width: 1023px) {
+  .mg-layout {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.875rem;
+  }
+  .mg-side {
+    position: static;
+    max-height: none;
+    overflow: visible;
+  }
+  .mg-grid {
+    grid-template-columns: repeat(auto-fill, minmax(7.5rem, 1fr));
+    gap: 0.75rem;
+  }
+}
+
+/* 筛选隐藏（JS 给不命中/未命中的卡片加这个类） */
+.mg-item.is-hide {
+  display: none;
+}
+
+/* ============================================================
+   移动端（≤768px）：左栏整体收进右下角按钮 —— 与动态页 /moments/ 同一套行为
+   按钮默认不显示；浮岛收起（右下角冒出 FloatingDock）时与它同列出现、接在它上方；
+   点谁弹谁：浮层就是左栏那块 .mg-side，data-mg-view 决定显示哪一块。
+   ============================================================ */
+.mg-mobile-tools {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .mg-mobile-tools {
+    position: fixed;
+    right: 0.75rem;
+    /* 让开 FloatingDock 那一列（本页只剩「回顶部」一个按钮） */
+    bottom: calc(0.75rem + 3.125rem + 0.75rem);
+    z-index: 55;
+    display: none;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  .mg-mobile-tools.is-island-hidden {
+    display: flex;
+  }
+
+  .mg-mobile-tool {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 3.125rem;
+    height: 3.125rem;
+    padding: 0;
+    border-radius: 1.25rem;
+    border: 2px solid var(--deep-text);
+    background: var(--page-bg);
+    color: var(--deep-text);
+    cursor: pointer;
+    overflow: hidden;
+    flex-shrink: 0;
+    transition: background-color 200ms ease, color 200ms ease, border-color 200ms ease;
+  }
+  .mg-mobile-tool svg {
+    font-size: 1.875rem;
+  }
+  .mg-mobile-tool.is-active {
+    background: var(--deep-text);
+    color: var(--page-bg);
+    border-color: var(--page-bg);
+  }
+
+  /* 浮层：就是左栏那块，贴在按钮列左侧、底边与它齐平 */
+  .mg-side {
+    position: fixed;
+    /* 基础规则里的 sticky top 必须显式清掉：fixed 同时给 top/bottom 时按 top 定位 */
+    top: auto;
+    right: calc(0.75rem + 3.125rem + 0.75rem);
+    bottom: calc(0.75rem + 3.125rem + 0.75rem);
+    left: 0.75rem;
+    z-index: 67;
+    display: none;
+    max-height: min(60dvh, 26rem);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 0.875rem;
+    background: var(--page-bg);
+    border: 2px solid var(--deep-text);
+    border-radius: 1rem;
+    box-shadow: 0 0.65rem 1.8rem rgba(0, 0, 0, 0.18);
+    gap: 0.75rem;
+  }
+  .mg-side.is-mobile-open {
+    display: flex;
+  }
+
+  /* 面板自己就有描边，里面的块不再各套一层卡片 */
+  .mg-side .mg-block {
+    padding: 0;
+    border: none;
+    border-radius: 0;
+    background: transparent;
+  }
+
+  /* 只留被点中的那一块 */
+  .mg-side[data-mg-view="search"] .mg-block:not([data-mg-block="search"]),
+  .mg-side[data-mg-view="calendar"] .mg-block:not([data-mg-block="calendar"]),
+  .mg-side[data-mg-view="sort"] .mg-block:not([data-mg-block="sort"]),
+  .mg-side[data-mg-view="type"] .mg-block:not([data-mg-block="type"]),
+  .mg-side[data-mg-view="status"] .mg-block:not([data-mg-block="status"]),
+  .mg-side[data-mg-view="tags"] .mg-block:not([data-mg-block="tags"]) {
+    display: none;
+  }
+}
+
+/* ============================================================
+   本页手机档同样藏掉 FloatingDock 的「展开」按钮与它展开的那一列
+   （站长 2026-09-30：右下角那排筛选按钮就排在这一列上方，展开会叠在一起；
+   本页也用不到它展开后的那几个抽屉）。只藏「展开」与展开列，「回顶部」保留；
+   桌面档不动（那边没有那排筛选按钮、不会重叠）。 */
+@media (max-width: 768px) {
+  html:has(#content-wrapper[data-no-sidebar="movies-games"]) #ud-toggle-btn,
+  html:has(#content-wrapper[data-no-sidebar="movies-games"]) #ud-stack {
+    display: none !important;
+  }
+}
