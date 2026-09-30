@@ -1,7 +1,9 @@
 /**
  * 动态页（/moments/）左栏筛选：搜索 + 日历 + 标签
  *
- * 布局：`.wx-layout` 两栏（左栏 240px 粘住 + 右侧内容自适应），窄屏堆叠。
+ * 布局：`.wx-layout` 两栏（左栏 240px 粘住 + 右侧内容自适应）。
+ * 窄屏两档：769-1023px 左栏压到内容上方堆叠；**≤768px 左栏整体收进右下角
+ * 3 个按钮**（`.wx-mobile-tools`），点按钮才弹出对应那一组（`data-mobile-view`）。
  *
  * ⚠️ 文件底部「筛选显隐」那组选择器是本功能的关键：筛选显示的优先级要压过
  * `.wx-feed-hidden`（懒加载的分批揭示）与 `.wx-feed-pinned-copy`（置顶副本默认隐藏），
@@ -56,6 +58,102 @@ html:has(#content-wrapper[data-no-sidebar="moments"]) #main-content-wrapper {
 		position: static;
 		max-height: none;
 		overflow: visible;
+	}
+}
+
+/* ------------------- 移动端（≤768px）：左栏收进右下角 3 个按钮 -------------------
+   断点与 MobileDock 对齐。**默认不显示**：底部浮岛在的时候，右下角不挂这 3 个按钮；
+   浮岛一收起（往下滚），FloatingDock 的原有两个按钮冒出来，这 3 个按钮才出现，
+   并排在 FloatingDock 那一列的上方、与它同一列。769-1023px 没有浮岛，保持堆叠形态。 */
+.wx-mobile-tools {
+	display: none;
+}
+
+@media (max-width: 768px) {
+	/* 3 个按钮：规格与参考站 FloatingDock 一致（50×50、圆角 1.25rem、
+	   2px 深色描边、纯色底、按下反色） */
+	.wx-mobile-tools {
+		position: fixed;
+		right: 0.75rem;
+		/* 让开 FloatingDock 那一列的两个按钮：底距 0.75rem + 按钮 3.125rem×2 + 间距 0.75rem×2 */
+		bottom: calc(0.75rem + 3.125rem + 0.75rem + 3.125rem + 0.75rem);
+		/* 压在 FloatingDock(60) 之下：它展开的那一列按钮要能盖住这 3 个，避免互相穿插 */
+		z-index: 55;
+		display: none;
+		flex-direction: column;
+		gap: 0.5rem;
+	}
+
+	.wx-mobile-tools.is-island-hidden {
+		display: flex;
+	}
+
+	.wx-mobile-tool {
+		position: relative;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 3.125rem;
+		height: 3.125rem;
+		padding: 0;
+		border-radius: 1.25rem;
+		border: 2px solid var(--deep-text);
+		background: var(--page-bg);
+		color: var(--deep-text);
+		cursor: pointer;
+		overflow: hidden;
+		flex-shrink: 0;
+		transition: background-color 200ms ease, color 200ms ease, border-color 200ms ease;
+	}
+
+	.wx-mobile-tool svg {
+		font-size: 1.875rem;
+	}
+
+	.wx-mobile-tool.is-active,
+	.wx-mobile-tool:active {
+		background: var(--deep-text);
+		color: var(--page-bg);
+		border-color: var(--page-bg);
+	}
+
+	/* 浮层：就是左栏那块，只在点按钮后出现；贴在按钮列左侧，底边与按钮列齐平 */
+	.wx-filter {
+		position: fixed;
+		/* 基础规则里的 sticky top 必须显式清掉：fixed 同时给了 top/bottom 时
+		   先按 top 定位，浮层会被顶到屏幕上方（bottom 形同失效） */
+		top: auto;
+		right: calc(0.75rem + 3.125rem + 0.75rem);
+		bottom: calc(0.75rem + 3.125rem + 0.75rem + 3.125rem + 0.75rem);
+		left: 0.75rem;
+		z-index: 67;
+		display: none;
+		max-height: min(60dvh, 26rem);
+		overflow-y: auto;
+		overscroll-behavior: contain;
+		padding: 0.875rem;
+		background: var(--page-bg);
+		border: 2px solid var(--deep-text);
+		border-radius: 1rem;
+		box-shadow: 0 0.65rem 1.8rem rgba(0, 0, 0, 0.18);
+	}
+
+	.wx-filter.is-mobile-open {
+		display: flex;
+	}
+
+	.wx-filter[data-mobile-view="search"] .wx-filter__block:not(.wx-filter__block--search),
+	.wx-filter[data-mobile-view="calendar"] .wx-filter__block:not(.wx-filter__block--calendar),
+	.wx-filter[data-mobile-view="tags"] .wx-filter__block:not(.wx-filter__block--tags) {
+		display: none;
+	}
+
+	/* 浮层自己已有描边，内部块不再各套一层卡片 */
+	.wx-filter__block {
+		padding: 0;
+		border: none;
+		border-radius: 0;
+		background: transparent;
 	}
 }
 

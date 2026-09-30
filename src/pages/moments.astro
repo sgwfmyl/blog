@@ -140,9 +140,9 @@ const filterMeta = {
   <div class="wx-layout">
     <!-- 左栏：搜索 / 日历 / 标签（点日历与标签即时筛选右侧时间线） -->
     <aside class="wx-filter" data-moments-filter>
-      <div class="wx-filter__block">
+      <div class="wx-filter__block wx-filter__block--search">
         <label class="wx-filter__search">
-          <Icon name="material-symbols:search-rounded" class="text-[1.05rem]" />
+          <Icon name="material-symbols:search-rounded" is:inline class="text-[1.05rem]" />
           <input
             type="search"
             class="wx-filter__input"
@@ -162,7 +162,7 @@ const filterMeta = {
         </label>
       </div>
 
-      <details class="wx-filter__block wx-filter__details" open>
+      <details class="wx-filter__block wx-filter__block--calendar wx-filter__details" open>
         <summary class="wx-filter__summary">
           <Icon
             name="material-symbols:calendar-month-outline"
@@ -213,7 +213,7 @@ const filterMeta = {
         </div>
       </details>
 
-      <details class="wx-filter__block wx-filter__details" open>
+      <details class="wx-filter__block wx-filter__block--tags wx-filter__details" open>
         <summary class="wx-filter__summary">
           <Icon name="material-symbols:tag-outline" class="text-[1.05rem]" />
           <span>标签</span>
@@ -324,6 +324,37 @@ const filterMeta = {
         </div>
       </div>
     </div>
+  </div>
+
+  <!-- 移动端（≤1023px）：左栏三件套收进右下角这 3 个按钮，点谁弹谁 -->
+  <div class="wx-mobile-tools" data-moments-tools>
+    <button
+      type="button"
+      class="wx-mobile-tool"
+      data-moments-tool="search"
+      aria-label="搜索动态"
+      aria-expanded="false"
+    >
+      <Icon name="material-symbols:search-rounded" is:inline />
+    </button>
+    <button
+      type="button"
+      class="wx-mobile-tool"
+      data-moments-tool="calendar"
+      aria-label="按日期筛选"
+      aria-expanded="false"
+    >
+      <Icon name="material-symbols:calendar-month-outline" />
+    </button>
+    <button
+      type="button"
+      class="wx-mobile-tool"
+      data-moments-tool="tags"
+      aria-label="按标签筛选"
+      aria-expanded="false"
+    >
+      <Icon name="material-symbols:tag-outline" />
+    </button>
   </div>
 
   <!-- 评论弹窗（单频道聊天室，复用留言板样式，client:load 确保 Swup SPA 首入即水合） -->
@@ -721,6 +752,96 @@ const filterMeta = {
     init();
     document.addEventListener("swup:content:replaced", init);
     document.addEventListener("astro:page-load", init);
+  })();
+  </script>
+
+  <!-- 移动端右下角 3 个按钮：点谁弹谁（面板复用左栏那块 .wx-filter，断点决定它是列还是浮层） -->
+  <script is:inline>
+  (function () {
+    /* 委托到 document，且每次都重新取元素：Swup 换页后按钮/面板是新节点，无需重绑 */
+    if (window.__momentsToolsBound) return;
+    window.__momentsToolsBound = true;
+
+    var view = "";
+
+    function nodes() {
+      return {
+        tools: document.querySelector("[data-moments-tools]"),
+        panel: document.querySelector("[data-moments-filter]"),
+      };
+    }
+
+    function sync() {
+      var n = nodes();
+      if (!n.tools || !n.panel) return;
+
+      Array.prototype.forEach.call(n.tools.querySelectorAll("[data-moments-tool]"), function (btn) {
+        var on = btn.getAttribute("data-moments-tool") === view;
+        btn.classList.toggle("is-active", on);
+        btn.setAttribute("aria-expanded", on ? "true" : "false");
+      });
+
+      if (view) {
+        n.panel.setAttribute("data-mobile-view", view);
+        n.panel.classList.add("is-mobile-open");
+      } else {
+        n.panel.removeAttribute("data-mobile-view");
+        n.panel.classList.remove("is-mobile-open");
+      }
+    }
+
+    function setView(next) {
+      view = next;
+      sync();
+      if (view !== "search") return;
+      var input = nodes().panel.querySelector("[data-moments-search]");
+      if (input) setTimeout(function () { input.focus(); }, 60);
+    }
+
+    document.addEventListener("click", function (e) {
+      var n = nodes();
+      if (!n.tools || !n.panel) return;
+
+      var btn = e.target.closest("[data-moments-tool]");
+      if (btn) {
+        var next = btn.getAttribute("data-moments-tool") || "";
+        setView(view === next ? "" : next);
+        return;
+      }
+      /* 点面板外部收起；面板内部的点击（选日期/标签）保持打开 */
+      if (view && !n.panel.contains(e.target)) setView("");
+    });
+
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && view) setView("");
+    });
+
+    /* 手机上这 3 个按钮只在浮岛收起（＝FloatingDock 的两个按钮冒出来）时显示，
+       并排在 FloatingDock 那一列的上方；浮岛回来就收起。
+       ⚠️ 浮岛（MobileDock）在布局里排在本页内容之后，脚本执行时它还不存在，
+       所以这里一律「用的时候再取」：滚动事件驱动 + 元素首次出现时挂上观察器 */
+    var observedIsland = null;
+    function syncWithIsland() {
+      var n = nodes();
+      var island = document.getElementById("mobile-dock");
+      if (!n.tools || !n.panel || !island) return;
+      if (island !== observedIsland) {
+        observedIsland = island;
+        new MutationObserver(syncWithIsland).observe(island, { attributes: true, attributeFilter: ["class"] });
+      }
+      var lifted = island.classList.contains("is-hidden");
+      n.tools.classList.toggle("is-island-hidden", lifted);
+      /* 浮岛回来 → 按钮收起，浮层也跟着收 */
+      if (!lifted && view) setView("");
+    }
+    window.addEventListener("scroll", syncWithIsland, { passive: true });
+    document.addEventListener("swup:content:replaced", syncWithIsland);
+    document.addEventListener("astro:page-load", syncWithIsland);
+    syncWithIsland();
+
+    /* Swup 换页后回到默认视图 */
+    document.addEventListener("swup:content:replaced", function () { view = ""; sync(); });
+    document.addEventListener("astro:page-load", function () { view = ""; sync(); });
   })();
   </script>
 

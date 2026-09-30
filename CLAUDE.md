@@ -415,6 +415,17 @@ Layout.astro          ← HTML 骨架：<html>, <head>, <body>, 全局组件, �
 - ⚠️ **CSS 里三者的顺序决定胜负**（特异性相同）：`.wx-feed-pinned-copy`（置顶副本默认隐藏）→ `.is-filter-hide` → `.is-filter-match`（**必须放最后**）。顺序一改，置顶副本就会从筛选结果里消失（踩过一次）。
 - 置顶那 2 条**也渲染进 feed**（排最后、默认隐藏），筛选时作为普通项被匹配；无筛选时仍由顶部置顶块展示，不重复。
 - 卡片 wrapper 的筛选属性：`data-tags` / `data-date` / `data-month` / `data-search`（正文去 Markdown + 标签 + 位置的小写串）；日历数据（每天/每月条数）由构建期内联。
+- **手机档（≤768px，与 MobileDock 同断点）左栏整块收进右下角**：右下角竖排 3 个按钮（`.wx-mobile-tools` / `.wx-mobile-tool`，结构在 `moments.astro`、样式在 `moments-filter.css`，只在本页存在）。**默认不显示**，浮岛一收起（`is-hidden`）才和 FloatingDock 那列一起出现、排在它上方同列；点谁弹谁 —— 浮层就是左栏那块 `.wx-filter`，`data-mobile-view` 决定显示哪一组、`.is-mobile-open` 决定开合；再点一次同按钮 / 点外部 / Esc 收起，点浮层内部（选日期、选标签）不收起；浮岛回来时浮层自动关。769–1023px 没有浮岛，保持「左栏堆叠在内容上方」的原形态，两档互不干扰。
+  - ⚠️ 手机上给 `.wx-filter` 改 `position: fixed` 时**必须显式写 `top: auto`**：基础规则里的 sticky `top: 5.5rem` 仍在，`fixed` 同时拿到 `top` 与 `bottom` 时按 `top` 定位，浮层会被顶到屏幕上方（踩过一次）。
+  - ⚠️ **显示时机与列位由站长定死**（2026-09-30 反复三轮才对）：浮岛在 = 这 3 个按钮不显示；浮岛收起（右下角冒出 FloatingDock 的 `···`/`↑`）= 它们出现并**与 FloatingDock 同一右边缘、接在它上方**（`bottom` 让开浮坞两个按钮），整列连成一串。别再改成"一直显示"或"另起一列"。
+  - ⚠️ 信号来源：浮岛（`MobileDock`）在**布局里排在本页内容之后**，本页脚本执行时它还不存在 —— 所以 `#mobile-dock` 一律「用的时候再取」（滚动事件 + 元素首次出现时才挂 `MutationObserver`），别在脚本顶部就 `getElementById` 存起来（会永远绑不上，踩过一次）。
+
+### 5.9 右下角浮动按钮规格（2026-09-30，对齐参考博客）
+
+- **桌面端悬浮坞**（`src/components/layout/UnifiedDock.astro` 的 `<style>`）：按钮 50×50（`3.125rem`）、圆角 `1.25rem`、**2px 实色描边**（`--deep-text`）、纯色底（`--page-bg`）、无毛玻璃无阴影，悬停/按下**反色**；图标 `1.875rem`；悬浮坞贴边 1.25rem、按钮间距 0.75rem（对齐参考站 `.dock-btn` / `.floating-dock`）。
+  - ⚠️ **收起状态那一列要 `display: none`**（`.ud-stack:not([data-expanded="true"])`），否则它虽然没内容却仍占一个 0.75rem 的间距，悬浮坞里会多出一道空档。
+- ⚠️ **手机底部那条浮岛（`MobileDock` + `src/styles/components/mobile-dock.css`）不在这次统一范围内，保持原样**（透明按钮 + 中间凸出的黑色圆钮 + 胶囊圆角）—— 站长 2026-09-30 明确要求改回来，别再顺手「统一规格」。它的总高 `4.25rem`（按钮 3.25rem + 上下留白 0.5rem）被 `dock-drawer`、动态页那 3 个按钮的 `bottom` 偏移按写死的值引用，**改它高度要同步改那两处**。
+- ⚠️ **图标空白 = sprite 丢符号**（本次踩到）：页面里的 `<Icon>` 默认走 astro-icon 的 sprite（`<use href="#ai:…">`），这份 sprite 有已知的丢符号问题（`src/components/common/Icon.astro` 就是为绕开它而写的包装组件）。症状是图标**整块空白**而不报错，`document.querySelector("symbol#ai:…")` 能确认缺没缺。判断/修复：给那个 `<Icon>` 加 `is:inline`（路径直接内联），或改用 `@/components/common/Icon.astro`。
 
 ---
 
