@@ -380,6 +380,89 @@ const hostOf = (url: string): string => {
         );
       }
 
+      /* ---------- 悬浮/聚焦卡片：浮层里显示完整描述 + 域名 ----------
+         卡片上的描述只占一行（超出省略），完整内容靠这个共用浮层展示。
+         用 JS 定位（而不是 CSS 伪元素）：卡片在网格里的位置不定，浮层要能自动
+         贴住左右边界、下面放不下时翻到上方，箭头再指向卡片中心。 */
+      function bindTip() {
+        var tip = document.getElementById("nav-tip");
+        if (!tip || tip.dataset.navBound) return;
+        tip.dataset.navBound = "1";
+
+        var descEl = document.getElementById("nav-tip-desc");
+        var urlEl = document.getElementById("nav-tip-url");
+        var showTimer = null;
+        var GAP = 10;
+
+        function place(card) {
+          var r = card.getBoundingClientRect();
+          tip.classList.add("is-visible");
+          var tw = tip.offsetWidth;
+          var th = tip.offsetHeight;
+          var left = r.left + r.width / 2 - tw / 2;
+          var maxLeft = window.innerWidth - tw - 12;
+          if (left > maxLeft) left = maxLeft;
+          if (left < 12) left = 12;
+          var top = r.bottom + GAP;
+          var above = top + th > window.innerHeight - 12;
+          if (above) top = Math.max(12, r.top - th - GAP);
+          tip.classList.toggle("is-above", above);
+          tip.style.left = Math.round(left) + "px";
+          tip.style.top = Math.round(top) + "px";
+          var arrowX = Math.round(r.left + r.width / 2 - left);
+          tip.style.setProperty(
+            "--nav-tip-arrow-x",
+            Math.min(Math.max(arrowX, 16), tw - 16) + "px",
+          );
+        }
+
+        function show(card) {
+          if (showTimer) clearTimeout(showTimer);
+          showTimer = setTimeout(function () {
+            var desc = card.getAttribute("data-desc") || "";
+            var host = card.getAttribute("data-host") || "";
+            if (descEl) {
+              descEl.textContent = desc;
+              descEl.hidden = !desc;
+            }
+            if (urlEl) {
+              urlEl.textContent = host;
+              urlEl.hidden = !host;
+            }
+            /* 描述与域名都空就不弹了 */
+            if (!desc && !host) return;
+            place(card);
+          }, 100);
+        }
+
+        function hide() {
+          if (showTimer) {
+            clearTimeout(showTimer);
+            showTimer = null;
+          }
+          tip.classList.remove("is-visible");
+        }
+
+        function cardOf(target) {
+          return target && target.closest ? target.closest(".nav-card") : null;
+        }
+
+        document.addEventListener("pointerover", function (ev) {
+          var card = cardOf(ev.target);
+          if (card) show(card);
+        });
+        document.addEventListener("pointerout", function (ev) {
+          if (cardOf(ev.target)) hide();
+        });
+        document.addEventListener("focusin", function (ev) {
+          var card = cardOf(ev.target);
+          if (card) show(card);
+        });
+        document.addEventListener("focusout", hide);
+        window.addEventListener("scroll", hide, { passive: true });
+        window.addEventListener("resize", hide, { passive: true });
+      }
+
       /* ---------- 初始化（Swup 换页后重新取元素） ---------- */
       function init() {
         var side = document.querySelector("[data-nav-side]");
@@ -396,6 +479,7 @@ const hostOf = (url: string): string => {
 
         bindSearch();
         bindTabs();
+        bindTip();
 
         var fromHash = "";
         try {
@@ -562,6 +646,12 @@ const hostOf = (url: string): string => {
         </div>
       )}
     </div>
+  </div>
+
+  <!-- 悬浮/聚焦卡片时显示的完整信息（一个共用浮层，JS 定位，见脚本 bindTip） -->
+  <div class="nav-tip" id="nav-tip" role="tooltip" aria-hidden="true">
+    <span class="nav-tip__desc" id="nav-tip-desc"></span>
+    <span class="nav-tip__url" id="nav-tip-url"></span>
   </div>
 
 </MainGridLayout>
@@ -887,6 +977,74 @@ const hostOf = (url: string): string => {
     margin-left: 0.0625rem;
   }
 
+  /* 悬浮时显示完整信息的浮层（参考站那种深色小气泡 + 指向卡片的小三角）。
+     亮色主题下 --deep-text 是近黑、--page-bg 是白，所以这对 token 直接就是「反色气泡」。 */
+  .nav-tip {
+    position: fixed;
+    z-index: 80;
+    max-width: min(20rem, calc(100vw - 1.5rem));
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.5rem;
+    background: var(--deep-text);
+    color: var(--page-bg);
+    font-size: 0.8125rem;
+    line-height: 1.5;
+    text-align: left;
+    white-space: normal;
+    word-break: break-word;
+    box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.2);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-0.25rem);
+    transition:
+      opacity 150ms ease,
+      transform 150ms ease,
+      visibility 0s linear 150ms;
+    pointer-events: none;
+  }
+
+  .nav-tip.is-visible {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+    transition-delay: 0s;
+  }
+
+  /* 小三角：旋转 45° 的方块，水平位置由 JS 按卡片中心设置 */
+  .nav-tip::before {
+    content: "";
+    position: absolute;
+    top: -0.3125rem;
+    left: var(--nav-tip-arrow-x, 50%);
+    width: 0.625rem;
+    height: 0.625rem;
+    margin-left: -0.3125rem;
+    border-radius: 0.125rem;
+    background: var(--deep-text);
+    transform: rotate(45deg);
+  }
+
+  .nav-tip.is-above::before {
+    top: auto;
+    bottom: -0.3125rem;
+  }
+
+  .nav-tip__desc {
+    display: block;
+  }
+
+  .nav-tip__desc[hidden],
+  .nav-tip__url[hidden] {
+    display: none;
+  }
+
+  .nav-tip__url {
+    display: block;
+    margin-top: 0.25rem;
+    font-size: 0.75rem;
+    opacity: 0.65;
+  }
+
   /* 卡片网格 */
   .nav-grid {
     display: grid;
@@ -965,6 +1123,17 @@ const hostOf = (url: string): string => {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+
+  /* 触屏没有悬浮，浮层不会出现 —— 描述改成两行，至少多露出一点 */
+  @media (hover: none) {
+    .nav-card__desc {
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      line-clamp: 2;
+      -webkit-box-orient: vertical;
+      white-space: normal;
+    }
   }
 
   /* 悬浮时图标「蹦一蹦」：关键帧原样复刻参考站（1.2s、只播一次） */
