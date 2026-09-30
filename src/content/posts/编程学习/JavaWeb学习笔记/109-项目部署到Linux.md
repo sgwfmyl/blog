@@ -6,6 +6,7 @@ tags:
   - JavaWeb
   - Linux
   - 部署
+image: https://img.tsh520.cn/file/blog/post-covers/javaweb-109-deploy-to-linux.webp
 order: 109
 ---
 

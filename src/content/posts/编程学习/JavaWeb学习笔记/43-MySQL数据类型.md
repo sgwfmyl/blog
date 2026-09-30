@@ -6,7 +6,7 @@ tags:
   - JavaWeb
   - MySQL
   - 后端
-image: https://img.tsh520.cn/file/blog/post-covers/javaweb-43-mysql-data-types.webp
+image: https://img.tsh520.cn/file/blog/post-covers/javaweb-43-mysql-data-types(1).webp
 order: 43
 ---
 

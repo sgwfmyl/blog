@@ -6,7 +6,7 @@ tags:
   - JavaWeb
   - SpringBoot
   - 部署
-image: https://img.tsh520.cn/file/blog/post-covers/javaweb-73-aliyun-oss-config.webp
+image: https://img.tsh520.cn/file/blog/post-covers/javaweb-73-aliyun-oss-config(1).webp
 order: 73
 ---
 

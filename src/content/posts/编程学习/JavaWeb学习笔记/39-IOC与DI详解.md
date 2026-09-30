@@ -6,7 +6,7 @@ tags:
   - JavaWeb
   - SpringBoot
   - 后端
-image: https://img.tsh520.cn/file/blog/post-covers/javaweb-39-ioc-di-detail.webp
+image: https://img.tsh520.cn/file/blog/post-covers/javaweb-39-ioc-di-detail(1).webp
 order: 39
 ---
 

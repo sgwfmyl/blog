@@ -6,7 +6,7 @@ tags:
   - JavaWeb
   - MyBatis
   - MySQL
-image: https://img.tsh520.cn/file/blog/post-covers/javaweb-54-mybatis-crud.webp
+image: https://img.tsh520.cn/file/blog/post-covers/javaweb-54-mybatis-crud(1).webp
 order: 54
 ---
 

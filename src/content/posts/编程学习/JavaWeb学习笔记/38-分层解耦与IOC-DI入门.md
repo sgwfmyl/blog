@@ -6,7 +6,7 @@ tags:
   - JavaWeb
   - SpringBoot
   - 后端
-image: https://img.tsh520.cn/file/blog/post-covers/javaweb-38-decouple-ioc-di.webp
+image: https://img.tsh520.cn/file/blog/post-covers/javaweb-38-decouple-ioc-di(1).webp
 order: 38
 ---
 

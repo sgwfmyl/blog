@@ -6,6 +6,7 @@ tags:
   - JavaWeb
   - Docker
   - 部署
+image: https://img.tsh520.cn/file/blog/post-covers/javaweb-111-docker-commands-volumes.webp
 order: 111
 ---
 

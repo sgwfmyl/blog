@@ -6,7 +6,7 @@ tags:
   - JavaWeb
   - MySQL
   - 后端
-image: https://img.tsh520.cn/file/blog/post-covers/javaweb-45-dml-insert-update-delete.webp
+image: https://img.tsh520.cn/file/blog/post-covers/javaweb-45-dml-insert-update-delete(1).webp
 order: 45
 ---
 

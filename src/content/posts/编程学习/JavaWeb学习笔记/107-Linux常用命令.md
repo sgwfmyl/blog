@@ -5,6 +5,7 @@ description: 从命令格式 command [-options] [parameter] 和四个使用技�
 tags:
   - JavaWeb
   - Linux
+image: https://img.tsh520.cn/file/blog/post-covers/javaweb-107-linux-commands.webp
 order: 107
 ---
 

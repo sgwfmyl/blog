@@ -6,7 +6,7 @@ tags:
   - JavaWeb
   - HTTP
   - Web
-image: https://img.tsh520.cn/file/blog/post-covers/javaweb-32-http-protocol.webp
+image: https://img.tsh520.cn/file/blog/post-covers/javaweb-32-http-protocol(1).webp
 order: 32
 ---
 

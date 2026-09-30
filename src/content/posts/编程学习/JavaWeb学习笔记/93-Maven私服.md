@@ -6,6 +6,7 @@ tags:
   - JavaWeb
   - Maven
   - 部署
+image: https://img.tsh520.cn/file/blog/post-covers/javaweb-93-maven-private-server.webp
 order: 93
 ---
 

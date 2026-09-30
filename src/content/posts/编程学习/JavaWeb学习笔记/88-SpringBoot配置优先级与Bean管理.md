@@ -6,6 +6,7 @@ tags:
   - JavaWeb
   - SpringBoot
   - 后端
+image: https://img.tsh520.cn/file/blog/post-covers/javaweb-88-config-priority-bean.webp
 order: 88
 ---
 
@@ -156,7 +157,7 @@ PPT 第 7 页给出这一节的结论——**SpringBoot 配置优先级（低 �
 
 那"优先级高"具体表现成什么？不是"两个值合并"，而是**同一个键只留优先级最高的那个值**——所以三个配置文件同时存在时，你在 `application.yml` 里把端口改成别的也没用，生效的永远是 `application.properties` 里那一行（这正是 PPT 第 4 页说的"推荐统一用一种格式"的另一个理由）。
 
-## 本机实测：三次启动，三个端口（LAB §1）
+## 本机实测：三次启动，三个端口
 
 光看排序容易记住但记不牢，把课程那套实验在本机跑了一遍（实验工程 `springboot-web-config`，`src/main/resources` 下同时放三个配置文件，端口分别是 8081 / 8082 / 8083）：
 
@@ -485,7 +486,7 @@ PPT 给推荐版本的理由：**若要管理的第三方 bean 对象，建议�
   | 打包与运行、`spring-boot-maven-plugin`（PPT 6） | 第 2 步——没有这个插件，`java -jar` 跑不起来 |
   | Java 系统属性与命令行参数（PPT 5～6） | 第 4、5 步——`-Dserver.port=9000` 与 `--server.port=10010` |
   | 配置优先级（PPT 7） | 第 3～7 步——三次启动三个端口，链条一步步被压上来 |
-  | 本机实测（第 14 章 LAB §1） | 第 3～5 步的对照答案（8081 / 9000 / 10010） |
+  | 本机实测（第 14 章 ） | 第 3～5 步的对照答案（8081 / 9000 / 10010） |
 
   > [!TIP]- 提示（先自己想，实在想不出再点开）
   > **一级 · 思路**：一次只改一个变量——先"只有配置文件"跑一次当基准，再依次往上加压：先加 JVM 属性，再加应用参数；每一步都只看同一句话（`Tomcat started on port xxx`）

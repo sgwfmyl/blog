@@ -6,6 +6,7 @@ tags:
   - JavaWeb
   - Linux
   - 部署
+image: https://img.tsh520.cn/file/blog/post-covers/javaweb-108-linux-software-install.webp
 order: 108
 ---
 

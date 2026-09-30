@@ -5,7 +5,7 @@ description: 讲清 HTTP 响应报文的三部分（响应行、响应头、响�
 tags:
   - JavaWeb
   - HTTP
-image: https://img.tsh520.cn/file/blog/post-covers/javaweb-34-http-response-status.webp
+image: https://img.tsh520.cn/file/blog/post-covers/javaweb-34-http-response-status(1).webp
 order: 34
 ---
 

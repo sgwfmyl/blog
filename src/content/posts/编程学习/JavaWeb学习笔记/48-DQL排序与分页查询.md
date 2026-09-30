@@ -6,7 +6,7 @@ tags:
   - JavaWeb
   - MySQL
   - 后端
-image: https://img.tsh520.cn/file/blog/post-covers/javaweb-48-dql-order-limit.webp
+image: https://img.tsh520.cn/file/blog/post-covers/javaweb-48-dql-order-limit(1).webp
 order: 48
 ---
 

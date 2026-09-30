@@ -6,6 +6,7 @@ tags:
   - JavaWeb
   - SpringBoot
   - Maven
+image: https://img.tsh520.cn/file/blog/post-covers/javaweb-90-custom-starter.webp
 order: 90
 ---
 
@@ -521,8 +522,8 @@ AliyunOSSOperator 已自动装配: true , 实例: com.aliyun.oss.AliyunOSSOperat
   | `@ConditionalOnMissingBean`（89 篇） | 第 2、8 步——使用方定义了就让位 |
   | `.imports` 名单文件（89 篇源码跟踪） | 第 3 步——路径与文件名的每一个字都不能改 |
   | `install` 与本地仓库（26 篇） | 第 5 步——装进本地仓库别的工程才能引用 |
-  | 本机实测（第 14 章 LAB §2） | 第 5～8 步的对照答案——`/check` 返回"已自动装配: true" |
-  | 版本差异（LAB §5） | 第 9 步——本机 3.2.x 走 `.imports`，`spring.factories` 是历史写法 |
+  | 本机实测（第 14 章 ） | 第 5～8 步的对照答案——`/check` 返回"已自动装配: true" |
+  | 版本差异 | 第 9 步——本机 3.2.x 走 `.imports`，`spring.factories` 是历史写法 |
 
   > [!TIP]- 提示（先自己想，实在想不出再点开）
   > **一级 · 思路**：按"依赖 → 自动配置 → 登记 → 使用"的顺序做，每完成一步都先想"使用方少写了什么"；第 8 步的对照实验是把 [89 篇](/posts/编程学习/javaweb学习笔记/89-springboot自动配置原理/)那个实测再做一次，只是这次组件是你自己写的

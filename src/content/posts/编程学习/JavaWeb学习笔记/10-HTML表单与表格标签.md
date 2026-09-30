@@ -6,7 +6,7 @@ tags:
   - JavaWeb
   - HTML
   - 表单
-image: https://img.tsh520.cn/file/blog/post-covers/javaweb-10-html-form-table.webp
+image: https://img.tsh520.cn/file/blog/post-covers/javaweb-10-html-form-table(1).webp
 order: 10
 ---
 

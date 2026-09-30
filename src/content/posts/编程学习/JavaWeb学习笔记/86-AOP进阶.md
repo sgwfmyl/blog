@@ -6,6 +6,7 @@ tags:
   - JavaWeb
   - SpringBoot
   - 后端
+image: https://img.tsh520.cn/file/blog/post-covers/javaweb-86-aop-advanced.webp
 order: 86
 ---
 

@@ -6,7 +6,7 @@ tags:
   - JavaWeb
   - SpringBoot
   - HTTP
-image: https://img.tsh520.cn/file/blog/post-covers/javaweb-35-springboot-response-data.webp
+image: https://img.tsh520.cn/file/blog/post-covers/javaweb-35-springboot-response-data(1).webp
 order: 35
 ---
 

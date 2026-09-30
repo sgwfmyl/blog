@@ -6,6 +6,7 @@ tags:
   - JavaWeb
   - SpringBoot
   - 后端
+image: https://img.tsh520.cn/file/blog/post-covers/javaweb-89-auto-configuration.webp
 order: 89
 ---
 
@@ -576,9 +577,9 @@ INFO  ... : Started SpringbootAutoconfigurationTestApplication in 2.084 seconds 
   | --- | --- |
   | `@SpringBootApplication` 三部分（PPT 29） | 第 1 步——从引导类的注解源码里读出来 |
   | `AutoConfigurationImportSelector` 与 imports 文件（PPT 30） | 第 2、3 步——点名导入 → 选择器 → 名单文件 |
-  | 版本差异（PPT 30 注意 + LAB §5） | 第 3、8 步——本机 3.2.x 读 `.imports`，`spring.factories` 是历史写法 |
+  | 版本差异（PPT 30 注意 + ） | 第 3、8 步——本机 3.2.x 读 `.imports`，`spring.factories` 是历史写法 |
   | `@Conditional` 三兄弟（PPT 31） | 第 4、8 步——类上用 Class 判断、方法上用 MissingBean 判断 |
-  | 本机实测（LAB §3） | 第 5～7 步——自定义 bean 创建了、自动配置的没执行、应用正常启动 |
+  | 本机实测 | 第 5～7 步——自定义 bean 创建了、自动配置的没执行、应用正常启动 |
 
   > [!TIP]- 提示（先自己想，实在想不出再点开）
   > **一级 · 思路**：先"读"再"跑"——前四步都只是读源码和 jar 里的文件（不许背），第 5 步才动手；动手时只加一个自己造的同类 bean，观察"自动配置让不让位"

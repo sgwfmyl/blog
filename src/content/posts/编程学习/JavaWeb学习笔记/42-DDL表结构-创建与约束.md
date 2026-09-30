@@ -6,7 +6,7 @@ tags:
   - JavaWeb
   - MySQL
   - 后端
-image: https://img.tsh520.cn/file/blog/post-covers/javaweb-42-ddl-table-constraints.webp
+image: https://img.tsh520.cn/file/blog/post-covers/javaweb-42-ddl-table-constraints(1).webp
 order: 42
 ---
 

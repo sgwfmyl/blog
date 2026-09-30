@@ -6,6 +6,7 @@ tags:
   - JavaWeb
   - Docker
   - 部署
+image: https://img.tsh520.cn/file/blog/post-covers/javaweb-113-docker-deploy-compose.webp
 order: 113
 ---
 

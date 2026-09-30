@@ -6,6 +6,7 @@ tags:
   - JavaWeb
   - Vue
   - 前端
+image: https://img.tsh520.cn/file/blog/post-covers/javaweb-97-elementplus-components.webp
 order: 97
 ---
 

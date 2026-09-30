@@ -6,6 +6,7 @@ tags:
   - JavaWeb
   - Maven
   - 后端
+image: https://img.tsh520.cn/file/blog/post-covers/javaweb-92-maven-inherit-aggregate.webp
 order: 92
 ---
 

@@ -6,6 +6,7 @@ tags:
   - JavaWeb
   - Vue
   - Ajax
+image: https://img.tsh520.cn/file/blog/post-covers/javaweb-96-vue-composition-api.webp
 order: 96
 ---
 
