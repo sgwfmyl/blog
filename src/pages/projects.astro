@@ -11,41 +11,121 @@ const allEntries = await getCollection("daohang");
 // 迁移前的老数据都在 daohang 根目录，没有目录时归入「未分类」
 
 /**
- * 分类元数据：显示名 / 排序 / 图标。
+ * 分类元数据：显示名 / 排序 / 图标 / 标语。
  * key 用文件夹名，比较时统一按「小写 + 空格转连字符」归一化：
  * Astro 生成 entry id 时会把大写转小写、空格转连字符（`AI 工具` → `ai-工具`），
  * 所以映射表不能只按原样匹配。
+ *
+ * `tagline` 是标题行右侧那句标语（参考站同款位置），留空就不显示。
+ * ⚠️ 左栏是竖排列表，order 决定它在左栏与内容区的先后 —— 新增分类务必在这里登记，
+ * 漏登记的会带着默认图标掉到列表末尾（踩过：AI / 开发者工具 / 开发者服务平台）。
  */
 const CATEGORY_META: Record<
 	string,
-	{ display: string; order: number; icon: string }
+	{ display: string; order: number; icon: string; tagline?: string }
 > = {
-	未分类: { display: "未分类", order: 13, icon: "material-symbols:link" },
-	我的网站: { display: "我的网站", order: 0, icon: "material-symbols:person" },
-	常用网站: { display: "常用网站", order: 1, icon: "material-symbols:star" },
-	在用网站: { display: "在用网站", order: 1.5, icon: "material-symbols:star" },
-	资源网站: { display: "资源网站", order: 2, icon: "material-symbols:folder" },
+	我的网站: {
+		display: "我的网站",
+		order: 0,
+		icon: "material-symbols:person",
+		tagline: "自己折腾出来的，都放这儿",
+	},
+	常用网站: {
+		display: "常用网站",
+		order: 1,
+		icon: "material-symbols:star",
+		tagline: "每天都要点开的那几个",
+	},
+	在用网站: {
+		display: "在用网站",
+		order: 1.5,
+		icon: "material-symbols:star",
+		tagline: "手上正在用的，就这几家",
+	},
 	工具网站: {
 		display: "工具网站",
-		order: 3,
+		order: 2,
 		icon: "material-symbols:handyman",
+		tagline: "开箱即用，省事省心",
 	},
-	学习网站: { display: "学习网站", order: 5, icon: "material-symbols:school" },
-	文档: { display: "文档", order: 6, icon: "material-symbols:description" },
-	设计资源: { display: "设计资源", order: 7, icon: "material-symbols:palette" },
-	实用项目: {
-		display: "实用项目",
-		order: 8,
-		icon: "material-symbols:deployed-code",
+	开发者工具: {
+		display: "开发者工具",
+		order: 3,
+		icon: "material-symbols:terminal",
+		tagline: "写代码离不开这一套",
 	},
-	API: { display: "API", order: 9, icon: "material-symbols:api" },
+	开发者服务平台: {
+		display: "开发者服务平台",
+		order: 4,
+		icon: "material-symbols:cloud",
+		tagline: "部署、托管、跑起来",
+	},
+	AI: {
+		display: "AI",
+		order: 5,
+		icon: "material-symbols:smart-toy",
+		tagline: "各路大模型，挨个问一遍",
+	},
 	"AI 工具": {
 		display: "AI 工具",
-		order: 10,
+		order: 5,
 		icon: "material-symbols:smart-toy",
+		tagline: "从对话到画图，一网打尽",
 	},
-	影视网站: { display: "影视网站", order: 11, icon: "material-symbols:movie" },
-	其他网站: { display: "其他网站", order: 12, icon: "material-symbols:link" },
+	学习网站: {
+		display: "学习网站",
+		order: 6,
+		icon: "material-symbols:school",
+		tagline: "刷题练手，慢慢变强",
+	},
+	文档: {
+		display: "文档",
+		order: 7,
+		icon: "material-symbols:description",
+		tagline: "查手册的第一站",
+	},
+	设计资源: {
+		display: "设计资源",
+		order: 8,
+		icon: "material-symbols:palette",
+		tagline: "配色图标字体，随手就取",
+	},
+	实用项目: {
+		display: "实用项目",
+		order: 9,
+		icon: "material-symbols:deployed-code",
+		tagline: "自己动手，够用就好",
+	},
+	API: {
+		display: "API",
+		order: 10,
+		icon: "material-symbols:api",
+		tagline: "接口都在这儿，接上就能跑",
+	},
+	资源网站: {
+		display: "资源网站",
+		order: 11,
+		icon: "material-symbols:folder",
+		tagline: "找资源先来这儿翻翻",
+	},
+	影视网站: {
+		display: "影视网站",
+		order: 12,
+		icon: "material-symbols:movie",
+		tagline: "追剧看片，这儿管够",
+	},
+	其他网站: {
+		display: "其他网站",
+		order: 12.5,
+		icon: "material-symbols:link",
+		tagline: "杂七杂八，先收着",
+	},
+	未分类: {
+		display: "未分类",
+		order: 13,
+		icon: "material-symbols:link",
+		tagline: "还没归好类，先放着",
+	},
 };
 
 /** 归一化：小写 + 空格转连字符，与 Astro 的 entry id 规则对齐 */
@@ -64,7 +144,12 @@ function getCategoryMeta(folder: string) {
 	for (const [k, v] of Object.entries(CATEGORY_META)) {
 		if (normalizeCatKey(k) === key) return v;
 	}
-	return { display: folder, order: 99, icon: "material-symbols:link" };
+	return {
+		display: folder,
+		order: 99,
+		icon: "material-symbols:link",
+		tagline: "",
+	};
 }
 
 // 按分类分组
@@ -115,117 +200,239 @@ for (const [cat, items] of sortedData) {
 
 // 所有启用的网站（扁平列表）
 const allSites = sortedCategories.flatMap((cat) => sortedData.get(cat) ?? []);
+
+/**
+ * 每个分类里出现过的标签 —— 标题行那一排子标签就用它（个数多的靠前，其次按名称）。
+ * 标签来自条目 frontmatter 的 `tags`（后台「标签」字段）；一个都没填时这一排不渲染。
+ */
+const categoryTags = new Map<string, string[]>();
+for (const [cat, items] of sortedData) {
+	const counts = new Map<string, number>();
+	for (const item of items) {
+		for (const tag of item.data.tags ?? []) {
+			counts.set(tag, (counts.get(tag) ?? 0) + 1);
+		}
+	}
+	categoryTags.set(
+		cat,
+		[...counts.entries()]
+			.sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], "zh-CN"))
+			.map(([tag]) => tag),
+	);
+}
+
+const getCategoryTagline = (cat: string) => getCategoryMeta(cat).tagline ?? "";
+
+/** 卡片上的域名；解析失败就退回原串 */
+const hostOf = (url: string): string => {
+	try {
+		return new URL(url).hostname;
+	} catch {
+		return url;
+	}
+};
 ---
 
 <MainGridLayout title="网站导航" description="收录个人网站、常用工具和收藏网站">
 
+  <!-- 左栏分类 + 搜索（纯前端筛选：52 条链接本来就渲染在页面里，不发请求） -->
   <script slot="head" is:inline>
-    (function() {
-      function initToolsTabs() {
-        var tabNav = document.querySelector('[data-tools-tab-nav]');
-        var tabButtons = document.querySelectorAll('[data-tools-tab]');
-        var sections = document.querySelectorAll('[data-tools-section]');
-        var indicator = document.querySelector('[data-tools-tab-indicator]');
-        if (!tabNav || !tabButtons.length || !indicator) return;
+    (function () {
+      /* 一次性绑定 document 级监听（head 脚本在 Swup 换页时可能被重新插入，重复绑定会跑两遍） */
+      if (window.__navPageBound) return;
+      window.__navPageBound = true;
 
-        function updateIndicator(targetBtn) {
-          if (!indicator || !targetBtn) return;
-          indicator.style.left = targetBtn.offsetLeft + 'px';
-          indicator.style.top = targetBtn.offsetTop + 'px';
-          indicator.style.width = targetBtn.offsetWidth + 'px';
-          indicator.style.height = targetBtn.offsetHeight + 'px';
-          indicator.style.opacity = '1';
-        }
+      var ANCHOR = "#nav-";
+      var searchTimer = null;
 
-        function activateTab(targetTab) {
-          if (!targetTab) return;
-          var targetButton = Array.from(tabButtons).find(function(btn) {
-            return btn.dataset.toolsTab === targetTab;
-          });
-          if (!targetButton) return;
-
-          // 切换按钮激活状态
-          tabButtons.forEach(function(btn) {
-            btn.classList.remove('tools-tab-btn-active');
-            btn.classList.add('tools-tab-btn-inactive');
-            btn.disabled = false;
-          });
-          targetButton.classList.remove('tools-tab-btn-inactive');
-          targetButton.classList.add('tools-tab-btn-active');
-          targetButton.disabled = true;
-
-          // 更新指示器
-          requestAnimationFrame(function() { updateIndicator(targetButton); });
-
-          // 切换内容区域并重置卡片动画
-          sections.forEach(function(section) {
-            if (section.dataset.toolsSection === targetTab) {
-              section.classList.remove('hidden');
-              var cards = section.querySelectorAll('.tools-card');
-              cards.forEach(function(card) {
-                card.style.animation = 'none';
-                card.offsetHeight;
-                card.style.animation = '';
-              });
-            } else {
-              section.classList.add('hidden');
-            }
-          });
-
-          var nextHash = '#tools-' + encodeURIComponent(targetTab);
-          if (window.location.hash !== nextHash) {
-            window.history.replaceState(null, '', nextHash);
-          }
-        }
-
-        // 绑定点击事件
-        tabButtons.forEach(function(button) {
-          button.addEventListener('click', function() {
-            var targetTab = button.dataset.toolsTab;
-            if (targetTab) activateTab(targetTab);
-          });
-        });
-
-        // 从 hash 恢复 Tab
-        function getTabFromHash() {
-          var hash = window.location.hash.replace(/^#tools-/, '');
-          if (!hash) return '';
-          try { return decodeURIComponent(hash); } catch(e) { return ''; }
-        }
-
-        var initialTab = getTabFromHash();
-        if (initialTab) {
-          activateTab(initialTab);
-        } else {
-          var activeBtn = tabNav.querySelector('.tools-tab-btn-active');
-          if (activeBtn) {
-            requestAnimationFrame(function() { updateIndicator(activeBtn); });
-          }
-        }
-
-        window.addEventListener('hashchange', function() {
-          var tabFromHash = getTabFromHash();
-          if (tabFromHash) activateTab(tabFromHash);
-        });
-
-        window.addEventListener('resize', function() {
-          var activeBtn = tabNav.querySelector('.tools-tab-btn-active');
-          if (activeBtn) updateIndicator(activeBtn);
-        });
+      function els() {
+        return {
+          side: document.querySelector("[data-nav-side]"),
+          sections: Array.prototype.slice.call(document.querySelectorAll("[data-nav-section]")),
+          cards: Array.prototype.slice.call(document.querySelectorAll(".nav-card")),
+          input: document.getElementById("nav-search"),
+          clear: document.getElementById("nav-search-clear"),
+          count: document.getElementById("nav-search-count"),
+          empty: document.getElementById("nav-search-empty"),
+        };
       }
+
+      function currentCat() {
+        var btn = document.querySelector("[data-nav-cat].is-active");
+        return btn ? btn.getAttribute("data-nav-cat") : "all";
+      }
+
+      /* ---------- 分类切换 ---------- */
+      function setActive(cat, writeHash) {
+        var e = els();
+        if (!e.sections.length) return;
+
+        Array.prototype.forEach.call(document.querySelectorAll("[data-nav-cat]"), function (btn) {
+          btn.classList.toggle("is-active", btn.getAttribute("data-nav-cat") === cat);
+        });
+        e.sections.forEach(function (sec) {
+          sec.classList.toggle("hidden", cat !== "all" && sec.getAttribute("data-nav-section") !== cat);
+        });
+
+        if (writeHash === false) return;
+        var next = ANCHOR + encodeURIComponent(cat);
+        if (window.location.hash !== next) {
+          window.history.replaceState(null, "", next);
+        }
+      }
+
+      /* ---------- 筛选：搜索（名称 / 描述 / 域名）+ 每个分区自己的标签 ---------- */
+      function activeTagOf(section) {
+        var btn = section.querySelector(".nav-tab.is-active");
+        return btn ? btn.getAttribute("data-nav-tag") || "" : "";
+      }
+
+      function applyFilters() {
+        var e = els();
+        if (!e.input || !e.cards.length) return;
+
+        var q = (e.input.value || "").trim().toLowerCase();
+        if (e.clear) e.clear.hidden = !q;
+        /* 一开始输入就切到「全部」：搜的是整站收藏，而不是当前分类里的 */
+        if (q && currentCat() !== "all") setActive("all");
+
+        var totalHits = 0;
+        e.sections.forEach(function (sec) {
+          var tag = activeTagOf(sec);
+          var hits = 0;
+          Array.prototype.forEach.call(sec.querySelectorAll(".nav-card"), function (card) {
+            var okSearch =
+              !q ||
+              [
+                card.getAttribute("data-name") || "",
+                card.getAttribute("data-desc") || "",
+                card.getAttribute("data-host") || "",
+              ]
+                .join(" ")
+                .toLowerCase()
+                .indexOf(q) >= 0;
+            var okTag =
+              !tag ||
+              (card.getAttribute("data-tags") || "").split(",").indexOf(tag) >= 0;
+            var ok = okSearch && okTag;
+            card.classList.toggle("hidden", !ok);
+            if (ok) hits++;
+          });
+          /* 整段一个都不剩就隐藏该段（含标题行） */
+          sec.classList.toggle("hidden", hits === 0);
+          totalHits += hits;
+        });
+
+        if (e.count) e.count.textContent = q ? "找到 " + totalHits + " 个" : "";
+        if (e.empty) e.empty.hidden = !q || totalHits > 0;
+      }
+
+      function clearSearch() {
+        var e = els();
+        if (!e.input) return;
+        e.input.value = "";
+        applyFilters();
+        e.input.focus();
+      }
+
+      function bindSearch() {
+        var e = els();
+        if (e.input && !e.input.dataset.navBound) {
+          e.input.dataset.navBound = "1";
+          e.input.addEventListener("input", function () {
+            if (searchTimer) clearTimeout(searchTimer);
+            searchTimer = setTimeout(applyFilters, 150);
+          });
+          e.input.addEventListener("keydown", function (ev) {
+            if (ev.key === "Escape") clearSearch();
+          });
+        }
+        if (e.clear && !e.clear.dataset.navBound) {
+          e.clear.dataset.navBound = "1";
+          e.clear.addEventListener("click", clearSearch);
+        }
+        var emptyClear = document.getElementById("nav-search-empty-clear");
+        if (emptyClear && !emptyClear.dataset.navBound) {
+          emptyClear.dataset.navBound = "1";
+          emptyClear.addEventListener("click", clearSearch);
+        }
+      }
+
+      /* 标题行那排子标签：点谁按谁筛该分区的卡片（默认「全部」） */
+      function bindTabs() {
+        Array.prototype.forEach.call(
+          document.querySelectorAll("[data-nav-tabs]"),
+          function (group) {
+            if (group.dataset.navBound) return;
+            group.dataset.navBound = "1";
+            group.addEventListener("click", function (ev) {
+              var btn = ev.target.closest("[data-nav-tag]");
+              if (!btn) return;
+              Array.prototype.forEach.call(
+                group.querySelectorAll(".nav-tab"),
+                function (b) {
+                  b.classList.toggle("is-active", b === btn);
+                },
+              );
+              applyFilters();
+            });
+          },
+        );
+      }
+
+      /* ---------- 初始化（Swup 换页后重新取元素） ---------- */
+      function init() {
+        var side = document.querySelector("[data-nav-side]");
+        if (!side || !document.querySelector("[data-nav-section]")) return;
+
+        if (!side.dataset.navBound) {
+          side.dataset.navBound = "1";
+          side.addEventListener("click", function (ev) {
+            var btn = ev.target.closest("[data-nav-cat]");
+            if (!btn) return;
+            setActive(btn.getAttribute("data-nav-cat"));
+          });
+        }
+
+        bindSearch();
+        bindTabs();
+
+        var fromHash = "";
+        try {
+          fromHash = decodeURIComponent(window.location.hash.replace(ANCHOR, ""));
+        } catch (err) {
+          fromHash = "";
+        }
+        var known = Array.prototype.some.call(
+          document.querySelectorAll("[data-nav-cat]"),
+          function (btn) { return btn.getAttribute("data-nav-cat") === fromHash; },
+        );
+        setActive(known ? fromHash : "all", false);
+      }
+
+      function reinit() {
+        init();
+        applyFilters();
+      }
+
+      document.addEventListener("click", function (ev) {
+        var emptyClear = ev.target.closest("#nav-search-empty-clear");
+        if (emptyClear) clearSearch();
+      });
 
       if (document.readyState === "loading") {
-        document.addEventListener("DOMContentLoaded", initToolsTabs);
+        document.addEventListener("DOMContentLoaded", init);
       } else {
-        initToolsTabs();
+        init();
       }
-      document.addEventListener("astro:page-load", initToolsTabs);
-      document.addEventListener("astro:after-swap", initToolsTabs);
-      document.addEventListener("swup:content:replaced", initToolsTabs);
+      document.addEventListener("astro:page-load", reinit);
+      document.addEventListener("astro:after-swap", reinit);
+      document.addEventListener("swup:content:replaced", reinit);
+      window.addEventListener("hashchange", init);
     })();
   </script>
 
-  <div class="flex w-full rounded-(--radius-large) overflow-hidden relative min-h-32">
+  <div class="flex w-full rounded-(--radius-large) overflow-clip relative min-h-32">
     <div class="card-base z-10 px-4 py-6 md:px-9 relative w-full">
       <!-- 页面标题（PageTitle：英文小字 + SVG 签写入场动画 + 描述） -->
       <div class="mb-8">
@@ -236,135 +443,121 @@ const allSites = sortedCategories.flatMap((cat) => sortedData.get(cat) ?? []);
         />
       </div>
 
-      <!-- Tab 分类导航（椭圆胶囊 + 换行） -->
-      {allSites.length > 0 && sortedCategories.length > 1 && (
-        <div class="tools-tab-wrapper">
-          <div class="tools-tab-pill" data-tools-tab-nav>
-            <div class="tools-tab-indicator" data-tools-tab-indicator></div>
-            <button data-tools-tab="all" class="tools-tab-btn tools-tab-btn-active">
-              全部
-              <span class="tools-tab-badge">{allSites.length}</span>
+      {allSites.length > 0 ? (
+        <div class="nav-layout">
+          <!-- 左栏：全部分类（窄屏收成顶部横向可滑的胶囊） -->
+          <aside class="nav-side" data-nav-side aria-label="分类导航">
+            <button type="button" class="nav-side__item is-active" data-nav-cat="all">
+              <Icon name="material-symbols:apps" is:inline class="nav-side__icon" />
+              <span class="nav-side__label">全部</span>
+              <span class="nav-side__count">{allSites.length}</span>
             </button>
             {sortedCategories.map((cat) => (
-              <button data-tools-tab={cat} class="tools-tab-btn tools-tab-btn-inactive">
-                {getCategoryDisplay(cat)}
-                <span class="tools-tab-badge">{categoryCounts[cat]}</span>
+              <button type="button" class="nav-side__item" data-nav-cat={cat}>
+                <Icon name={getCategoryIcon(cat)} is:inline class="nav-side__icon" />
+                <span class="nav-side__label">{getCategoryDisplay(cat)}</span>
+                <span class="nav-side__count">{categoryCounts[cat]}</span>
               </button>
             ))}
-          </div>
-        </div>
-      )}
+          </aside>
 
-      <!-- 工具卡片内容 -->
-      {allSites.length > 0 ? (
-        <div>
-          <!-- 全部：按分类分组显示 -->
-          <div data-tools-section="all">
+          <!-- 内容区：搜索 + 各分类分区 -->
+          <div class="nav-main">
+            <div class="nav-search">
+              <span class="nav-search__icon">
+                <Icon name="material-symbols:search-rounded" is:inline />
+              </span>
+              <input
+                id="nav-search"
+                type="search"
+                class="nav-search__input"
+                placeholder="搜索网站…"
+                aria-label="搜索网站"
+                autocomplete="off"
+              />
+              <button
+                id="nav-search-clear"
+                type="button"
+                class="nav-search__clear"
+                aria-label="清空搜索"
+                hidden
+              >
+                <Icon name="material-symbols:close-rounded" is:inline />
+              </button>
+              <span class="nav-search__count" id="nav-search-count"></span>
+            </div>
+
+            <p class="nav-search__empty" id="nav-search-empty" hidden>
+              没找到匹配的网站
+              <button type="button" id="nav-search-empty-clear">清空搜索</button>
+            </p>
+
             {sortedCategories.map((cat) => {
               const catSites = sortedData.get(cat)!;
               if (catSites.length === 0) return null;
+              const tags = categoryTags.get(cat) ?? [];
+              const tagline = getCategoryTagline(cat);
               return (
-                <div class="tools-category-group mt-8 first:mt-0">
-                  <div class="flex items-center gap-3 mb-5">
-                    <div class="flex items-center gap-2">
-                      <Icon name={getCategoryIcon(cat)} class="text-lg text-neutral-900 dark:text-neutral-100" />
-                      <span class="text-base font-bold text-neutral-900 dark:text-neutral-100">{getCategoryDisplay(cat)}</span>
-                    </div>
-                    <span class="text-xs text-neutral-400 dark:text-neutral-500">{catSites.length}</span>
-                    <div class="flex-1 h-px bg-neutral-300 dark:bg-neutral-700" />
+                <section class="nav-section" data-nav-section={cat}>
+                  <div class="nav-section__head">
+                    <Icon name={getCategoryIcon(cat)} is:inline class="nav-section__icon" />
+                    <h2 class="nav-section__title">{getCategoryDisplay(cat)}</h2>
+                    <span class="nav-section__count">{catSites.length}</span>
+                    {tags.length > 0 && (
+                      <>
+                        <span class="nav-section__sep" aria-hidden="true" />
+                        <div class="nav-section__tabs" data-nav-tabs={cat} role="group" aria-label={`${getCategoryDisplay(cat)}标签`}>
+                          <button type="button" class="nav-tab is-active" data-nav-tag="">
+                            全部
+                          </button>
+                          {tags.map((tag) => (
+                            <button type="button" class="nav-tab" data-nav-tag={tag}>
+                              {tag}
+                            </button>
+                          ))}
+                        </div>
+                      </>
+                    )}
+                    {tagline && <span class="nav-section__tagline">{tagline}</span>}
                   </div>
-                  <div class="tools-card-grid">
+                  <div class="nav-grid">
                     {catSites.map((site, index) => (
                       <a
                         href={site.data.url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        class="tools-card group"
-                        data-category={cat}
-                        style={`animation-delay: ${index * 60}ms`}
+                        class="nav-card"
+                        data-name={site.data.name}
+                        data-desc={site.data.description || ""}
+                        data-host={hostOf(site.data.url)}
+                        data-tags={(site.data.tags ?? []).join(",")}
+                        style={`--nav-card-i: ${Math.min(index, 8)}`}
                       >
-                        <div class="flex items-center gap-2 mb-3">
-                          {site.data.icon ? (
-                            site.data.icon.startsWith('http') ? (
-                              <img src={site.data.icon} alt={site.data.name} class="w-6 h-6 rounded object-contain shrink-0" />
-                            ) : site.data.icon.startsWith('/') ? (
-                              <img src={site.data.icon} alt={site.data.name} class="w-6 h-6 rounded object-contain shrink-0" />
-                            ) : (
-                              <Icon name={site.data.icon} class="text-2xl text-neutral-600 dark:text-neutral-300 group-hover:text-black dark:group-hover:text-white transition-colors duration-300 shrink-0" />
-                            )
+                        <span class="nav-card__icon">
+                          {site.data.icon && /^(https?:|\/)/.test(site.data.icon) ? (
+                            <img src={site.data.icon} alt="" loading="lazy" />
                           ) : (
-                            <Icon name="material-symbols:language" class="text-2xl text-neutral-600 dark:text-neutral-300 group-hover:text-black dark:group-hover:text-white transition-colors duration-300 shrink-0" />
+                            <Icon
+                              name={site.data.icon || "material-symbols:language"}
+                              is:inline
+                            />
                           )}
-                          <h3 class="text-lg font-bold text-neutral-900 dark:text-neutral-100 group-hover:translate-x-1 transition-transform duration-300 truncate">
-                            {site.data.name}
-                          </h3>
-                        </div>
-                        <p class="tools-card-desc">{site.data.description}</p>
-                        <div class="tools-card-footer">
-                          <span class="text-[0.75rem] text-neutral-400 dark:text-neutral-500 truncate">
-                            {(() => {
-                              try { return new URL(site.data.url).hostname; } catch { return site.data.url; }
-                            })()}
-                          </span>
-                        </div>
+                        </span>
+                        <span class="nav-card__body">
+                          <span class="nav-card__title">{site.data.name}</span>
+                          <span class="nav-card__desc">{site.data.description}</span>
+                        </span>
                       </a>
                     ))}
                   </div>
-                </div>
+                </section>
               );
             })}
           </div>
-
-          <!-- 各分类独立 Tab 内容 -->
-          {sortedCategories.map((cat) => {
-            const catSites = sortedData.get(cat)!;
-            if (catSites.length === 0) return null;
-            return (
-              <div data-tools-section={cat} class="hidden">
-                <div class="tools-card-grid">
-                  {catSites.map((site, index) => (
-                    <a
-                      href={site.data.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      class="tools-card group"
-                      data-category={cat}
-                      style={`animation-delay: ${index * 60}ms`}
-                    >
-                      <div class="flex items-center gap-2 mb-3">
-                        {site.data.icon ? (
-                          site.data.icon.startsWith('http') ? (
-                            <img src={site.data.icon} alt={site.data.name} class="w-6 h-6 rounded object-contain shrink-0" />
-                          ) : site.data.icon.startsWith('/') ? (
-                            <img src={site.data.icon} alt={site.data.name} class="w-6 h-6 rounded object-contain shrink-0" />
-                          ) : (
-                            <Icon name={site.data.icon} class="text-2xl text-neutral-600 dark:text-neutral-300 group-hover:text-black dark:group-hover:text-white transition-colors duration-300 shrink-0" />
-                          )
-                        ) : (
-                          <Icon name="material-symbols:language" class="text-2xl text-neutral-600 dark:text-neutral-300 group-hover:text-black dark:group-hover:text-white transition-colors duration-300 shrink-0" />
-                        )}
-                        <h3 class="text-lg font-bold text-neutral-900 dark:text-neutral-100 group-hover:translate-x-1 transition-transform duration-300 truncate">
-                          {site.data.name}
-                        </h3>
-                      </div>
-                      <p class="tools-card-desc">{site.data.description}</p>
-                      <div class="tools-card-footer">
-                        <span class="text-[0.75rem] text-neutral-400 dark:text-neutral-500 truncate">
-                          {(() => {
-                            try { return new URL(site.data.url).hostname; } catch { return site.data.url; }
-                          })()}
-                        </span>
-                      </div>
-                    </a>
-                  ))}
-                </div>
-              </div>
-            );
-          })}
         </div>
       ) : (
         <div class="text-center py-16">
-          <Icon name="material-symbols:bookmark-outline" class="text-5xl text-neutral-300 dark:text-neutral-600 mb-4" />
+          <Icon name="material-symbols:bookmark-outline" is:inline class="text-5xl text-neutral-300 dark:text-neutral-600 mb-4" />
           <p class="text-neutral-500 dark:text-neutral-400">暂无收录的网站</p>
         </div>
       )}
@@ -374,230 +567,528 @@ const allSites = sortedCategories.flatMap((cat) => sortedData.get(cat) ?? []);
 </MainGridLayout>
 
 <style>
-  /* ===== Tab 外层 ===== */
-  .tools-tab-wrapper {
-    margin-bottom: 1.5rem;
+  /* ============================================
+   * 布局：左栏 13rem 粘住 + 右侧内容自适应
+   * （整页宽度在 no-sidebar-pages.css 里逐页设，见该文件 projects 那一条）
+   * ============================================ */
+  .nav-layout {
+    display: grid;
+    grid-template-columns: 13rem minmax(0, 1fr);
+    gap: 1.25rem;
+    align-items: start;
   }
 
-  /* 胶囊容器（换行） */
-  .tools-tab-pill {
-    position: relative;
+  .nav-main {
+    min-width: 0;
+  }
+
+  /* ============================================
+   * 左栏：分类列表
+   * ============================================ */
+  .nav-side {
+    position: sticky;
+    top: 5.5rem;
     display: flex;
-    flex-wrap: wrap;
-    gap: 0.375rem;
-    padding: 0.375rem;
-    border-radius: 1rem;
-    border: 2px solid #000;
-  }
-  :root.dark .tools-tab-pill {
-    border-color: #fff;
+    flex-direction: column;
+    gap: 0.125rem;
+    max-height: calc(100vh - 7rem);
+    overflow-y: auto;
+    overscroll-behavior: contain;
   }
 
-  /* 滑动指示条（填充胶囊背景） */
-  .tools-tab-indicator {
-    position: absolute;
-    border-radius: 9999px;
-    background: #000;
-    transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-                top 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-                width 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-                height 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    opacity: 0;
-    pointer-events: none;
-    z-index: 0;
-  }
-  :root.dark .tools-tab-indicator {
-    background: #fff;
-  }
-
-  /* Tab 按钮 */
-  .tools-tab-btn {
+  .nav-side__item {
     position: relative;
-    z-index: 1;
     display: flex;
     align-items: center;
-    gap: 0.375rem;
-    padding: 0.375rem 0.875rem;
+    gap: 0.5rem;
+    width: 100%;
+    padding: 0.5rem 0.625rem;
+    border: none;
+    border-radius: 0.625rem;
+    background: transparent;
+    color: var(--deep-text);
+    font-family: inherit;
+    font-size: 0.875rem;
+    text-align: left;
+    cursor: pointer;
+    transition: background-color 150ms ease, color 150ms ease;
+  }
+
+  .nav-side__item:hover {
+    background: var(--btn-plain-bg-hover);
+  }
+
+  .nav-side__item.is-active {
+    background: var(--btn-plain-bg-hover);
+    font-weight: 700;
+  }
+
+  /* 当前项的短竖条（参考站同款 2px，不是粗条） */
+  .nav-side__item.is-active::before {
+    content: "";
+    width: 2px;
+    height: 1rem;
+    border-radius: 2px;
+    background: var(--primary);
+    margin-left: -0.25rem;
+    flex: 0 0 auto;
+  }
+
+  .nav-side__icon {
+    font-size: 1.125rem;
+    flex: 0 0 auto;
+    color: var(--content-meta);
+  }
+
+  .nav-side__item.is-active .nav-side__icon {
+    color: var(--primary);
+  }
+
+  .nav-side__label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .nav-side__count {
+    margin-left: auto;
+    padding-left: 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--content-meta);
+    flex: 0 0 auto;
+  }
+
+  /* ============================================
+   * 内容区：搜索 + 分区 + 卡片
+   * ============================================ */
+  .nav-search {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    margin-bottom: 1.5rem;
+    border: 1px solid var(--line-divider);
+    border-radius: 0.75rem;
+    background: var(--card-bg, transparent);
+    transition: border-color 150ms ease;
+  }
+
+  .nav-search:focus-within {
+    border-color: var(--deep-text);
+  }
+
+  .nav-search__icon {
+    display: inline-flex;
+    font-size: 1.05rem;
+    color: var(--content-meta);
+    flex: 0 0 auto;
+  }
+
+  .nav-search__input {
+    flex: 1;
+    min-width: 0;
+    border: none;
+    background: transparent;
+    color: var(--deep-text);
+    font-family: inherit;
+    font-size: 0.875rem;
+    outline: none;
+  }
+
+  .nav-search__clear {
+    display: grid;
+    place-items: center;
+    width: 1.5rem;
+    height: 1.5rem;
+    padding: 0;
     border: none;
     border-radius: 9999px;
-    font-size: 0.8125rem;
-    font-weight: 500;
-    white-space: nowrap;
-    cursor: pointer;
     background: transparent;
-    transition: color 0.2s;
-    flex-shrink: 0;
+    color: var(--content-meta);
+    cursor: pointer;
+    flex: 0 0 auto;
+    transition: background-color 150ms ease, color 150ms ease;
+  }
+
+  .nav-search__clear:hover {
+    background: var(--btn-plain-bg-hover);
+    color: var(--deep-text);
+  }
+
+  .nav-search__count {
+    font-size: 0.75rem;
+    color: var(--content-meta);
+    white-space: nowrap;
+    flex: 0 0 auto;
+  }
+
+  .nav-search__empty {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0 0 1.5rem;
+    padding: 2.5rem 1rem;
+    border: 1px dashed var(--line-divider);
+    border-radius: 0.75rem;
+    color: var(--content-meta);
+    font-size: 0.875rem;
+    justify-content: center;
+  }
+
+  .nav-search__empty[hidden] {
+    display: none;
+  }
+
+  .nav-search__empty button {
+    border: none;
+    background: transparent;
+    color: var(--primary);
     font-family: inherit;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 0;
   }
 
-  /* 激活态：指示条覆盖时白色文字 */
-  .tools-tab-btn-active {
-    color: #fff;
-    cursor: default;
-  }
-  :root.dark .tools-tab-btn-active {
-    color: #000;
-  }
-
-  /* 未激活态：黑色文字 */
-  .tools-tab-btn-inactive {
-    color: #000;
-  }
-  .tools-tab-btn-inactive:hover {
-    opacity: 0.7;
-  }
-  :root.dark .tools-tab-btn-inactive {
-    color: #fff;
-  }
-
-  /* 数量徽章 */
-  .tools-tab-badge {
-    font-size: 0.65rem;
-    padding: 0.0625rem 0.375rem;
-    border-radius: 9999px;
-    background: oklch(0.92 0 0);
-    color: oklch(0.35 0 0);
-    line-height: 1.4;
-  }
-  :root.dark .tools-tab-badge {
-    background: oklch(0.25 0 0);
-    color: oklch(0.65 0 0);
-  }
-
-  /* 激活态徽章反转 */
-  .tools-tab-btn-active .tools-tab-badge {
-    background: rgba(255, 255, 255, 0.25);
-    color: #fff;
-  }
-  :root.dark .tools-tab-btn-active .tools-tab-badge {
-    background: rgba(0, 0, 0, 0.2);
-    color: #000;
-  }
-
-  /* 分组间距（"全部" Tab） */
-  .tools-category-group + .tools-category-group {
+  .nav-section + .nav-section {
     margin-top: 2rem;
   }
 
-  /* 卡片网格 */
-  .tools-card-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 1rem;
-  }
-  @media (max-width: 1024px) {
-    .tools-card-grid {
-      grid-template-columns: repeat(2, 1fr);
-    }
-  }
-  @media (max-width: 768px) {
-    .tools-card-grid {
-      grid-template-columns: repeat(2, 1fr);
-      gap: 0.75rem;
-    }
-  }
-  @media (max-width: 480px) {
-    .tools-card-grid {
-      grid-template-columns: repeat(1, 1fr);
-      gap: 0.75rem;
-    }
+  .nav-section.hidden {
+    display: none;
   }
 
-  /* 卡片样式 */
-  .tools-card {
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    padding: 1.25rem;
-    border-radius: 0.75rem;
-    border: 2px solid #000;
-    background: transparent;
-    text-decoration: none;
-    overflow: hidden;
-    opacity: 0;
-    transform: translateY(20px);
-    animation: toolsCardSlideIn 0.5s ease-out forwards;
-    transition: border-color 300ms ease, box-shadow 300ms ease, transform 300ms ease, background-color 300ms ease;
-  }
-  :root.dark .tools-card {
-    border-color: #fff;
-    background: transparent;
-  }
-  .tools-card:hover {
-    border-color: var(--primary);
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
-    transform: translateY(-2px);
-  }
-  :root.dark .tools-card:hover {
-    border-color: var(--primary);
-    box-shadow: 0 2px 12px rgba(255, 255, 255, 0.08);
-    transform: translateY(-2px);
-  }
-
-  /* 右上角跳转图标 */
-  .tools-card-jump-icon {
-    position: absolute;
-    top: 0.875rem;
-    right: 0.875rem;
+  .nav-section__head {
     display: flex;
     align-items: center;
-    justify-content: center;
-    width: 1.75rem;
-    height: 1.75rem;
-    border-radius: 0.5rem;
-    color: oklch(0.55 0 0);
-    background: oklch(0.9 0 0);
-    opacity: 0;
-    transform: scale(0.8) translateY(-4px);
-    transition: opacity 250ms cubic-bezier(0.4, 0, 0.2, 1), transform 250ms cubic-bezier(0.4, 0, 0.2, 1);
-    z-index: 2;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .nav-section__icon {
+    font-size: 1.125rem;
+    flex: 0 0 auto;
+    color: var(--deep-text);
+  }
+
+  .nav-section__title {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--deep-text);
+  }
+
+  .nav-section__count {
+    font-size: 0.75rem;
+    color: var(--content-meta);
+  }
+
+  /* 分类名与子标签之间的竖分隔条（参考站 2.5px×12px） */
+  .nav-section__sep {
+    width: 2.5px;
+    height: 0.75rem;
+    margin: 0 0.75rem;
+    border-radius: 2px;
+    background: var(--deep-text);
+    opacity: 0.85;
+    flex: 0 0 auto;
+  }
+
+  /* 子标签一排（标签来自条目 frontmatter 的 tags；一条都没有时整排不渲染） */
+  .nav-section__tabs {
+    display: flex;
+    align-items: center;
+    gap: 0.125rem;
+    min-width: 0;
+    flex: 0 1 auto;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
+    overscroll-behavior-x: contain;
+  }
+
+  .nav-section__tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .nav-tab {
+    position: relative;
+    z-index: 1;
+    flex: 0 0 auto;
+    padding: 0.375rem 0.75rem;
+    border: none;
+    background: transparent;
+    color: var(--deep-text);
+    font-family: inherit;
+    font-size: 0.875rem;
+    line-height: 1;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: color 200ms ease;
+  }
+
+  .nav-tab:hover {
+    color: var(--primary);
+  }
+
+  .nav-tab.is-active {
+    color: var(--primary);
+    font-weight: 600;
+  }
+
+  /* 当前子标签背后那道斜切渐变（参考站 .term-slider 同款：透明 → 主题色 20%） */
+  .nav-tab.is-active::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 50%;
+    height: 0.8125rem;
+    border-radius: 0.375rem;
+    background: linear-gradient(
+      to right,
+      transparent 0%,
+      color-mix(in srgb, var(--primary) 22%, transparent) 100%
+    );
+    transform: translateY(-50%) skewX(-15deg);
+    z-index: -1;
     pointer-events: none;
   }
-  :root.dark .tools-card-jump-icon {
-    color: oklch(0.6 0 0);
-    background: oklch(0.2 0 0);
-  }
-  .tools-card:hover .tools-card-jump-icon {
-    opacity: 1;
-    transform: scale(1) translateY(0);
+
+  /* 标题行右侧的标语（CATEGORY_META 的 tagline，留空即不显示）。
+     引号用 CSS 加（文案里不写引号），换成主题色的衬线引号、略大一号，读起来更响一点。
+     标语靠 margin-left: auto 推到右边，不需要中间那条横线撑开。 */
+  .nav-section__tagline {
+    margin-left: auto;
+    padding-left: 0.75rem;
+    font-size: 0.8125rem;
+    color: var(--content-meta);
+    white-space: nowrap;
+    flex: 0 0 auto;
   }
 
-  /* 描述文本：固定两行高度（短描述留白、长描述截断），保证同排卡片高度一致 */
-  .tools-card-desc {
-    margin: 0 0 0.625rem 0;
-    font-size: 0.875rem;
-    font-weight: 400;
-    color: oklch(0.45 0 0);
-    line-height: 1.5;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-    flex: 1;
-    min-height: 2.625rem;
-    max-height: 2.625rem;
-  }
-  :root.dark .tools-card-desc {
-    color: oklch(0.62 0 0);
+  .nav-section__tagline::before,
+  .nav-section__tagline::after {
+    color: var(--primary);
+    font-family: Georgia, "Times New Roman", "Songti SC", serif;
+    font-size: 1.125rem;
+    line-height: 0;
+    vertical-align: -0.125rem;
   }
 
-  /* 底部域名 */
-  .tools-card-footer {
+  .nav-section__tagline::before {
+    content: "“";
+    margin-right: 0.0625rem;
+  }
+
+  .nav-section__tagline::after {
+    content: "”";
+    margin-left: 0.0625rem;
+  }
+
+  /* 卡片网格 */
+  .nav-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(12.5rem, 1fr));
+    gap: 0.75rem;
+  }
+
+  /* 卡片：图标 + 两行文字（参考站的两行式），悬浮上移一档 + 图标跳一次 */
+  .nav-card {
     display: flex;
-    align-items: center;
-    padding-top: 0.75rem;
-    border-top: 1px solid oklch(0.9 0 0);
-    margin-top: auto;
-  }
-  :root.dark .tools-card-footer {
-    border-color: oklch(0.2 0 0);
+    align-items: flex-start;
+    gap: 0.625rem;
+    padding: 0.75rem;
+    border: 1px solid var(--line-divider);
+    border-radius: 0.75rem;
+    background: transparent;
+    text-decoration: none;
+    opacity: 0;
+    animation: navCardIn 0.4s ease-out forwards;
+    animation-delay: calc(var(--nav-card-i, 0) * 40ms);
+    transition: background-color 200ms ease, border-color 200ms ease, transform 200ms ease;
   }
 
-  @keyframes toolsCardSlideIn {
+  .nav-card.hidden {
+    display: none;
+  }
+
+  .nav-card:hover,
+  .nav-card:focus-visible {
+    background: var(--btn-plain-bg-hover);
+    border-color: var(--btn-plain-bg-hover);
+    transform: translateY(-1px);
+  }
+
+  .nav-card__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    flex: 0 0 auto;
+    font-size: 2rem;
+    border-radius: 0.5rem;
+    color: var(--deep-text);
+    transform-origin: 50% 100%;
+  }
+
+  .nav-card__icon img {
+    width: 2rem;
+    height: 2rem;
+    border-radius: 0.5rem;
+    object-fit: contain;
+  }
+
+  .nav-card__body {
+    display: block;
+    min-width: 0;
+    flex: 1;
+  }
+
+  .nav-card__title {
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--deep-text);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .nav-card__desc {
+    display: block;
+    margin-top: 0.125rem;
+    font-size: 0.75rem;
+    color: var(--content-meta);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* 悬浮时图标「蹦一蹦」：关键帧原样复刻参考站（1.2s、只播一次） */
+  .nav-card:hover .nav-card__icon,
+  .nav-card:focus-visible .nav-card__icon {
+    animation: nav-icon-jumps 1.2s ease 1;
+  }
+
+  @keyframes nav-icon-jumps {
+    0% {
+      transform: translate(0);
+    }
+    10% {
+      transform: translateY(8px) scaleX(1.2) scaleY(0.8);
+    }
+    30% {
+      transform: translateY(-5px) scaleX(1) scaleY(1) rotate(5deg);
+    }
+    50% {
+      transform: translateY(3px) scale(1) rotate(0);
+    }
+    55% {
+      transform: translateY(0) scaleX(1.1) scaleY(0.9) rotate(0);
+    }
+    70% {
+      transform: translateY(-5px) scaleX(1) scaleY(1) rotate(-2deg);
+    }
+    80% {
+      transform: translateY(0) scaleX(1) scaleY(1) rotate(0);
+    }
+    85% {
+      transform: translateY(0) scaleX(1.05) scaleY(0.95) rotate(0);
+    }
+    100% {
+      transform: translateY(0) scaleX(1) scaleY(1);
+    }
+  }
+
+  @keyframes navCardIn {
     to {
       opacity: 1;
-      transform: translateY(0);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .nav-card {
+      animation: none;
+      opacity: 1;
+    }
+    .nav-card:hover .nav-card__icon,
+    .nav-card:focus-visible .nav-card__icon {
+      animation: none;
+    }
+  }
+
+  /* ============================================
+   * 窄屏：左栏收成顶部横向可滑的胶囊条
+   * ============================================ */
+  @media (max-width: 1023px) {
+    .nav-layout {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 0.875rem;
+    }
+
+    .nav-side {
+      position: static;
+      flex-direction: row;
+      gap: 0.375rem;
+      max-height: none;
+      overflow-x: auto;
+      overflow-y: hidden;
+      overscroll-behavior-x: contain;
+      scrollbar-width: none;
+      padding-bottom: 0.125rem;
+    }
+
+    .nav-side::-webkit-scrollbar {
+      display: none;
+    }
+
+    .nav-side__item {
+      width: auto;
+      padding: 0.375rem 0.75rem;
+      border-radius: 9999px;
+      font-size: 0.8125rem;
+      flex: 0 0 auto;
+    }
+
+    .nav-side__item.is-active::before {
+      display: none;
+    }
+
+    .nav-side__item.is-active {
+      background: var(--deep-text);
+      color: var(--page-bg);
+    }
+
+    .nav-side__item.is-active .nav-side__icon,
+    .nav-side__item.is-active .nav-side__count {
+      color: var(--page-bg);
+    }
+
+    .nav-grid {
+      grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
+      gap: 0.625rem;
+    }
+
+    /* 窄屏把标题行右侧标语让给子标签（标签本身可横向滑动） */
+    .nav-section__tagline {
+      display: none;
+    }
+
+    .nav-section__sep {
+      margin: 0 0.5rem;
+    }
+  }
+
+  @media (max-width: 640px) {
+    .nav-grid {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .nav-search {
+      margin-bottom: 1rem;
     }
   }
 </style>

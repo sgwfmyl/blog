@@ -206,7 +206,7 @@ Layout.astro          ← HTML 骨架：<html>, <head>, <body>, 全局组件, �
 
 > **分类系统（2026-08-20 文件夹即分类）**：`posts` 的 `category` 已从 `src/content.config.ts` 的 Zod schema 移除，分类 100% 由 `src/utils/category-tree.ts#getCategoryFromId(entry.id)` 的文件夹路径推导（`编程学习/Java学习` → `CategoryNode{fullPath, count, directCount, children}`），URL 分段编码 `src/utils/url-utils.ts#getCategoryUrl` + 路由 `src/pages/categories/[...category].astro`（catch-all，子树聚合 `startsWith(parent+"/")`），卡片 `src/components/widget/CategoryFolders.astro` 递归树（有子展开看子树/无子整卡跳转，已删右侧跳转按钮），`.pages.yml` 已删 `category` 字段，`scripts/新建文章/index.js` 不再写 `category`，Obsidian 插件 `plug-in/Obsidian/obsidian-category-autofill` 已废弃写入（`logic.ts#getTargetCategory` 恒返回 null，模板移除 `category`）。**禁止再写 `frontmatter.category`，分类只靠建文件夹**。
 
-> **导航站分类（2026-09-21 文件夹即分类）**：`daohang` 同样移除了 `category`（schema 与 `.pages.yml` 都已删），改为按 `src/content/daohang/<分类>/xxx.md` 的**文件夹**归类，分类名 = 文件夹名。读取逻辑在 `src/pages/projects.astro`：`getFolderCategory(entry.id)` 取目录段，`getCategoryMeta()` 查 `CATEGORY_META` 表得到显示名/排序/图标。**Astro 生成 entry id 时会把大写转小写、空格转连字符**（文件夹 `AI 工具` → id `ai-工具`），所以查表统一走 `normalizeCatKey`（小写 + 空格转连字符）归一化——新增分类时在 `CATEGORY_META` 里按正常写法（`"AI 工具": {...}`）补一条即可，未登记的文件夹会原样显示并排在末尾。**导航条目只保留 `name` / `url` / `icon` / `description` 四个字段**（`tags`/`color`/`featured`/`order`/`image` 已全部删除，分类内按 `name` 拼音排序），新增条目不要再写这些字段。
+> **导航站分类（2026-09-21 文件夹即分类）**：`daohang` 同样移除了 `category`（schema 与 `.pages.yml` 都已删），改为按 `src/content/daohang/<分类>/xxx.md` 的**文件夹**归类，分类名 = 文件夹名。读取逻辑在 `src/pages/projects.astro`：`getFolderCategory(entry.id)` 取目录段，`getCategoryMeta()` 查 `CATEGORY_META` 表得到显示名/排序/图标/标语。**Astro 生成 entry id 时会把大写转小写、空格转连字符**（文件夹 `AI 工具` → id `ai-工具`），所以查表统一走 `normalizeCatKey`（小写 + 空格转连字符）归一化——新增分类时在 `CATEGORY_META` 里按正常写法（`"AI 工具": {...}`）补一条即可，未登记的文件夹会原样显示并排在末尾。**导航条目字段为 `name` / `url` / `icon` / `description`，外加可选的 `tags`**（2026-09-30 为导航页标题行的子标签加回；`color`/`featured`/`order`/`image` 仍是删除状态，分类内按 `name` 拼音排序）。
 
 ### 3.6 文章排序规则（2026-09-21 统一）
 
@@ -426,6 +426,21 @@ Layout.astro          ← HTML 骨架：<html>, <head>, <body>, 全局组件, �
   - ⚠️ **收起状态那一列要 `display: none`**（`.ud-stack:not([data-expanded="true"])`），否则它虽然没内容却仍占一个 0.75rem 的间距，悬浮坞里会多出一道空档。
 - ⚠️ **手机底部那条浮岛（`MobileDock` + `src/styles/components/mobile-dock.css`）不在这次统一范围内，保持原样**（透明按钮 + 中间凸出的黑色圆钮 + 胶囊圆角）—— 站长 2026-09-30 明确要求改回来，别再顺手「统一规格」。它的总高 `4.25rem`（按钮 3.25rem + 上下留白 0.5rem）被 `dock-drawer`、动态页那 3 个按钮的 `bottom` 偏移按写死的值引用，**改它高度要同步改那两处**。
 - ⚠️ **图标空白 = sprite 丢符号**（本次踩到）：页面里的 `<Icon>` 默认走 astro-icon 的 sprite（`<use href="#ai:…">`），这份 sprite 有已知的丢符号问题（`src/components/common/Icon.astro` 就是为绕开它而写的包装组件）。症状是图标**整块空白**而不报错，`document.querySelector("symbol#ai:…")` 能确认缺没缺。判断/修复：给那个 `<Icon>` 加 `is:inline`（路径直接内联），或改用 `@/components/common/Icon.astro`。
+
+### 5.10 导航页（/projects/）左栏 + 搜索 + 卡片动效（2026-09-30，参照 kulayu.com）
+
+页面自包含在 `src/pages/projects.astro`（markup + `<style>` + head 槽内联脚本），只有宽度与 sticky 前提两条规则在 `src/styles/features/no-sidebar-pages.css` 的 projects 段。
+
+- **结构**：`.nav-layout` 两栏 = 左栏 13rem 分类列表（`.nav-side`，`position: sticky; top: 5.5rem`，内容含「全部」+ 各分类，带条数）+ 右侧 `.nav-main`（搜索条 + 各分类 `.nav-section` + `.nav-grid` 卡片）。≤1023px 左栏变顶部横向可滑胶囊条。
+- **标题行**（对齐参考站）：`[分类图标] 分类名 · 条数 ｜（2.5px 竖条） 子标签… “标语”`。子标签＝该分类里条目 `tags` 的并集（个数多的靠前，其次按名称），点谁按谁筛该分区的卡片，默认「全部」；当前标签背后是那道斜切渐变（`skew` -15° + 主题色 22% 的透明渐变，抄参考站 `.term-slider`）。**一个分类里一条标签都没填时，这排完全不渲染**。右侧标语取 `CATEGORY_META` 的 `tagline`（17 个分类已写全，留空则不显示），引号由 CSS `::before/::after` 加（主题色衬线引号，文案里不写引号），靠 `margin-left: auto` 推到右边 —— **中间那条横线已按要求删除**，别再往标题行加分隔线。
+- **标签数据**：条目 frontmatter 的 `tags`（可选字符串数组，schema 与 `.pages.yml` 都已加，后台可直接填）。加标签 → 导航页该分类标题行自动出现子标签，不用改代码。
+- **分类与卡片的契约**（改结构/改搜索时别弄丢）：左栏按钮 `[data-nav-cat="<分类名|all>"]`、分区容器 `[data-nav-section="<分类名>"]`、标签组 `[data-nav-tabs="<分类名>"]` + 按钮 `[data-nav-tag="<标签|空串=全部>"]`、卡片 `.nav-card` + `data-name` / `data-desc` / `data-host` / `data-tags`、hash 前缀 `#nav-`。
+- **筛选是纯前端**（150ms 防抖，搜索匹配名称/描述/域名）：52 条链接本来就整页渲染，不发请求；搜索与标签是**与**关系，整段一个都不剩就隐藏该段，无命中给空态 + 清空按钮；有查询时**自动切到「全部」**（搜的是整站收藏而不是当前分类）。`CATEGORY_META` 同时决定了左栏与分区的先后 —— **新增分类必须登记**，漏登记的会带默认图标掉到末尾（`AI` / `开发者工具` / `开发者服务平台` 就漏过一次）。
+- **图标跳动效**：`.nav-card:hover .nav-card__icon` 播一次 1.2s 的 `nav-icon-jumps`（下压 → 起跳带 5° 旋转 → 落地 → 回弹，关键帧原样抄自参考站 `.jumps`）。动画挂在**图标外层容器**上，`<img>` 图标与字体图标才都能跳；`prefers-reduced-motion` 下关掉。
+- ⚠️ **sticky 前提（本项目第三次踩）**：`#main-content-wrapper` 和页面外层卡片都是 `overflow: hidden`，会变成「滚动容器」而自身不滚 → 左栏 sticky 完全失效。本页把 `#main-content-wrapper` 换成 `overflow: clip`（写在 `no-sidebar-pages.css` 的 projects 段），页面外层卡片用 Tailwind 的 `overflow-clip`。
+- 本页图标一律 `is:inline`（见 §5.9 那条 sprite 丢符号）。
+- **整页宽度**：站长要求「占 4/5」→ `no-sidebar-pages.css` 里逐页一条：≥768px `max-width: 100%`、≥1280px `max-width: 80vw`（用 vw 不用 %，% 会按上一级容器算、实际只有 70%）。
+- ⚠️ **dev 改动不生效先怀疑 Vite 样式缓存**：改完 `projects.astro` 后如果页面样式还是旧的（markup 新、CSS 旧），直接请求 `/src/pages/projects.astro?astro&type=style&index=0&lang.css` 看内容，必要时重写一遍文件（更新 mtime）让它重新编译。
 
 ---
 

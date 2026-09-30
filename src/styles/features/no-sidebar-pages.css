@@ -16,7 +16,7 @@
  * 宽度取值说明：文章列表页等取 932px —— 这个数与网格列表自身的上限
  * `calc(3 * 300px + 2 * 1rem)`（`src/styles/pages/article-list.css` 的 `.article-list-masonry`）
  * 保持一致，否则「置顶区 / 标题栏 / 网格列表」的左右边缘会对不齐（置顶区会比列表突出）。
- * 导航站 /projects/ 单独放宽到 1024px（对齐参考博客的 64rem 内容区）。
+ * 导航站 /projects/ 取视口的 4/5（左栏 + 满宽内容区的两栏布局，宽一点才排得下 4 列卡片）。
  */
 
 @media (min-width: 768px) {
@@ -66,11 +66,26 @@
 	}
 }
 
-/* 导航站 /projects/ —— 比列表页宽一档（对齐参考博客的 64rem 内容区） */
+/* 导航站 /projects/ —— 左栏分类 + 满宽内容区，整页占 **视口的 4/5**
+   （站长 2026-09-30 要求「不要占满整个页面，占 4/5 就行」；用 vw 不用 %，
+   % 会相对上一级容器算、实际只有 70%）。 */
 @media (min-width: 768px) {
 	html:has(#content-wrapper[data-no-sidebar="projects"]) #content-wrapper {
-		max-width: 1024px;
+		max-width: 100%;
 	}
+}
+@media (min-width: 1280px) {
+	html:has(#content-wrapper[data-no-sidebar="projects"]) #content-wrapper {
+		max-width: 80vw;
+	}
+}
+
+/* 导航站 /projects/ 的左栏要 position: sticky —— 祖先 `#main-content-wrapper` 是
+   `overflow: hidden`，它会变成「滚动容器」而自身并不滚动，sticky 于是完全失效
+   （动态页踩过同一个坑）。这里在本页把它换成 `overflow: clip`：裁剪一样、不产生滚动容器。
+   另一处 `overflow-hidden` 在页面自己的外层卡片上（已在 markup 里写成 overflow-clip）。 */
+html:has(#content-wrapper[data-no-sidebar="projects"]) #main-content-wrapper {
+	overflow: clip;
 }
 
 /* 归档 /archive/ */

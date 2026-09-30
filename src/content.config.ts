@@ -271,12 +271,14 @@ const tombstonesCollection = defineCollection({
 
 const daohangCollection = defineCollection({
 	loader: glob({ pattern: "**/*.md", base: "./src/content/daohang" }),
-	// 只保留展示必需的四项：分类由文件夹决定，顺序按名称排（见 src/pages/projects.astro）
+	// 展示必需的四项：分类由文件夹决定，顺序按名称排（见 src/pages/projects.astro）
+	// tags 可选：填了就在导航页该分类的标题行里变成一排子标签（筛选该分类里的卡片）
 	schema: z.object({
 		name: z.string(),
 		url: z.string(),
 		icon: z.string().optional().default(""),
 		description: z.string().optional().default(""),
+		tags: z.array(z.string()).optional().default([]),
 	}),
 });
 

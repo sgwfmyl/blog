@@ -707,6 +707,12 @@ content:
             label: 描述
             type: string
 
+          - name: tags
+            label: 标签
+            type: string
+            list: true
+            description: 同一分类里出现的标签会变成标题行上的子标签；留空则该分类不显示那一排
+
           - name: body
             label: 备注
             type: text
