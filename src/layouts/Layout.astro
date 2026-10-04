@@ -567,6 +567,33 @@ const siteLang = lang.replace("_", "-");
   initBannerResize();
   initTabTitleInteraction();
 
+  // 开发文档（Starlight）链接放行：/docs 页面没有 #swup-container，
+  // 被 Swup 接管会白屏，故在捕获阶段给命中的 <a> 打 data-no-swup（Swup 冒泡阶段自行忽略）。
+  // 全局只注册一次，符合 CLAUDE.md §9.1 单例 guard 规范。
+  if (!(window as any).__docsLinkGuard) {
+    (window as any).__docsLinkGuard = true;
+    document.addEventListener(
+      "click",
+      (event) => {
+        const target = event.target as Element | null;
+        const link = target?.closest?.("a[href]");
+        if (!link) return;
+        const href = link.getAttribute("href");
+        if (!href || href.startsWith("#")) return;
+        try {
+          const linkUrl = new URL(href, window.location.origin);
+          if (linkUrl.origin !== window.location.origin) return;
+          if (linkUrl.pathname === "/docs" || linkUrl.pathname.startsWith("/docs/")) {
+            link.setAttribute("data-no-swup", "");
+          }
+        } catch {
+          // 非法 URL 忽略
+        }
+      },
+      true,
+    );
+  }
+
   // Home layout constraint removal
   function applyHomeLayoutOnLoad() {
     const mainGrid = document.getElementById("main-grid");

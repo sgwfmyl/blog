@@ -1,5 +1,6 @@
 import { unified } from "@astrojs/markdown-remark";
 import sitemap from "@astrojs/sitemap";
+import starlight from "@astrojs/starlight";
 import svelte from "@astrojs/svelte";
 import { pluginCollapsibleSections } from "@expressive-code/plugin-collapsible-sections";
 import { pluginLineNumbers } from "@expressive-code/plugin-line-numbers";
@@ -33,6 +34,25 @@ import { parseDirectiveNode } from "./src/plugins/remark-directive-rehype.js";
 import { remarkExcerpt } from "./src/plugins/remark-excerpt.js";
 import { remarkMermaid } from "./src/plugins/remark-mermaid.js";
 import { remarkReadingTime } from "./src/plugins/remark-reading-time.mjs";
+
+import { createRequire } from "node:module";
+import { dirname, join } from "node:path";
+
+// Starlight 内部用 `import yaml from "js-yaml"`（需要 4.x 的 default 导出），
+// 而本项目根依赖 js-yaml 5.x（仅有具名导出）。Astro 会把 js-yaml 外部化，
+// prerender 产物从 dist/ 解析时命中根的 5.x，导致构建报
+// "does not provide an export named 'default'"。
+// 这里把 js-yaml 显式指向 Starlight 自带的 4.x，使其被内联进产物。
+const starlightRequire = createRequire(
+	join(
+		dirname(createRequire(import.meta.url).resolve("@astrojs/starlight")),
+		"package.json",
+	),
+);
+const starlightJsYaml = join(
+	dirname(starlightRequire.resolve("js-yaml/package.json")),
+	"dist/js-yaml.mjs",
+);
 
 // https://astro.build/config
 export default defineConfig({
@@ -161,11 +181,33 @@ export default defineConfig({
 			},
 		}),
 		svelte(),
+		// 开发文档（Starlight）挂载在 /docs/：
+		// 内容位于 src/content/docs/docs/**（目录名即 URL 段），随博客一起构建。
+		// 与既有博客的三处冲突在此显式规避：
+		//   1) expressiveCode: false —— 复用项目已注册的 astro-expressive-code 集成，避免重复处理代码块
+		//   2) disable404Route —— 保留自研 src/pages/404.astro
+		//   3) pagefind: false + head noindex —— 不暴露搜索 UI、不被搜索引擎收录（sitemap 侧见下方 filter）
+		starlight({
+			title: "二次开发文档",
+			description: "lh的博客开发文档",
+			defaultLocale: "root",
+			locales: { root: { label: "简体中文", lang: "zh-CN" } },
+			disable404Route: true,
+			pagefind: false,
+			expressiveCode: false,
+			head: [{ tag: "meta", attrs: { name: "robots", content: "noindex, nofollow" } }],
+			sidebar: [{ label: "开发文档", items: [{ autogenerate: { directory: "docs" } }] }],
+		}),
 		sitemap({
 			filter: (page) => {
 				// 根据页面开关配置过滤sitemap
 				const url = new URL(page);
 				const pathname = url.pathname;
+
+				// 开发文档不收录进 sitemap（公开但不希望被搜索引擎收录）
+				if (pathname === "/docs" || pathname.startsWith("/docs/")) {
+					return false;
+				}
 
 				if (pathname === "/sponsor/" && !siteConfig.pages.sponsor) {
 					return false;
@@ -301,6 +343,8 @@ export default defineConfig({
 		resolve: {
 			alias: {
 				"@rehype-callouts-theme": `rehype-callouts/theme/${siteConfig.rehypeCallouts.theme}`,
+				// 见文件顶部说明：强制 js-yaml 内联为 Starlight 自带的 4.x
+				"js-yaml": starlightJsYaml,
 			},
 		},
 		build: {

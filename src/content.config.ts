@@ -1,4 +1,6 @@
 import { defineCollection } from "astro:content";
+import { docsLoader } from "@astrojs/starlight/loaders";
+import { docsSchema } from "@astrojs/starlight/schema";
 import { glob } from "astro/loaders";
 import { z } from "astro/zod";
 
@@ -353,6 +355,16 @@ const changelogCollection = defineCollection({
 	}),
 });
 
+// 开发文档（Astro Starlight）：内容位于 src/content/docs/**
+// 路由前缀由子目录名决定，故文档实际放在 src/content/docs/docs/** → 路由 /docs/**
+// pagefind 默认 false：文档页不进站内 Pagefind 索引（公开但不收录）
+const docsCollection = defineCollection({
+	loader: docsLoader(),
+	schema: docsSchema({
+		extend: z.object({ pagefind: z.boolean().default(false) }),
+	}),
+});
+
 export const collections = {
 	posts: postsCollection,
 	spec: specCollection,
@@ -369,4 +381,5 @@ export const collections = {
 	tombstones: tombstonesCollection,
 	bills: billsCollection,
 	schedules: schedulesCollection,
+	docs: docsCollection,
 };
