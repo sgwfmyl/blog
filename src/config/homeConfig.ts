@@ -47,14 +47,14 @@ export const homeConfig = {
 		dialogue: {
 			enabled: true,
 			speakers: {
-				host: "团子",
+				host: "lh",
 				visitor: "访客",
 			},
 			menuTitle: "想聊点什么？",
 			typingSpeed: 45,
 			autoDelay: 1600,
 			intro: [
-				{ speaker: "host", text: "欸，来客人啦。欢迎来到团子和蛋糕的博客。" },
+				{ speaker: "host", text: "欸，来客人啦。欢迎来到lh的博客。" },
 				{
 					speaker: "host",
 					text: `这里是 ${profileConfig.name} 的个人空间，技术、生活和喜欢的东西都会慢慢收进来。`,
@@ -105,8 +105,8 @@ export const homeConfig = {
 		rightPanel: {
 			pill: "BLOG",
 			title: "博客",
-			diamond: "✦",
-			microText: "システム起動完了",
+			diamond: "",
+			microText: "",
 		},
 		rain: {
 			enabled: true,
@@ -123,7 +123,7 @@ export const homeConfig = {
 	},
 
 	displayLayer: {
-		enabled: true,
+		enabled: false,
 		kicker: "作品展示",
 		title: "CRYSTALLIZE GALLERY",
 		description:
@@ -134,7 +134,7 @@ export const homeConfig = {
 	},
 
 	portfolioShutter: {
-		enabled: true,
+		enabled: false,
 		kicker: "The End",
 		title: "愿你每一天 都闪闪发光",
 		description: "岁岁常欢愉，万事皆胜意",

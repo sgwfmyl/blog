@@ -7,26 +7,22 @@ const SITE_LANG = "zh_CN";
 
 export const siteConfig: SiteConfig = {
 	// 站点标题
-	title: "团子和蛋糕的博客",
+	title: "lh的博客",
 
 	// 站点副标题
 	subtitle: "",
 
 	// 站点 URL
-	site_url: "https://blog.tsh520.cn",
+	site_url: "https://blog.5484826.xyz",
 
 	// 站点描述
 	description:
-		"团子和蛋糕的博客，一个分享技术见解与生活感悟的个人空间。涵盖编程开发、实用工具推荐、ACG文化与日常生活的随想，记录成长的每一步。",
+		"个人生活留存博客",
 
 	// 站点关键词
 	keywords: [
-		"团子",
-		"团子和蛋糕",
-		"蛋糕",
-		"团子和蛋糕的博客",
-		"团子的博客",
-		"蛋糕的博客",
+		"sgwfmyl",
+		"LH的博客",
 	],
 
 	// 主题色
@@ -54,12 +50,18 @@ export const siteConfig: SiteConfig = {
 	favicon: [
 		{
 			// 图标文件路径
-			src: "/assets/ziyuan/tx.webp",
+			src: "assets/images/logo01light.svg",
+			theme: "light",
 			// 可选，指定主题 'light' | 'dark'
 			// theme: "light",
 			// 可选，图标大小
 			// sizes: "32x32",
 		},
+		{
+			// 图标文件路径
+			src: "assets/images/logo01dark.svg",
+			theme: "dark",
+		}
 	],
 
 	// 导航栏配置
@@ -72,13 +74,13 @@ export const siteConfig: SiteConfig = {
 		// 4. 网络图片: { type: "url", value: "https://example.com/logo.png", alt: "Logo" }
 		logo: {
 			type: "image",
-			value: "assets/images/firefly.png",
-			alt: "🍀",
+			value: "assets/images/logo01light.svg",
+			alt: "lh",
 		},
 		// 导航栏标题
-		title: "团子和蛋糕",
+		title: "lh",
 		// 悬停时显示的互动颜文字
-		hoverTitle: "w(ﾟДﾟ)w 不要走！再看看嘛！",
+		hoverTitle: "(つω-｀)｡oO",
 		// 全宽导航栏，导航栏是否占满屏幕宽度，true：占满，false：不占满
 		widthFull: false,
 		// 导航栏图标和标题是否跟随主题色
@@ -86,19 +88,19 @@ export const siteConfig: SiteConfig = {
 	},
 
 	// 站点开始日期，用于统计运行天数
-	siteStartDate: "2025-9-1",
+	siteStartDate: "2026-10-7",
 
 	// 门户区配置
 	portal: {
 		announcement: {
 			enable: true,
-			text: "欢迎来到团子和蛋糕的博客！这里有技术分享、生活记录和更多有趣内容。",
+			text: "欢迎来到lh的博客！这里有技术分享、生活记录和更多有趣内容。",
 		},
 		dailyQuote: {
 			enable: true,
 			quotes: [
 				{ text: "人生到处知何似，应似飞鸿踏雪泥。", source: "苏轼" },
-				{ text: "海棠花未眠，老陈总在我身边。", source: "团子" },
+				{ text: "每一天都要有得有趣。", source: "lh" },
 				{
 					text: "世界上只有一种真正的英雄主义，那就是在认识生活的真相后依然热爱生活。",
 					source: "罗曼·罗兰",
@@ -148,7 +150,7 @@ export const siteConfig: SiteConfig = {
 	// bangumi配置
 	bangumi: {
 		// Bangumi用户ID
-		userId: "1219895",
+		userId: "1210536",
 	},
 
 	// 豆瓣配置
@@ -178,7 +180,7 @@ export const siteConfig: SiteConfig = {
 	// 说说页面封面配置（微信朋友圈风格）
 	momentsCover: {
 		enable: true,
-		image: "/assets/images/moments-cover.jpg",
+		image: "/assets/images/moments-cover.webp",
 	},
 
 	// 分类导航栏开关，在首页和归档页顶部显示分类快捷导航
