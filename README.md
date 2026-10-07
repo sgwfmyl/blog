@@ -2,7 +2,7 @@
 
 <div align="center">
 
-# 团子和蛋糕的博客
+# lh的博客
 > 一款清新美观的 Astro 静态博客主题模板
 >
 > ![Node.js >= 22](https://img.shields.io/badge/node.js-%3E%3D22-brightgreen) 
@@ -119,7 +119,7 @@
    ```bash
    pnpm dev
    ```
-   博客将在 `http://localhost:4321` 可用
+   博客将在 `http://localhost:4500` 可用
 
 ### 平台托管部署
 - **参考[官方指南](https://docs.astro.build/zh-cn/guides/deploy/)将博客部署至 Vercel, Netlify, GitHub Pages, Cloudflare Pages, EdgeOne Pages 等。**
@@ -207,7 +207,7 @@ comment: true    # 是否允许评论
 | Command                    | Action                                              |
 |:---------------------------|:----------------------------------------------------|
 | `pnpm install`             | 安装依赖                               |
-| `pnpm dev`                 | 在 `localhost:4321` 启动本地开发服务器        |
+| `pnpm dev`                 | 在 `localhost:4500` 启动本地开发服务器        |
 | `pnpm build`               | 构建网站至 `./dist/`            |
 | `pnpm preview`             | 本地预览已构建的网站        |
 | `pnpm check`               | 检查代码中的错误                 |
@@ -235,6 +235,6 @@ comment: true    # 是否允许评论
 **版权声明：**
 - Copyright (c) 2024 [saicaca](https://github.com/saicaca) - [fuwari](https://github.com/saicaca/fuwari)
 - Copyright (c) 2025 [CuteLeaf](https://github.com/CuteLeaf) - [Firefly](https://github.com/CuteLeaf/Firefly)
-- Copyright (c) 2026 [团子和蛋糕](https://blog.tsh520.cn) - 个人博客
+- Copyright (c) 2026 [lh](https://blog.tsh520.cn) - 个人博客
 
 根据 MIT 开源协议，你可以自由使用、修改、分发代码，但需保留上述版权声明。

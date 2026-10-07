@@ -113,6 +113,8 @@ export const homeConfig = {
 			intensity: 0.6,
 			color: "255, 255, 255",
 		},
+		// 唤出后无操作时自动消散的等待时长（毫秒），0 表示不自动消散
+		autoHideDelay: 60000,
 	},
 
 	dataLayer: {

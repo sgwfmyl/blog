@@ -144,7 +144,7 @@
    ```bash
    pnpm dev
    ```
-   部落格將在 `http://localhost:4321` 可用
+   部落格將在 `http://localhost:4500` 可用
 
 ### 平台託管部署
 - **參考[官方指南](https://docs.astro.build/zh-cn/guides/deploy/)將部落格部署至 Vercel, Netlify, GitHub Pages, Cloudflare Pages, EdgeOne Pages 等。**
@@ -237,7 +237,7 @@ comment: true    # 是否允許留言
 | Command                    | Action                                              |
 |:---------------------------|:----------------------------------------------------|
 | `pnpm install`             | 安裝依賴                                            |
-| `pnpm dev`                 | 在 `localhost:4321` 啟動本地開發伺服器              |
+| `pnpm dev`                 | 在 `localhost:4500` 啟動本地開發伺服器              |
 | `pnpm build`               | 建置網站至 `./dist/`                                |
 | `pnpm preview`             | 本地預覽已建置的網站                                |
 | `pnpm check`               | 檢查程式碼中的錯誤                                  |

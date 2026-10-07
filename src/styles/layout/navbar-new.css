@@ -119,9 +119,26 @@
   background-color: transparent !important;
 }
 
-/* logo 文字：滚动后淡出收缩（左段成球） */
+/* logo 图片：按主题切换 light/dark 变体（仅本地 svg，两个 <img> 在同一位置，只显其一） */
+.navbar-logo-img {
+  display: block;
+}
+.navbar-logo-img--dark {
+  display: none;
+}
+:root.dark .navbar-logo-img--light {
+  display: none;
+}
+:root.dark .navbar-logo-img--dark {
+  display: block;
+}
+
+/* logo 文字：滚动后淡出收缩（左段成球）
+   必须显式设置 color（按钮不继承它兄弟 <a> 的 --deep-text，且 .dark
+   类是切变量而非 prefers-color-scheme，否则按钮文字在暗色下仍是黑） */
 .navbar-logo-text {
   display: inline-block;
+  color: var(--deep-text);
   max-width: 12rem;
   overflow: hidden;
   white-space: nowrap;

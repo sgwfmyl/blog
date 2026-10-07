@@ -36,7 +36,7 @@ pnpm add @astrojs/starlight
 ```js
 starlight({
   title: "Firefly 开发文档",
-  description: "团子和蛋糕的博客开发文档",
+  description: "lh的博客开发文档",
   defaultLocale: "root",                                  // 不产生 /zh-cn/ 前缀
   locales: { root: { label: "简体中文", lang: "zh-CN" } },
   disable404Route: true,                                  // 保留自研 404 页

@@ -2,7 +2,7 @@
 
 <div align="center">
 
-# 团子和蛋糕的博客
+# lh的博客
 > A Fresh and Beautiful Astro Static Blog Theme Template
 >
 > ![Node.js >= 22](https://img.shields.io/badge/node.js-%3E%3D22-brightgreen) 
@@ -116,7 +116,7 @@
    ```bash
    pnpm dev
    ```
-   Blog will be available at `http://localhost:4321`
+   Blog will be available at `http://localhost:4500`
 
 ### Platform Hosting Deployment
 - **Refer to the [official guide](https://docs.astro.build/en/guides/deploy/) to deploy your blog to Vercel, Netlify, GitHub Pages, Cloudflare Pages, EdgeOne Pages, etc.**
@@ -205,7 +205,7 @@ All commands need to be executed in the project root directory:
 | Command                    | Action                                              |
 |:---------------------------|:----------------------------------------------------|
 | `pnpm install`             | Install dependencies                                |
-| `pnpm dev`                 | Start local development server at `localhost:4321`  |
+| `pnpm dev`                 | Start local development server at `localhost:4500`  |
 | `pnpm build`               | Build site to `./dist/`                             |
 | `pnpm preview`             | Preview built site locally                          |
 | `pnpm check`               | Check for errors in code                            |
@@ -233,6 +233,6 @@ Originally based on [CuteLeaf/Firefly](https://github.com/CuteLeaf/Firefly), whi
 **Copyright Notice:**
 - Copyright (c) 2024 [saicaca](https://github.com/saicaca) - [fuwari](https://github.com/saicaca/fuwari)
 - Copyright (c) 2025 [CuteLeaf](https://github.com/CuteLeaf) - [Firefly](https://github.com/CuteLeaf/Firefly)
-- Copyright (c) 2026 [团子和蛋糕](https://blog.tsh520.cn) - Personal Blog
+- Copyright (c) 2026 [lh](https://blog.tsh520.cn) - Personal Blog
 
 Under the MIT license, you are free to use, modify, and distribute the code, but you must retain the above copyright notice.

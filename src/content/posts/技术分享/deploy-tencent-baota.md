@@ -159,7 +159,7 @@ EOF
 | 变量 | 说明 | 示例 |
 |------|------|------|
 | `JWT_TOKEN` | JWT 密钥，用于加密 token，建议用复杂字符串 | `mySecretKey123!@#` |
-| `SITE_NAME` | 网站名称 | `团子和蛋糕` |
+| `SITE_NAME` | 网站名称 | `lh` |
 | `SITE_URL` | 网站地址（带 https） | `https://waline.tsh520.cn` |
 | `SECURE_DOMAINS` | 允许的域名（防止跨站请求） | `waline.tsh520.cn` | 
 <!-- SECURE_DOMAINS: 'waline.tsh520.cn,blog.tsh520.cn' -->

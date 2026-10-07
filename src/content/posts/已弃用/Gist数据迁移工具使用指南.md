@@ -82,7 +82,7 @@ Gist 中的说说如果没有 `author` 和 `avatar` 字段，脚本会自动补�
 ```yaml
 ---
 published: 2026-06-10 08:00:00
-author: 团子和蛋糕
+author: lh
 avatar: /assets/ziyuan/tx.webp
 tags:
   - 日常

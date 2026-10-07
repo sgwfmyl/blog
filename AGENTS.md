@@ -8,7 +8,7 @@
 
 ## 项目概览
 
-- Firefly v6.6.13 —— "团子和蛋糕的博客"，Fork 自 CuteLeaf/Firefly 并深度定制
+- Firefly v6.6.13 —— "lh的博客"，Fork 自 CuteLeaf/Firefly 并深度定制
 - 部署：**生产为 EdgeOne Pages**（GitHub 集成：push main 自动 `pnpm build` 并托管 blog.tsh520.cn，见 `docs/deploy-edgeone-pages.md`）；GitHub Actions 的 `build.yml` 仅作 CI 质量门（GitHub Pages 的遗留配置 `.github/workflows/pages.yml` + `public/CNAME` 已于 2026-09-21 删除，不再随 push 触发）；后台 PagesCMS 自托管（cms.tsh520.cn，配置在根目录 `.pages.yml`，字段必须与 `src/content.config.ts` 的 zod 对齐，未声明字段保存时被丢弃）
 - 15 个 Astro Content Collections（`src/content.config.ts` + `src/content/`：posts/spec/moments/bangumi/life/notebooks/album/daohang/ziyuan/friends/tombstones/apps/changelog/bills/schedules；notebooks 的物理目录在 `src/content/life/` 下）
 - **本地 Obsidian 插件**（`plug-in/Obsidian/obsidian-category-autofill/`，独立 git 仓库，`plug-in/` 被本仓库整体 gitignore）：category 写入已废弃（分类=文件夹路径），现只做新建文章的模板属性补全。**改它的规范见该目录的 AGENTS.md**——完成后必须 `pnpm build`（自动拷贝进 Obsidian 库）+ `pnpm test` + commit & push GitHub + 提醒用户在 Obsidian 里 Ctrl+P 重载

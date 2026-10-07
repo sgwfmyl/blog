@@ -72,6 +72,12 @@ export default defineConfig({
 		enabled: false,
 	},
 
+	// 开发服务器端口：默认 4321 落在 Windows 动态保留端口范围（4298-4497）内，
+	// 绑定会报 EACCES，固定改用 4500
+	server: {
+		port: 4500,
+	},
+
 	integrations: [
 		swup({
 			theme: false,

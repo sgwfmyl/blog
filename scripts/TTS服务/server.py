@@ -40,7 +40,7 @@ ALLOWED_ORIGINS = [
     origin.strip()
     for origin in os.getenv(
         "ALLOWED_ORIGINS",
-        "https://blog.tsh520.cn,http://localhost:4321",
+        "https://blog.tsh520.cn,http://localhost:4321,http://localhost:4500",
     ).split(",")
     if origin.strip()
 ]

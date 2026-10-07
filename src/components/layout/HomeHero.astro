@@ -139,7 +139,7 @@ const rainConfig = {
 };
 ---
 
-<section class="home-hero home-hero--motion-pending" id="home-hero"
+<section class="home-hero home-hero--motion-pending home-hero--content-hidden" id="home-hero"
 	data-avatar={avatarUrl}
 	data-avatar-pool={JSON.stringify(workAvatarUrls)}
 	data-avatar-off={avatarOffUrl}
@@ -163,14 +163,6 @@ const rainConfig = {
 			<div class="home-hero__viewfinder-corner home-hero__viewfinder-corner--tr"></div>
 			<div class="home-hero__viewfinder-corner home-hero__viewfinder-corner--bl"></div>
 			<div class="home-hero__viewfinder-corner home-hero__viewfinder-corner--br"></div>
-		</div>
-
-		<!-- 拍摄参数面板 -->
-		<div class="home-hero__camera-params" aria-hidden="true">
-			<span>MNL</span>
-			<span>1/125</span>
-			<span>OPEN</span>
-			<span>3dB</span>
 		</div>
 
 		<!-- 中心对焦框（相机效果） -->
@@ -325,6 +317,7 @@ const rainConfig = {
 <script>
 	import { gsap } from "gsap";
 	import { ScrollTrigger } from "gsap/ScrollTrigger";
+	import { homeConfig } from "@/config";
 	import { VFX } from "@vfx-js/core";
 	import { waitForPageLoaderHidden } from "@/utils/page-loader-controller.js";
 	import { HatchEffect } from "@/utils/hatch-effect.ts";
@@ -335,6 +328,12 @@ const rainConfig = {
 	let heroOpeningTimeline: ReturnType<typeof gsap.timeline> | null = null;
 	let vfxInstance: VFX | null = null;
 	let heroHatchEffect: HatchEffect | null = null;
+
+	// 内容区显隐（初始隐藏 → 点击显示 → 延时自动收起）
+	let heroRevealAbort: AbortController | null = null;
+	let heroAutoHideTimer: number | null = null;
+	let heroEntrancePlayed = false;
+	const HERO_AUTO_HIDE_DELAY = homeConfig.hero.autoHideDelay ?? 60000;
 
 	// 玻璃雨珠 + 撞击水花
 	type RainDrop = { x: number; y: number; r: number; vy: number; len: number; alpha: number };
@@ -707,12 +706,19 @@ const rainConfig = {
 		destroyHeroHatch();
 
 		// VFX canvas 默认 z-index 为 9999 且挂载到 document.body，会盖住弹窗与浮动组件。
-		// 这里把 canvas 挂到 hero 内部（hero 已 isolation: isolate），并降低 z-index 到 hero 内部层级。
-		const heroEl = document.getElementById("home-hero") ?? undefined;
+		// 这里把 canvas 挂到 hero 内部（hero 已 isolation: isolate）。z-index 需高于
+		// 内容面板（left/right-panel 均为 15），否则名字的铅笔笔触被面板背景盖住而不可见；
+		// 同时要低于雨珠画布（z-index:20，保持镜头在最前），故取 18。
+		const heroEl = document.getElementById("home-hero");
+		// 把 VFX canvas 挂进 canvas-container（而非 hero），使其随 .home-hero__content-hidden
+		// 一并 visibility:hidden——否则隐藏状态下手绘字符仍悬浮在最上层不消失。
+		const wrapper =
+			(heroEl?.querySelector<HTMLElement>(".home-hero__canvas-container") ?? heroEl) ??
+			undefined;
 		const vfx = VFX.init({
 			pixelRatio: Math.min(window.devicePixelRatio, 1.5),
-			zIndex: 10,
-			wrapper: heroEl,
+			zIndex: 18,
+			wrapper,
 		});
 		if (!vfx) return;
 		vfxInstance = vfx;
@@ -1000,6 +1006,109 @@ function collectRainEdges(hero: HTMLElement) {
 		rainDrops = [];
 		rainSplashes = [];
 		rainEdges = [];
+	}
+
+	// ============================================
+	// 内容区显隐控制（初始隐藏 → 点击显示 → 延时自动收起）
+	// ============================================
+	function clearHeroAutoHide() {
+		if (heroAutoHideTimer !== null) {
+			window.clearTimeout(heroAutoHideTimer);
+			heroAutoHideTimer = null;
+		}
+	}
+
+	function scheduleHeroAutoHide() {
+		clearHeroAutoHide();
+		// autoHideDelay 为 0 时表示不自动消散
+		if (!HERO_AUTO_HIDE_DELAY) return;
+		heroAutoHideTimer = window.setTimeout(() => {
+			heroAutoHideTimer = null;
+			document.getElementById("home-hero")?.classList.add("home-hero--content-hidden");
+		}, HERO_AUTO_HIDE_DELAY);
+	}
+
+	function hideHeroContent() {
+		clearHeroAutoHide();
+		document.getElementById("home-hero")?.classList.add("home-hero--content-hidden");
+	}
+
+	function revealHeroContent(token: number) {
+		const hero = document.getElementById("home-hero");
+		if (!hero) return;
+		hero.classList.remove("home-hero--content-hidden");
+
+		// 入场动画只在首次显示时播放一次，之后仅做淡入
+		if (heroEntrancePlayed) {
+			scheduleHeroAutoHide();
+			return;
+		}
+		heroEntrancePlayed = true;
+
+		const heroOpeningReady = initHeroOpening();
+
+		// 在容器淡入过渡（0.45s）刚结束后就初始化 VFX 铅笔名字，而不等整个入场动画
+		// （约 3s）结束——否则名字要等好几秒才从普通文字变成铅笔效果。
+		window.setTimeout(() => {
+			if (token !== initToken) return;
+			void initHeroHatch(heroOpeningReady, token);
+		}, 800);
+
+		const timeline = heroOpeningTimeline;
+		if (timeline) {
+			// 入场动画播完后再开始自动收起计时，避免内容在入场过程中被收起
+			timeline.eventCallback("onComplete", scheduleHeroAutoHide);
+		} else {
+			scheduleHeroAutoHide();
+		}
+	}
+
+	// 对话框 / 按钮 / 链接等交互元素上的点击不触发整体显隐
+	function isHeroInteractiveTarget(target: EventTarget | null): boolean {
+		return (
+			target instanceof Element &&
+			target.closest(".home-hero__dialogue, button, a, [role='button'], input, select, textarea") !== null
+		);
+	}
+
+	function initHeroReveal(token: number) {
+		const hero = document.getElementById("home-hero");
+		if (!hero) return;
+
+		destroyHeroReveal();
+		hero.classList.add("home-hero--content-hidden");
+
+		const controller = new AbortController();
+		heroRevealAbort = controller;
+		hero.addEventListener(
+				"click",
+				(event) => {
+					const hidden = hero.classList.contains("home-hero--content-hidden");
+					// 隐藏态下任何点击都一律唤出：隐藏时 GSAP 可能在子元素（如
+					// .home-hero__dialogue-box）残留内联 visibility，会被 elementFromPoint
+					// 命中并误判为「交互区点击」，导致 content-hidden 永不移除（唤不出）。
+					if (hidden) {
+						revealHeroContent(token);
+						return;
+					}
+					if (isHeroInteractiveTarget(event.target)) {
+						// 交互区内点击：不收起，仅重置自动收起计时
+						scheduleHeroAutoHide();
+						return;
+					}
+					hideHeroContent();
+				},
+				{ signal: controller.signal },
+			);
+	}
+
+	function destroyHeroReveal() {
+		clearHeroAutoHide();
+		if (heroRevealAbort) {
+			heroRevealAbort.abort();
+			heroRevealAbort = null;
+		}
+		heroEntrancePlayed = false;
 	}
 
 	// ============================================
@@ -1320,9 +1429,9 @@ function collectRainEdges(hero: HTMLElement) {
 		cleanup();
 		const token = initToken;
 		initDialogue();
-		const heroOpeningReady = initHeroOpening();
 		initWorkStatus();
-		void initHeroHatch(heroOpeningReady, token);
+		// 内容区初始隐藏，首次点击后才播放入场动画
+		initHeroReveal(token);
 
 		// 推迟 ScrollTrigger 初始化，避免阻塞 Hero 入场动画的首次渲染
 		requestAnimationFrame(() => {
@@ -1337,6 +1446,7 @@ function collectRainEdges(hero: HTMLElement) {
 		destroyHeroHatch();
 		destroyHeroRain();
 		destroyDialogue();
+		destroyHeroReveal();
 	}
 
 	async function scheduleHomeInit() {

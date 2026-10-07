@@ -87,6 +87,7 @@ html:has(.home-hero) #top-row {
 	grid-template-columns: 87% 13%;
 	z-index: 10;
 	overflow: hidden;
+	transition: opacity 0.45s ease, visibility 0.45s ease;
 }
 
 /* ---------- 外四角取景框 ---------- */
@@ -164,7 +165,7 @@ html:has(.home-hero) #top-row {
 	top: 50%;
 	transform: translate(-50%, -50%);
 	z-index: 8;
-	width: clamp(12rem, 24vw, 22rem);
+	width: clamp(20rem, 24vw, 35rem);
 	height: clamp(7.5rem, 15vw, 13rem);
 	pointer-events: none;
 }
@@ -370,13 +371,7 @@ html:has(.home-hero) #top-row {
 	padding-bottom: 0.12em;
 }
 
-.home-hero__name--rainbow .home-hero__name-letter:nth-child(7n+1) { color: #FF5252; }
-.home-hero__name--rainbow .home-hero__name-letter:nth-child(7n+2) { color: #FF9800; }
-.home-hero__name--rainbow .home-hero__name-letter:nth-child(7n+3) { color: #FFEB3B; }
-.home-hero__name--rainbow .home-hero__name-letter:nth-child(7n+4) { color: #4CAF50; }
-.home-hero__name--rainbow .home-hero__name-letter:nth-child(7n+5) { color: #00BCD4; }
-.home-hero__name--rainbow .home-hero__name-letter:nth-child(7n+6) { color: #2196F3; }
-.home-hero__name--rainbow .home-hero__name-letter:nth-child(7n+7) { color: #9C27B0; }
+.home-hero__name--rainbow .home-hero__name-letter { color: #fff; }
 
 .home-hero__name-letter {
 	display: inline-block;
@@ -575,6 +570,13 @@ html:has(.home-hero) #top-row {
 	transform: translateX(60px);
 }
 
+/* ---------- 内容区初始隐藏：等待用户点击后再显示 ---------- */
+.home-hero--content-hidden .home-hero__canvas-container {
+	opacity: 0;
+	visibility: hidden;
+	pointer-events: none;
+}
+
 .home-page--motion-pending > :not(#home-hero) .home-section-title,
 .home-page--motion-pending > :not(#home-hero) [data-motion-title],
 .home-page--motion-pending > :not(#home-hero) .card-base,
@@ -633,6 +635,7 @@ html:has(.home-hero) #top-row {
 	flex-direction: column;
 	align-items: center;
 	gap: 15px;
+	height: 350px;
 }
 
 .home-hero__v-title {

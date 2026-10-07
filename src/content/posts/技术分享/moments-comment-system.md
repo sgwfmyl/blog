@@ -62,7 +62,7 @@ description: 为说说页面的每条动态适配独立评论区，实现自定�
     adminNicknames?: string[];
   }
 
-  let { serverURL, adminNicknames = ["团子和蛋糕"] }: Props = $props();
+  let { serverURL, adminNicknames = ["lh"] }: Props = $props();
 
   // 评论数据
   let comments: Comment[] = $state([]);

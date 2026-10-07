@@ -31,6 +31,7 @@ const isLocalSrcLogo =
 	!logoValue.startsWith("/") &&
 	!logoValue.startsWith("http");
 let logoImg: ImageMetadata | null = null;
+let darkLogoImg: ImageMetadata | null = null;
 
 if (isLocalSrcLogo) {
 	const files = import.meta.glob<ImageMetadata>(
@@ -41,7 +42,13 @@ if (isLocalSrcLogo) {
 		.normalize(path.join("../../", logoValue))
 		.replace(/\\/g, "/");
 	const file = files[normalizedPath];
-	if (file) logoImg = await file();
+	if (file) {
+		logoImg = await file();
+		// 存在对应的深色变体（文件名 light→dark）时一并导入，用于暗色主题切换
+		const darkPath = normalizedPath.replace(/light(?=\.)/, "dark");
+		const darkFile = files[darkPath];
+		if (darkFile) darkLogoImg = await darkFile();
+	}
 }
 ---
 
@@ -55,9 +62,12 @@ if (isLocalSrcLogo) {
 				{siteConfig.navbar.logo?.type === "icon" ? (
 					<Icon name={siteConfig.navbar.logo.value || "material-symbols:home-pin-outline"} is:inline class="text-[1.35rem] flex-shrink-0" />
 				) : siteConfig.navbar.logo?.type === "image" && logoImg ? (
-					logoImg.format === "svg" ? (
-						<img src={logoImg.src} alt={siteConfig.navbar.logo.alt || siteConfig.title} class="h-6 w-6 object-contain flex-shrink-0" fetchpriority="high" />
-					) : (
+						logoImg.format === "svg" ? (
+							<>
+								<img src={logoImg.src} alt={siteConfig.navbar.logo.alt || siteConfig.title} class="navbar-logo-img navbar-logo-img--light h-6 w-6 object-contain flex-shrink-0" fetchpriority="high" />
+								{darkLogoImg && <img src={darkLogoImg.src} alt={siteConfig.navbar.logo.alt || siteConfig.title} class="navbar-logo-img navbar-logo-img--dark h-6 w-6 object-contain flex-shrink-0" fetchpriority="high" />}
+							</>
+						) : (
 						<Picture
 							src={logoImg}
 							alt={siteConfig.navbar.logo.alt || siteConfig.title}

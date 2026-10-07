@@ -52,7 +52,7 @@ const momentsCollection = defineCollection({
 	schema: ({ image }) =>
 		z.object({
 			id: z.string().optional().default(""),
-			author: z.string().optional().default("团子和蛋糕"),
+			author: z.string().optional().default("lh"),
 			avatar: z.string().optional().default("/assets/ziyuan/tx.webp"),
 			pinned: z.boolean().optional().default(false),
 			published: z.date(),

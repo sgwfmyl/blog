@@ -380,6 +380,8 @@ export type HomeConfig = {
 			intensity?: number;
 			color?: string;
 		};
+		/** 唤出后无操作时自动消散的等待时长（毫秒）；省略或为 0 表示不自动消散 */
+		autoHideDelay?: number;
 	};
 	dataLayer: {
 		visitImage: string;

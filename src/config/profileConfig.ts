@@ -6,7 +6,7 @@ export const profileConfig: ProfileConfig = {
 	// 1. public 目录（以 "/" 开头，不优化）："/assets/images/avatar.webp"
 	// 2. src 目录（不以 "/"开头，自动优化但会增加构建时间，推荐）："assets/images/avatar.webp"
 	// 3. 远程 URL："https://example.com/avatar.jpg"
-	avatar: "/assets/ziyuan/tx.webp",
+	avatar: "/assets/ziyuan/avatar01.webp",
 
 	// 下班时间头像（为空则始终使用上方 avatar）
 	avatarOffWork: "",
@@ -15,7 +15,7 @@ export const profileConfig: ProfileConfig = {
 	name: "lh",
 
 	// 首页展示名字（留空则使用 name）
-	displayName: "lh",
+	displayName: "moment",
 
 	// 职业/身份标签
 	occupation: "[生活记录者]",
@@ -33,7 +33,7 @@ export const profileConfig: ProfileConfig = {
 		{
 			name: "QQ",
 			icon: "simple-icons:tencentqq",
-      		url: 'https://qun.qq.com/universal-share/share?ac=1&authKey=8z%2ByvkL3EKwjCtmc6QKZmduI/ufFtZBvx7D0DMhqKJwBEM7PUy/swJfkMUCv3aoi&busi_data=eyJncm91cENvZGUiOiIxMTAyOTAyNjUwIiwidG9rZW4iOiJyRGU1Mnl5UUFVMDJMV1NLZkI0bmJrQm9qT29DRDM2Vk1TVEtqVytaTnZ4U2JUWEIwd29rNVNON2ZEQlp2TUhMIiwidWluIjoiNzg0Nzc0ODM1In0=&data=T_QVe-9P0pKN7Dg5Zp7H0zqeFfAolUlhY4fL3A4fuO1ShkcKonYSmw8fbb6_sRcbl-z_yrNts0JGtBZtrDi7ZqZZtrdz5eexpBsLavvtTPU&svctype=5&tempid=h5_group_info',
+      		url: 'https://qm.qq.com/q/FjkXxV9Hmo',
 			showName: false,
 		},
 		{
