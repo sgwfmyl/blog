@@ -1,7 +1,7 @@
 ---
 name: CloudFlare-ImgBed
-url: https://img.tsh520.cn/
-icon: https://img.tsh520.cn/file/blog/daohang/blog.tsh520.cn-icon.webp
+url: https://img.5484826.xyz/
+icon: https://img.5484826.xyz/file/icon/1791391293783_logo01dark.svg
 description: 个人照片存储与展示
 tags:
   - 存储
