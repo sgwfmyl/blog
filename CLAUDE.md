@@ -65,9 +65,9 @@ src/
 │   └── widget/          # 侧栏 Widget (27)
 ├── config/              # 站点配置（27 个 .ts，index.ts barrel export）
 ├── constants/           # 常量：页面尺寸、主题模式、图标、链接预设
-├── content/             # Astro Content Collections（15 个集合：posts/spec/moments/bangumi/life/notebooks/album/daohang/ziyuan/friends/apps/tombstones/changelog/bills/schedules）
+├── content/             # Astro Content Collections（16 个集合：posts/spec/moments/bangumi/music/life/notebooks/album/daohang/ziyuan/friends/apps/tombstones/changelog/bills/schedules）
 │   ├── album/ apps/ bangumi/ changelog/ daohang/
-│   ├── friends/ life/ moments/ posts/ spec/ ziyuan/  # spec/about.mdx 为组件化 Q&A；更新日志图谱组件（ChangelogGraph）用于 /changelog/ 页（2026-08-30 起不再嵌入关于页）
+│   ├── friends/ life/ moments/ music/ posts/ spec/ ziyuan/  # music/ 为 JSON 歌单（2026-10-08 起替代 bangumi/music md，见 src/content/music/playlist.json）；spec/about.mdx 为组件化 Q&A；更新日志图谱组件（ChangelogGraph）用于 /changelog/ 页（2026-08-30 起不再嵌入关于页）
 │   └── life/notebooks/  # notebooks 集合物理位置（life 的子目录，2026-09-27 起归档改 card 流，支持 images 多图 12字展开 + 年份下拉联动热力图与列表）
 ├── i18n/                # 国际化（5 种语言，330 个翻译键）
 │   └── languages/       # en.ts, zh_CN.ts, zh_TW.ts, ja.ts, ru.ts
@@ -182,14 +182,15 @@ Layout.astro          ← HTML 骨架：<html>, <head>, <body>, 全局组件, �
 
 ### 3.5 Content Collections
 
-13 个集合定义在 `src/content.config.ts`，使用 Zod schema 校验：
+13 个集合定义在 `src/content.config.ts`，使用 Zod schema 校验（另有 bills/schedules/music 与辅助集合 docs，实际注册 17 个）：
 
 | 集合 | 用途 |
 |------|------|
 | posts | 博客文章 |
 | spec | 特殊页面（about, friends, guestbook, privacy, user-agreement） |
 | moments | 说说/动态 |
-| bangumi | 番组/书籍/音乐/游戏追踪 |
+| bangumi | 番组/书籍/游戏追踪 |
+| music | 音乐歌单（JSON，2026-10-08 起替代 bangumi/music md；播放时经 Meting API 懒解析，见 src/utils/music-playlist.ts） |
 | life | 生活记录 |
 | notebooks | 笔记本（life 的子集） |
 | album | 相册（2026-08 全量图床化：统一 `imgbedFolder: "blog/album/<相册名>"` 动态加载，photos 静态列表已废弃） |
@@ -199,6 +200,8 @@ Layout.astro          ← HTML 骨架：<html>, <head>, <body>, 全局组件, �
 | tombstones | 友链墓碑（title/avatar/note，2026-08 新增，纪念下线友链） |
 | apps | 应用 |
 | changelog | 更新日志 |
+| bills | 账单 |
+| schedules | 日程 |
 
 > 友链页支撑系统（2026-08）：`.github/workflows/friend-status.yml`（每天 5:17 检测友链延迟 → public/friends-status.json，四档 fast/ok/slow/down）与 `friend-screenshots.yml`（每周日 3:23 全量补漏 + push main 变更 `src/content/friends/**` 时自动触发，Playwright 截图 → public/assets/friends-shots/{contentId}.webp，伪装真实浏览器 + load 后等字体就绪、网络空闲（6s 超时兜底）与 2s 缓冲，失败 3 次尝试）。前端 fetch 状态 JSON 注入徽标，无 JSON/无截图时优雅降级（卡片退化为纯头像卡）。改 friends 集合结构时注意同步这两个脚本（正则读 frontmatter）。**截图文件名必须是全小写**（Astro glob loader 的 entry id 为全小写 slug，脚本已按 `md 文件名.toLowerCase()` 输出；含大写的 webp 在 Windows dev 误判存在导致 404，线上 Linux 则直接退化）。
 
@@ -492,7 +495,7 @@ Layout.astro          ← HTML 骨架：<html>, <head>, <body>, 全局组件, �
 | `navBarConfig.ts` | `navBarConfig`, `navBarSearchConfig` | 导航栏链接（根据页面开关动态生成） |
 | `sidebarConfig.ts` | `sidebarLayoutConfig` | 侧栏布局：左/右/双侧栏、组件列表 |
 | `commentConfig.ts` | `commentConfig` | 评论系统选择（Waline/Twikoo/Giscus/Disqus/Artalk） |
-| `musicConfig.ts` | `musicPlayerConfig` | 音乐播放器：Meting API 或本地播放列表 |
+| `musicConfig.ts` | `musicPlayerConfig` | 音乐播放器：歌单来自 music collection（JSON），播放时经 Meting API 懒解析（mus.5484826.xyz，结果缓存 30 天） |
 | `backgroundWallpaper.ts` | `backgroundWallpaper` | 背景图配置（当前 mode: "none"，不渲染 banner） |
 | `homePortfolioShutterConfig.ts` | `homePortfolioShutterConfig` | 首页作品集百叶窗配置 |
 | `homeConfig.ts` | `homeConfig` | 首页配置（2026 新增，文档曾遗漏） |

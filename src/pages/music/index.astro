@@ -1,57 +1,26 @@
 ---
-import { getCollection } from "astro:content";
 import Comment from "@components/comment/index.astro";
 import MusicVisualizer from "@components/features/music-visualizer/MusicVisualizer.svelte";
 import Layout from "@layouts/Layout.astro";
-import { musicPlayerConfig, siteConfig } from "@/config";
+import { siteConfig } from "@/config";
 import I18nKey from "@/i18n/i18nKey";
 import { i18n } from "@/i18n/translation";
-
-const metingApiBase = musicPlayerConfig.meting?.api
-	? musicPlayerConfig.meting.api.split("?")[0]
-	: "https://mu.tsh520.cn/api";
+import { getMergedMusicPlaylist } from "@/utils/music-playlist";
 
 if (!siteConfig.pages.musicPage) {
 	return Astro.redirect("/404/");
 }
 
-const customBangumi = await getCollection("bangumi");
-
-const musicEntries = customBangumi
-	.filter((item) => item.data.category === "music")
-	.map((item) => {
-		const { data } = item;
-		const imageSrc =
-			typeof data.image === "string" ? data.image : data.image.src;
-		return {
-			title: data.title,
-			artist: data.artist || "",
-			image: imageSrc,
-			audioUrl: data.audioUrl || "",
-			lrcUrl: data.lrcUrl || "",
-			metingServer: data.metingServer || "",
-			metingId: data.metingId || "",
-			score: data.score || 0,
-			status: data.status,
-			comment: data.comment || "",
-			published: data.published?.toISOString() || new Date().toISOString(),
-		};
-	})
-	.sort(
-		(a, b) => new Date(b.published).getTime() - new Date(a.published).getTime(),
-	);
-
-const collectionPlaylist = musicEntries
-	.filter((item) => item.audioUrl || item.metingId)
-	.map((item) => ({
-		name: item.title,
-		artist: item.artist,
-		url: item.audioUrl,
-		pic: item.image,
-		lrc: item.lrcUrl,
-		metingServer: item.metingServer || "",
-		metingId: item.metingId || "",
-	}));
+// 音乐歌单数据源：music content collection（JSON），url 播放时由 MusicManager 懒解析
+const collectionPlaylist = (await getMergedMusicPlaylist()).map((song) => ({
+	name: song.name,
+	artist: song.artist,
+	url: "",
+	pic: "",
+	lrc: "",
+	metingServer: song.server,
+	metingId: song.metingId,
+}));
 ---
 
 <Layout title={i18n(I18nKey.musicPageTitle) + " - 3D可视化"} description="音乐地形可视化，沉浸式音乐体验">
@@ -62,42 +31,14 @@ const collectionPlaylist = musicEntries
 		</div>
 	</main>
 
-	<script is:inline define:vars={{ collectionPlaylistJson: JSON.stringify(collectionPlaylist), metingApiUrl: metingApiBase }}>
+	<script is:inline define:vars={{ collectionPlaylistJson: JSON.stringify(collectionPlaylist) }}>
 	(function() {
 		var collectionPlaylist = JSON.parse(collectionPlaylistJson);
-		var metingApi = metingApiUrl;
 
-		async function resolveMetingTracks(playlist) {
-			var base = metingApi + '?server=';
-			for (var i = 0; i < playlist.length; i++) {
-				var track = playlist[i];
-				if (track.metingServer && track.metingId && !track.url) {
-					try {
-						var s = encodeURIComponent(track.metingServer);
-						var id = encodeURIComponent(track.metingId);
-						var res = await fetch(base + s + '&type=song&id=' + id);
-						if (!res.ok) throw new Error('HTTP ' + res.status);
-						var raw = await res.json();
-						var data = Array.isArray(raw) ? raw[0] : raw;
-						if (data) {
-							if (data.url) track.url = data.url;
-							if (data.pic && !track.pic) track.pic = data.pic;
-							if (data.lrc && !track.lrc) track.lrc = data.lrc;
-							track.artist = track.artist || data.author || data.artist || "";
-							track.name = (track.name && track.name !== track.metingId) ? track.name : (data.title || track.name);
-						}
-					} catch(e) {
-						console.warn('[Meting] failed:', track.name, e);
-					}
-				}
-			}
-			return playlist;
-		}
-
-		async function loadBangumiPlaylist(mgr) {
-			var resolved = await resolveMetingTracks(collectionPlaylist);
-			if (resolved.length > 0) {
-				mgr.loadExternalPlaylist(resolved);
+		// 曲目 url 由 MusicManager 播放时懒解析（Meting API + 缓存），此处直接注入原始歌单
+		function loadMusicPlaylist(mgr) {
+			if (collectionPlaylist.length > 0) {
+				mgr.loadExternalPlaylist(collectionPlaylist);
 			}
 		}
 
@@ -105,11 +46,11 @@ const collectionPlaylist = musicEntries
 		// MusicVisualizer 会调用 mgr.init()，确保 crossOrigin 在 src 之前设置
 		function bindManager(mgr) {
 			if (mgr.getState().initialized) {
-				loadBangumiPlaylist(mgr);
+				loadMusicPlaylist(mgr);
 			} else {
 				window.addEventListener('fm:init', function handler() {
 					window.removeEventListener('fm:init', handler);
-					loadBangumiPlaylist(mgr);
+					loadMusicPlaylist(mgr);
 				});
 			}
 		}

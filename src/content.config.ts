@@ -96,6 +96,31 @@ const bangumiCollection = defineCollection({
 		}),
 });
 
+// 音乐歌单集合：单文件多歌单 JSON，曲目音频/歌词/封面由 Meting API 运行期解析
+const musicCollection = defineCollection({
+	loader: glob({ pattern: "*.json", base: "./src/content/music" }),
+	schema: z.object({
+		version: z.number().default(1),
+		updated: z.string().optional().default(""),
+		playlists: z.array(
+			z.object({
+				id: z.string(),
+				name: z.string(),
+				songs: z.array(
+					z.object({
+						name: z.string(),
+						artist: z.string(),
+						// 音乐平台：netease（网易云）/ tencent（QQ 音乐）
+						server: z.enum(["netease", "tencent"]).default("netease"),
+						// 平台歌曲 ID，缺省时运行期按 name+artist 搜索兜底
+						id: z.string().optional().default(""),
+					}),
+				),
+			}),
+		),
+	}),
+});
+
 const lifeCollection = defineCollection({
 	loader: glob({ pattern: "**/*.{md,mdx}", base: "./src/content/life" }),
 	schema: z.object({
@@ -370,6 +395,7 @@ export const collections = {
 	spec: specCollection,
 	moments: momentsCollection,
 	bangumi: bangumiCollection,
+	music: musicCollection,
 	life: lifeCollection,
 	notebooks: notebooksCollection,
 	album: albumCollection,

@@ -9,15 +9,8 @@ interface Props {
 	style?: string;
 	id?: string;
 	externalPlaylist?: string;
-	metingApiBase?: string;
 }
-const {
-	class: className,
-	style,
-	id,
-	externalPlaylist,
-	metingApiBase,
-} = Astro.props;
+const { class: className, style, id, externalPlaylist } = Astro.props;
 
 const config = musicPlayerConfig;
 
@@ -183,7 +176,7 @@ const widgetId =
 </div>
 </template>
 
-<script define:vars={{ viewConfigStr, widgetId, externalPlaylist, metingApiBase }} is:inline>
+<script define:vars={{ viewConfigStr, widgetId, externalPlaylist }} is:inline>
 (function () {
     var cfg = JSON.parse(viewConfigStr);
     var widget = document.getElementById(widgetId);
@@ -192,33 +185,7 @@ const widgetId =
     var mgr = window.__fireflyMusic;
     if (!mgr) return;
 
-    // Meting API resolution
-    async function resolveMetingTracks(playlist) {
-        var base = (metingApiBase || "https://mu.tsh520.cn/api") + '?server=';
-        for (var i = 0; i < playlist.length; i++) {
-            var track = playlist[i];
-            if (track.metingServer && track.metingId && !track.url) {
-                try {
-                    var s = encodeURIComponent(track.metingServer);
-                    var id = encodeURIComponent(track.metingId);
-                    var res = await fetch(base + s + '&type=song&id=' + id);
-                    if (!res.ok) throw new Error('HTTP ' + res.status);
-                    var raw = await res.json();
-                    var data = Array.isArray(raw) ? raw[0] : raw;
-                    if (data) {
-                        if (data.url) track.url = data.url;
-                        if (data.pic && !track.pic) track.pic = data.pic;
-                        if (data.lrc && !track.lrc) track.lrc = data.lrc;
-                        track.artist = track.artist || data.author || data.artist || "";
-                        track.name = (track.name && track.name !== track.metingId) ? track.name : (data.title || track.name);
-                    }
-                } catch(e) {
-                    console.warn('[Meting] failed:', track.name, e);
-                }
-            }
-        }
-        return playlist;
-    }
+    // 注：曲目 url 由 MusicManager 播放时懒解析（Meting API + 缓存），此处不做网络请求
 
     // ── UI element refs ──────────────────────────────────────
     var ui = {
@@ -705,8 +672,7 @@ const widgetId =
         try {
             var playlist = JSON.parse(externalPlaylist);
             if (playlist.length > 0) {
-                var resolved = await resolveMetingTracks(playlist);
-                mgr.loadExternalPlaylist(resolved);
+                mgr.loadExternalPlaylist(playlist);
                 mgr._externalLoaded = true;
                 return true;
             }

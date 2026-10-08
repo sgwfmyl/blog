@@ -8,15 +8,15 @@ export const musicPlayerConfig: MusicPlayerConfig = {
 	showLyrics: true,
 
 	meting: {
-		api: "https://mu.tsh520.cn/api?server=:server&type=:type&id=:id",
+		api: "https://mus.5484826.xyz/api?server=:server&type=:type&id=:id",
 		server: "netease",
 		type: "song",
 		id: "30254265974",
 		auth: "",
-		fallbackApis: ["https://mu.tsh520.cn/api?server=:server&type=:type&id=:id"],
+		fallbackApis: [],
 	},
 
-	// 本地播放列表为空 — 音乐数据全部从 bangumi content collection 加载
+	// 本地播放列表为空 — 音乐数据全部从 music content collection（JSON 歌单）加载
 	local: {
 		playlist: [],
 	},

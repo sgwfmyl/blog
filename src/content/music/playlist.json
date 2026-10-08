@@ -1,0 +1,388 @@
+{
+  "version": 1,
+  "updated": "2026-10-08",
+  "playlists": [
+    {
+      "id": "default",
+      "name": "博客歌单",
+      "songs": [
+        {
+          "name": "Always Online",
+          "artist": "林俊杰"
+        },
+        {
+          "name": "Animals",
+          "artist": "Maroon 5"
+        },
+        {
+          "name": "Baby",
+          "artist": "Justin Bieber / Ludacris"
+        },
+        {
+          "name": "Baby I'm Sorry",
+          "artist": "MYNAME"
+        },
+        {
+          "name": "Because Of You",
+          "artist": "Ne-Yo"
+        },
+        {
+          "name": "BIGBANG-Blue(Remix Chinese)（克然Eli / 哈布Rich-Beggar / 南北方舟 remix）",
+          "artist": "克然Eli / 哈布Ez / 南北方舟"
+        },
+        {
+          "name": "BREATHE",
+          "artist": "张艺兴"
+        },
+        {
+          "name": "DEAR JOHN",
+          "artist": "比莉"
+        },
+        {
+          "name": "Dilemma",
+          "artist": "Lika Morgan"
+        },
+        {
+          "name": "Enemy (from the series Arcane League of Legends)",
+          "artist": "Imagine Dragons / JID / 英雄联盟 / 双城之战"
+        },
+        {
+          "name": "Everybody Dies In Their Nightmares",
+          "artist": "XXXTENTACION"
+        },
+        {
+          "name": "Flower Dance",
+          "artist": "DJ OKAWARI"
+        },
+        {
+          "name": "Free Loop",
+          "artist": "Daniel Powter"
+        },
+        {
+          "name": "Insomnia (불면증) (Inst.)",
+          "artist": "辉星"
+        },
+        {
+          "name": "I wanted you",
+          "artist": "Ina Wroldsen"
+        },
+        {
+          "name": "Letting Go",
+          "artist": "蔡健雅"
+        },
+        {
+          "name": "Love Is Gone (Acoustic)",
+          "artist": "SLANDER / Dylan Matthew"
+        },
+        {
+          "name": "Love Story",
+          "artist": "Taylor Swift"
+        },
+        {
+          "name": "Lush Life",
+          "artist": "NALYRO"
+        },
+        {
+          "name": "Never Say Good Bye",
+          "artist": "Mario / NasTy"
+        },
+        {
+          "name": "New Boy",
+          "artist": "房东的猫 / 陈婧霏"
+        },
+        {
+          "name": "Normal No More",
+          "artist": "TYSM"
+        },
+        {
+          "name": "Numb (feat. Cour)",
+          "artist": "Arc North / Aaron Richards / New Beat Order / Cour"
+        },
+        {
+          "name": "Payphone",
+          "artist": "Maroon 5 / Wiz Khalifa"
+        },
+        {
+          "name": "Right Now (Na Na Na)",
+          "artist": "Akon"
+        },
+        {
+          "name": "Shots (Broiler Remix)",
+          "artist": "Imagine Dragons / Broiler"
+        },
+        {
+          "name": "Something Just Like This(Megamix)",
+          "artist": "AnDyWuMUSICLAND / Worry Free Studios"
+        },
+        {
+          "name": "Stronger (What Doesn't Kill You)",
+          "artist": "Kelly Clarkson"
+        },
+        {
+          "name": "Sugar",
+          "artist": "Maroon 5"
+        },
+        {
+          "name": "Sweet but Psycho",
+          "artist": "Vikki Leigh"
+        },
+        {
+          "name": "Tassel",
+          "artist": "Cymophane"
+        },
+        {
+          "name": "Tell Me（韩文版）",
+          "artist": "金润吉"
+        },
+        {
+          "name": "Trouble Maker(中文填词版)",
+          "artist": "洛少爷 / 封茗囧菌"
+        },
+        {
+          "name": "Umbrella (Matte Remix)",
+          "artist": "Matte / Ember Island"
+        },
+        {
+          "name": "Waiting For Love",
+          "artist": "Avicii"
+        },
+        {
+          "name": "Wake Me Up (Mellen Gi Remix)",
+          "artist": "Tommee Profitt / Fleurie / Mellen Gi"
+        },
+        {
+          "name": "Where Did U Go",
+          "artist": "G.E.M.邓紫棋"
+        },
+        {
+          "name": "Whistle",
+          "artist": "Laidback Luke / Tribbs / Bertie Scott"
+        },
+        {
+          "name": "Да Да Да（Da Da Da)(Remix by Mikis)",
+          "artist": "Tanir / Tyomcha / Mikis"
+        },
+        {
+          "name": "不再联系",
+          "artist": "夏天Alex"
+        },
+        {
+          "name": "不如",
+          "artist": "秦海清"
+        },
+        {
+          "name": "不如不见面",
+          "artist": "王极 / 梁淞Tsong"
+        },
+        {
+          "name": "不要说话",
+          "artist": "陈奕迅"
+        },
+        {
+          "name": "不过是一场山水一场空（DJ版）",
+          "artist": "R_浪浪"
+        },
+        {
+          "name": "丑八怪",
+          "artist": "薛之谦"
+        },
+        {
+          "name": "东京不太热",
+          "artist": "白允y"
+        },
+        {
+          "name": "丢了你(翻自 井胧)",
+          "artist": "Haagen Dazs / 马常九日 / AA / 4Dpocket"
+        },
+        {
+          "name": "丢了幸福的猪",
+          "artist": "姜玉阳"
+        },
+        {
+          "name": "从前说",
+          "artist": "小阿七"
+        },
+        {
+          "name": "倒带",
+          "artist": "蔡依林"
+        },
+        {
+          "name": "八年的爱",
+          "artist": "海上钢琴师"
+        },
+        {
+          "name": "冬眠",
+          "artist": "阿YueYue / 刘兆宇"
+        },
+        {
+          "name": "别怕我伤心(DJ版)",
+          "artist": "半吨兄弟"
+        },
+        {
+          "name": "单车",
+          "artist": "陈奕迅"
+        },
+        {
+          "name": "多余的解释",
+          "artist": "许嵩"
+        },
+        {
+          "name": "多想在平庸的生活拥抱你",
+          "artist": "隔壁老樊"
+        },
+        {
+          "name": "多想留在你身边",
+          "artist": "邓晃晃"
+        },
+        {
+          "name": "安和桥",
+          "artist": "宋冬野"
+        },
+        {
+          "name": "对不起, 我还爱你",
+          "artist": "回音哥"
+        },
+        {
+          "name": "差一步",
+          "artist": "魏大壮"
+        },
+        {
+          "name": "当妮走了",
+          "artist": "徐真真"
+        },
+        {
+          "name": "必杀技",
+          "artist": "古巨基"
+        },
+        {
+          "name": "成都",
+          "artist": "赵雷"
+        },
+        {
+          "name": "春风十里",
+          "artist": "鹿先森乐队"
+        },
+        {
+          "name": "曹操",
+          "artist": "林俊杰"
+        },
+        {
+          "name": "曾经你说 (Cover 赵乃吉)",
+          "artist": "珈珈"
+        },
+        {
+          "name": "曾经的你",
+          "artist": "许巍"
+        },
+        {
+          "name": "朵",
+          "artist": "赵雷"
+        },
+        {
+          "name": "沉醉的青丝",
+          "artist": "林宝馨"
+        },
+        {
+          "name": "爱丫爱丫",
+          "artist": "By2"
+        },
+        {
+          "name": "爱在不远处",
+          "artist": "李巍V仔"
+        },
+        {
+          "name": "爱如潮水",
+          "artist": "张信哲"
+        },
+        {
+          "name": "爱，存在（翻自 王靖雯）",
+          "artist": "小饭桶涵"
+        },
+        {
+          "name": "爱的哲学",
+          "artist": "牟凡"
+        },
+        {
+          "name": "爱的就是你",
+          "artist": "刘佳"
+        },
+        {
+          "name": "白羊",
+          "artist": "徐秉龙 / 沈以诚"
+        },
+        {
+          "name": "百年孤寂",
+          "artist": "王菲"
+        },
+        {
+          "name": "盗墓笔记·十年人间",
+          "artist": "李常超 (Lao乾妈)"
+        },
+        {
+          "name": "等我先说",
+          "artist": "夏天Alex"
+        },
+        {
+          "name": "等爱的玫瑰",
+          "artist": "凤凰传奇"
+        },
+        {
+          "name": "背对背拥抱",
+          "artist": "林俊杰"
+        },
+        {
+          "name": "被神明写的歌",
+          "artist": "K.D"
+        },
+        {
+          "name": "豆浆油条",
+          "artist": "林俊杰"
+        },
+        {
+          "name": "达尔文",
+          "artist": "蔡健雅"
+        },
+        {
+          "name": "P.S.我爱你",
+          "artist": "黄丽玲"
+        },
+        {
+          "name": "不分手的恋爱",
+          "artist": "汪苏泷"
+        },
+        {
+          "name": "断点",
+          "artist": "张敬轩"
+        },
+        {
+          "name": "暗恋过 结局呢",
+          "artist": "新街口组合 / Mona Lavi"
+        },
+        {
+          "name": "爱我还是他",
+          "artist": "陶喆"
+        },
+        {
+          "name": "错爱",
+          "artist": "阿里郎"
+        },
+        {
+          "name": "大鱼 (唱片版)",
+          "artist": "周深"
+        },
+        {
+          "name": "爱情转移",
+          "artist": "陈奕迅"
+        },
+        {
+          "name": "P.S.我爱你 (live)",
+          "artist": "黄丽玲"
+        },
+        {
+          "name": "爱得起 李溪芮 / 张彬彬",
+          "artist": "MIYA米娅 / RYO凉夜"
+        }
+      ]
+    }
+  ]
+}

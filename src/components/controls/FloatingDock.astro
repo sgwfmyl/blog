@@ -10,6 +10,7 @@ import I18nKey from "@/i18n/i18nKey";
 import { i18n } from "@/i18n/translation";
 import { getCategoryList, getTagList } from "@/utils/content-utils";
 import { getCategoryUrl, getTagUrl } from "@/utils/url-utils";
+import { getMergedMusicPlaylist } from "@/utils/music-playlist";
 
 interface Props {
 	headings?: MarkdownHeading[];
@@ -29,35 +30,17 @@ const announcementLink =
 		? announcementData.link
 		: undefined;
 
-// Fetch music playlist from bangumi (same source as music page)
-const metingApiBase = musicPlayerConfig.meting?.api
-	? musicPlayerConfig.meting.api.split("?")[0]
-	: "https://mu.tsh520.cn/api";
-const customBangumi = await getCollection("bangumi");
-const musicEntries = customBangumi
-	.filter((item) => item.data.category === "music")
-	.map((item) => {
-		const { data } = item;
-		const imageSrc =
-			typeof data.image === "string" ? data.image : data.image.src;
-		return {
-			name: data.title,
-			artist: data.artist || "",
-			pic: imageSrc,
-			url: data.audioUrl || "",
-			lrc: data.lrcUrl || "",
-			metingServer: data.metingServer || "",
-			metingId: data.metingId || "",
-			published: data.published,
-		};
-	})
-	.filter((item) => item.url || item.metingId)
-	.sort(
-		(a, b) =>
-			new Date(b.published || 0).getTime() -
-			new Date(a.published || 0).getTime(),
-	);
-const dockMusicPlaylist = JSON.stringify(musicEntries);
+// 音乐歌单数据源：music content collection（JSON），url 播放时由 MusicManager 懒解析
+const musicTracks = (await getMergedMusicPlaylist()).map((song) => ({
+	name: song.name,
+	artist: song.artist,
+	pic: "",
+	url: "",
+	lrc: "",
+	metingServer: song.server,
+	metingId: song.metingId,
+}));
+const dockMusicPlaylist = JSON.stringify(musicTracks);
 ---
 
 <div class="floating-dock" id="floating-dock">
@@ -191,7 +174,7 @@ const dockMusicPlaylist = JSON.stringify(musicEntries);
 {musicPlayerConfig.showInNavbar !== false && (
 <div class="dock-drawer dock-drawer-closed" id="dock-drawer-music">
   <div class="dock-drawer-title">[ {i18n(I18nKey.music)} ]</div>
-  <MusicPlayer externalPlaylist={dockMusicPlaylist} metingApiBase={metingApiBase} />
+  <MusicPlayer externalPlaylist={dockMusicPlaylist} />
 </div>
 )}
 

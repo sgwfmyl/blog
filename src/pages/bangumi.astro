@@ -25,11 +25,6 @@ const categoryMap = {
 		name: i18n(I18nKey.bangumiCategoryAnime),
 		subjectType: 2,
 	},
-	music: {
-		id: "music",
-		name: i18n(I18nKey.bangumiCategoryMusic),
-		subjectType: 3,
-	},
 	game: { id: "game", name: i18n(I18nKey.bangumiCategoryGame), subjectType: 4 },
 	real: { id: "real", name: i18n(I18nKey.bangumiCategoryReal), subjectType: 6 },
 };
@@ -132,7 +127,7 @@ mappedData.sort((a, b) => {
 const bangumiData: Record<string, UserSubjectCollection[]> = {};
 const tabs: Array<{ id: string; name: string; count: number }> = [];
 
-const displayCategories = ["anime", "book", "game", "music"];
+const displayCategories = ["anime", "book", "game"];
 
 for (const key of displayCategories) {
 	if (categoryMap[key as keyof typeof categoryMap]) {
