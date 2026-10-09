@@ -28,6 +28,17 @@ const commands = [
 		},
 	},
 	{
+		name: "moment",
+		desc: "创建一条说说（moments 动态）",
+		usage: "pnpm cli moment [可选正文]",
+		run: (args) =>
+			spawn(
+				"node",
+				[resolve(__dirname, "新建说说", "index.js"), ...args],
+				{ stdio: "inherit" },
+			),
+	},
+	{
 		name: "media",
 		desc: "下载影视封面 + 生成博客 md（TMDB）",
 		usage: 'pnpm cli media "片名" [--type=movie|tv] [-y]',
