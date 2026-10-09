@@ -14,7 +14,7 @@ const socialLinks = profileConfig.links
 	.filter((link) => link.url && link.url.trim() !== "")
 	.map((link) => ({
 		platform: link.name,
-		handle: link.name,
+		handle: link.handle || link.name,
 		note: link.url.startsWith("http") ? link.url : link.url,
 		href: link.url,
 		icon: link.icon,

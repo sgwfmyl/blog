@@ -6,46 +6,33 @@ import AboutTimeline from "@/components/about/AboutTimeline.astro";
 
 ## 关于我 / About Me
 
-你好呀，这里是<AboutProfileCard id="dumpling" trigger="lh" name="lh" role="技术博主 / 生活记录者" description="喜欢折腾技术，也认真记录生活。博客基于 Astro 与 Firefly 深度定制。" avatar="/assets/ziyuan/tx.webp" />的小窝。
+这里是<AboutProfileCard id="LH" trigger="LH" name="LH" role="摄影/游戏" description="要一起爬山吗？" avatar="/assets/ziyuan/avatar01.webp"/>的存档。
 
-如果你喜欢，那么欢迎来到我的世界！这里会分享技术、生活和一些有趣的想法。
+我在这里记录我的日常，也记录一些学习分享，用来留存记忆。
 
-本站是基于 **Firefly** 主题深度定制的个人博客，使用 **Astro** 构建，内容涵盖编程开发、工具推荐、ACG 与日常随想，记录成长的每一步。
+本站是基于 **<AboutProfileCard id="dumpling" trigger="团子和蛋糕" name="团子和蛋糕" role="技术博主 / 生活记录者" description="喜欢折腾技术，也认真记录生活。" avatar="/assets/ziyuan/tx.webp" />** fork修改的博客，使用 **Astro** 构建，用于记录日常。
 
 ### Q1：这个站点用到了哪些技术栈？
 
-这个小窝从 Firefly 模板 fork 后一点点魔改而来：骨架是 `Astro`，交互是 `Svelte`，样式是 `Tailwind CSS`，换页靠 `Swup` 做无缝过渡，搜索用 `Pagefind`。从排版到动效，每一块都是慢慢打磨出来的。
-
+采用静态框架搭建：骨架是 `Astro`，交互是 `Svelte`，样式是 `Tailwind CSS`，换页靠 `Swup` 做无缝过渡，搜索用 `Pagefind`。
 具体用了哪些技术，点开下面看看吧：
 
 <AboutTechStack />
 
-小卡片里藏着的，就是把这个小窝搭起来的工具与依赖。
+上面是主要的工具依赖，还有一些样式方案后期补充。
 
-这个小窝也不是一天建成的，下面这条时间线记录了关键的演进节点：
+下面这条时间线记录了关键的演进节点：
 
 <AboutTimeline />
 
 ### Q2：站长社交圈有哪些？
 
-如果你也喜欢折腾技术，或者只是想聊聊天、打个招呼，都可以通过下面的方式找到我：
+如果有什么疑问，都可以通过下面的方式找到我：
 
 <AboutSocialLinks />
-
-欢迎常来逛逛，也欢迎留下一个 `star` 或一条留言。
 
 ### Q3：站点的代码开源吗？
 
 <AboutChatBubble>开源的，代码就在 GitHub 上，欢迎围观、提 issue 或点个 star。</AboutChatBubble>
 
-::github{repo="tianshihao2003/dumplingandcakeblog"}
-
-<AboutChatBubble>AstrBot BlogWriter 是我为这座博客定制的微信写作插件，在微信里聊几句就能把文章发出去。</AboutChatBubble>
-
-::github{repo="tianshihao2003/AstrBot-BlogWriter"}
-
-<AboutChatBubble>它支持动态、笔记、足迹、友链、相册、账单与日程，图片自动传图床、坐标自动查高德，发布后自动走 GitHub 提交与部署，零手动操作。</AboutChatBubble>
-
-<AboutChatBubble>如果你喜欢这个主题的细节，也欢迎直接去 Firefly 上游看看原版实现。</AboutChatBubble>
-
-::github{repo="CuteLeaf/Firefly"}
+::github{repo="sgwfmyl/blog"}

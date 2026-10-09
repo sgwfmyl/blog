@@ -88,10 +88,13 @@
 }
 
 .about-social-links__note {
+	overflow: hidden;
 	margin-top: 0.125rem;
 	color: var(--content-meta);
 	font-size: 0.75rem;
 	line-height: 1.4;
+	text-overflow: ellipsis;
+	white-space: nowrap;
 }
 
 .about-social-links__arrow {

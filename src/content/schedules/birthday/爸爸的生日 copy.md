@@ -1,12 +1,12 @@
 ---
-title: "二姐生日"
+title: "爸爸的生日"
 allDay: true
 priority: "none"
 status: "todo"
 repeat: "每年"
 category: "birthday"
-person: "家人"
+person: "爸爸"
 isLunar: true
-lunarMonth: 4
-lunarDay: 4
+lunarMonth: 1
+lunarDay: 21
 ---

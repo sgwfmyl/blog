@@ -18,7 +18,7 @@ export const profileConfig: ProfileConfig = {
 	displayName: "moment",
 
 	// 职业/身份标签
-	occupation: "[生活记录者]",
+	occupation: "游戏/摄影",
 
 	// 个人签名（支持多条，会循环打字+删除效果）
 	bio: ["每一天都有趣有得！"],
@@ -33,26 +33,30 @@ export const profileConfig: ProfileConfig = {
 		{
 			name: "QQ",
 			icon: "simple-icons:tencentqq",
-      		url: 'https://qm.qq.com/q/FjkXxV9Hmo',
+	      	url: 'https://qm.qq.com/q/FjkXxV9Hmo',
 			showName: false,
+			handle: "博客联合国理事会",
 		},
 		{
 			name: "GitHub",
 			icon: "simple-icons:github",
-      		url: 'https://github.com/sgwfmyl',
+	      	url: 'https://github.com/sgwfmyl',
 			showName: false,
+			handle: "sgwfmyl",
 		},
 		{
 			name: "Email",
 			icon: "material-symbols:mail-outline",
-      		url: 'mailto:sgwfmyl@gmail.com',
+	      	url: 'mailto:lh@5484826.xyz',
 			showName: false,
+			handle: "lh@5484826.xyz",
 		},
 		{
 			name: "Bilibili",
 			icon: "simple-icons:bilibili",
-      		url: 'https://space.bilibili.com/3546688272730705?spm_id_from=333.1007.0.0',
+	      	url: 'https://space.bilibili.com/3546688272730705?spm_id_from=333.1007.0.0',
 			showName: false,
+			handle: "要去爬山",
 		},
 	],
 };

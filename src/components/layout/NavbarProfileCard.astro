@@ -327,7 +327,7 @@ const events = [
 							rel={site.external ? "noopener noreferrer" : undefined}
 						>
 							{site.icon &&
-								(site.icon.startsWith("http") ? (
+									(/^(https?:|\/)/.test(site.icon) ? (
 									<img
 										src={site.icon}
 										alt=""
