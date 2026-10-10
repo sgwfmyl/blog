@@ -135,21 +135,8 @@ const noteCards = (sortedEntries || []).map((e) => {
 			.split("/")
 			.pop()
 			?.replace(/\.(md|mdx)$/, "") || "note";
-	const rawImages =
-		(
-			e.data as unknown as {
-				images?: string | string[];
-				image?: string | string[];
-			}
-		).images ??
-		(
-			e.data as unknown as {
-				images?: string | string[];
-				image?: string | string[];
-			}
-		).image ??
-		"";
-	const images = normalizeImages(rawImages as string | string[]);
+	const rawImages = e.data.images ?? "";
+	const images = normalizeImages(rawImages);
 	const rawBody = (e.body || "").trim();
 	const textContent = rawBody || (e.data.summary as string) || "";
 	const date = e.data.date instanceof Date ? e.data.date : null;

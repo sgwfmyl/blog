@@ -181,13 +181,8 @@ const notebooksCollection = defineCollection({
 		name: z.string().optional().default("未命名日记本"),
 		cover: z.string().optional().default(""),
 		summary: z.string().optional().default(""),
-		// 新字段：对齐动态 images，支持 string|string[]（逗号/分号分隔的字符串也会在页面层归一为数组）
+		// 配图列表：对齐动态 images，支持 string|string[]（逗号/分号分隔的字符串也会在页面层归一为数组）
 		images: z
-			.union([z.string(), z.array(z.string())])
-			.optional()
-			.default(""),
-		// 兼容旧 image 字段：存量数据未迁移时仍可读取
-		image: z
 			.union([z.string(), z.array(z.string())])
 			.optional()
 			.default(""),
