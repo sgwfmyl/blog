@@ -169,15 +169,6 @@ export function normalizeMomentTimestamp(value: number): number {
 	return numeric < 1_000_000_000_000 ? numeric * 1000 : numeric;
 }
 
-function htmlToPlainText(value: string): string {
-	if (typeof DOMParser === "undefined") return value;
-	return (
-		new DOMParser()
-			.parseFromString(value, "text/html")
-			.body.textContent?.trim() ?? ""
-	);
-}
-
 function normalizeMomentLink(
 	value: string | null | undefined,
 ): string | undefined {
@@ -300,7 +291,7 @@ export function normalizeMomentComment(
 	comment: WalineComment,
 	adminNicknames?: Set<string>,
 ): MomentChatMessage {
-	const raw = comment.orig || htmlToPlainText(comment.comment);
+	const raw = comment.orig || comment.comment;
 	const parsed = parseMomentMessageBody(raw);
 
 	const nick = comment.nick || "匿名访客";

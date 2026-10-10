@@ -52,7 +52,9 @@ EdgeOne Pages 托管（blog.tsh520.cn 直接绑定 Pages 项目）
 | `PUBLIC_WALINE_SERVER` | Waline 评论后端地址 |
 | `PUBLIC_IMAGEBED_URL` | 图床地址 |
 | `PUBLIC_IMAGEBED_AUTH_CODE` | 图床上传鉴权码 |
-| `PUBLIC_IMAGEBED_FOLDER` | 图床上传目录 |
+| `PUBLIC_IMAGEBED_CHANNEL` | 留言图片上传渠道（telegram/cfr2/huggingface 等），空则用图床默认 |
+| `PUBLIC_IMAGEBED_CHANNEL_NAME` | 渠道名称（多渠道场景），空则不传 |
+| `PUBLIC_IMAGEBED_UPLOAD_FOLDER` | 留言图片上传目录，空则传根目录 |
 | `PUBLIC_IMAGEBED_API_TOKEN` | 图床 API Token |
 | `PUBLIC_TTS_SERVER` | 文章朗读 TTS 服务地址，留空降级浏览器系统语音 |
 

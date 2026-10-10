@@ -18,6 +18,7 @@ import type {
 	GuestbookProfile,
 } from "@/types/guestbook-chat";
 import {
+	htmlToPlainText,
 	loadGuestbookEmojiPacks,
 	uploadGuestbookImage,
 	WALINE_INLINE_IMAGE_SIZE_LIMIT,
@@ -454,7 +455,7 @@ async function handleImageSelection(event: Event) {
 			<Reply size={16} aria-hidden="true" />
 			<div>
 				<span>回复 @{replyTarget.nick}</span>
-				<small>{replyTarget.body.slice(0, 80)}</small>
+				<small>{htmlToPlainText(replyTarget.body).slice(0, 80)}</small>
 			</div>
 			<button type="button" onclick={onReplyCancel} aria-label="取消引用" title="取消引用">
 				<X size={18} aria-hidden="true" />

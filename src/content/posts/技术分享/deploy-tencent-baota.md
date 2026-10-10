@@ -60,7 +60,7 @@ description: 介绍Waline如何从 Vercel 迁移到腾讯云服务器。
 
 ### 1.3 域名解析
 
-将你的域名（如 `waline.tsh520.cn`）A 记录指向服务器公网 IP。
+将你的域名（如 `comment.5484826.xyz`）A 记录指向服务器公网 IP。
 
 ---
 

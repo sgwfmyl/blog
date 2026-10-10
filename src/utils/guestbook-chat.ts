@@ -93,6 +93,22 @@ export async function loadGuestbookEmojiPacks(
 	return packs;
 }
 
+function resolveImgbedSrc(payload: unknown, uploadURL: string): string {
+	if (!Array.isArray(payload)) return "";
+	for (const item of payload) {
+		if (isRecord(item) && typeof item.src === "string" && item.src) {
+			if (/^https?:\/\//u.test(item.src)) return item.src;
+			try {
+				const origin = new URL(uploadURL).origin;
+				return `${origin}${item.src.startsWith("/") ? item.src : `/${item.src}`}`;
+			} catch {
+				return item.src;
+			}
+		}
+	}
+	return "";
+}
+
 export async function uploadGuestbookImage(
 	file: File,
 	uploadURL: string,
@@ -115,17 +131,42 @@ export async function uploadGuestbookImage(
 	}
 	const formData = new FormData();
 	formData.append("file", file);
+	formData.append("name", file.name);
 
-	const response = await fetch(uploadURL, {
+	// 图床渠道、渠道名称与上传目录从环境变量读取，拼进 query 参数
+	const channel = import.meta.env.PUBLIC_IMAGEBED_CHANNEL?.trim();
+	const channelName = import.meta.env.PUBLIC_IMAGEBED_CHANNEL_NAME?.trim();
+	const folder = import.meta.env.PUBLIC_IMAGEBED_UPLOAD_FOLDER?.trim();
+	let targetURL = uploadURL;
+	if (channel || channelName || folder) {
+		const url = new URL(uploadURL);
+		if (channel) url.searchParams.set("uploadChannel", channel);
+		if (channelName) url.searchParams.set("channelName", channelName);
+		if (folder) url.searchParams.set("uploadFolder", folder);
+		targetURL = url.toString();
+	}
+
+	// CloudFlare ImgBed 上传鉴权：Bearer API Token + AUTH_CODE 作为 password
+	const apiToken = import.meta.env.PUBLIC_IMAGEBED_API_TOKEN ?? "";
+	const authCode = import.meta.env.PUBLIC_IMAGEBED_AUTH_CODE ?? "";
+	if (authCode) formData.append("password", authCode);
+	const headers: Record<string, string> = { Accept: "application/json" };
+	if (apiToken) headers.Authorization = `Bearer ${apiToken}`;
+
+	const response = await fetch(targetURL, {
 		method: "POST",
-		headers: { Accept: "application/json" },
+		headers,
 		body: formData,
 	});
 	const payload: unknown = await response.json().catch(() => null);
+	const imgbedUrl = resolveImgbedSrc(payload, uploadURL);
+
+	// Waline 兼容：{data:{links:{url}}} / {data:{url}} / {url}
 	const data =
 		isRecord(payload) && isRecord(payload.data) ? payload.data : null;
 	const links = data && isRecord(data.links) ? data.links : null;
 	const url =
+		imgbedUrl ||
 		(links && typeof links.url === "string" ? links.url : "") ||
 		(data && typeof data.url === "string" ? data.url : "") ||
 		(isRecord(payload) && typeof payload.url === "string" ? payload.url : "");
@@ -190,7 +231,7 @@ export function parseGuestbookMessageBody(raw: string): {
 	};
 }
 
-function htmlToPlainText(value: string): string {
+export function htmlToPlainText(value: string): string {
 	if (typeof DOMParser === "undefined") return value;
 	return (
 		new DOMParser()
@@ -227,9 +268,7 @@ export function normalizeGuestbookComment(
 	comment: WalineComment,
 	adminNicknames?: Set<string>,
 ): GuestbookChatMessage {
-	const parsed = parseGuestbookMessageBody(
-		comment.orig || htmlToPlainText(comment.comment),
-	);
+	const parsed = parseGuestbookMessageBody(comment.orig || comment.comment);
 
 	const nick = comment.nick || "匿名访客";
 	const isAdmin =

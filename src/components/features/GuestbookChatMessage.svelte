@@ -15,7 +15,7 @@ import {
 } from "lucide-svelte";
 import type { GuestbookChatMessage } from "@/types/guestbook-chat";
 import type { MomentQuote } from "@/types/moment-chat";
-import { getGuestbookInitials } from "@/utils/guestbook-chat";
+import { getGuestbookInitials, htmlToPlainText } from "@/utils/guestbook-chat";
 import { renderGuestbookMessage } from "@/utils/guestbook-chat-markup";
 
 interface Props {
@@ -72,14 +72,16 @@ function formatMomentQuoteDate(value: string): string {
 
 const quotePreview = $derived(
 	referencedMessage
-		? referencedMessage.body.replace(/\s+/gu, " ").slice(0, 72)
+		? htmlToPlainText(referencedMessage.body)
+				.replace(/\s+/gu, " ")
+				.slice(0, 72)
 		: "原消息暂未加载",
 );
 const renderedBody = $derived(renderGuestbookMessage(message.body));
 
 async function copyMessage() {
 	try {
-		await navigator.clipboard.writeText(message.body);
+		await navigator.clipboard.writeText(htmlToPlainText(message.body));
 		copied = true;
 		window.setTimeout(() => (copied = false), 1600);
 	} catch {

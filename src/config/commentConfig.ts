@@ -17,6 +17,10 @@ export const commentConfig: CommentConfig = {
 	waline: {
 		// waline 后端服务地址
 		serverURL: import.meta.env.PUBLIC_WALINE_SERVER || "",
+		// 留言图片上传接口：指向已部署的 CloudFlare ImgBed（未配置则回落 Waline 原生 128KB base64 内联）
+		imageUploadURL: import.meta.env.PUBLIC_IMAGEBED_URL
+			? `${String(import.meta.env.PUBLIC_IMAGEBED_URL).replace(/\/+$/u, "")}/upload`
+			: "",
 		// 设置 Waline 评论系统语言
 		lang: "zh-CN",
 		// 表情包

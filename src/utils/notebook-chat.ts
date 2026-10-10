@@ -170,15 +170,6 @@ export function normalizeNotebookTimestamp(value: number): number {
 	return numeric < 1_000_000_000_000 ? numeric * 1000 : numeric;
 }
 
-function htmlToPlainText(value: string): string {
-	if (typeof DOMParser === "undefined") return value;
-	return (
-		new DOMParser()
-			.parseFromString(value, "text/html")
-			.body.textContent?.trim() ?? ""
-	);
-}
-
 function normalizeNotebookLink(
 	value: string | null | undefined,
 ): string | undefined {
@@ -301,7 +292,7 @@ export function normalizeNotebookComment(
 	comment: WalineComment,
 	adminNicknames?: Set<string>,
 ): NotebookChatMessage {
-	const raw = comment.orig || htmlToPlainText(comment.comment);
+	const raw = comment.orig || comment.comment;
 	const parsed = parseNotebookMessageBody(raw);
 
 	const nick = comment.nick || "匿名访客";
