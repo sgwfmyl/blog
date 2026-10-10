@@ -206,6 +206,34 @@ export function parseMomentQuote(comment: string): MomentQuote | null {
 	return { id, published: published ?? "", excerpt: excerpt ?? "" };
 }
 
+function decodeHtmlEntities(value: string): string {
+	return value
+		.replaceAll("&quot;", '"')
+		.replaceAll("&apos;", "'")
+		.replaceAll("&gt;", ">")
+		.replaceAll("&lt;", "<")
+		.replaceAll("&amp;", "&");
+}
+
+/**
+ * 从 Waline 渲染后的 HTML 中提取 MOMENT 引用。
+ * 游客请求不返回原始 markdown（`orig` 字段缺失），正文是服务端渲染的 HTML：
+ * 开头的 `>>` 被 blockquote 语法吞掉、`>`/`<` 被实体转义，形如
+ * `MOMENT&gt;&gt;{id}||{published}||{excerpt}&lt;&lt;MOMENT&lt;&lt;`。
+ */
+export function parseMomentQuoteFromHtml(
+	raw: string,
+): { quote: MomentQuote; markerHtml: string } | null {
+	const match = raw.match(/MOMENT&gt;&gt;([\s\S]*?)&lt;&lt;MOMENT&lt;&lt;/);
+	if (!match) return null;
+	const [id, published, excerpt] = decodeHtmlEntities(match[1]).split("||");
+	if (!id) return null;
+	return {
+		quote: { id, published: published ?? "", excerpt: excerpt ?? "" },
+		markerHtml: match[0],
+	};
+}
+
 function decodeReplyNick(value: string): string {
 	try {
 		return decodeURIComponent(value);
@@ -257,6 +285,17 @@ export function parseMomentMessageBody(raw: string): {
 				quote = parseMomentQuote(rest);
 				rest = rest.replace(MOMENT_QUOTE_RE, "").trim();
 			}
+		}
+	}
+	// 游客请求拿不到原始 markdown（`orig` 缺失），正文是渲染后的 HTML，引用前缀会被转义/包进 blockquote
+	if (!quote) {
+		const htmlQuote = parseMomentQuoteFromHtml(rest);
+		if (htmlQuote) {
+			quote = htmlQuote.quote;
+			rest = rest
+				.replace(`${htmlQuote.markerHtml}<br>`, "")
+				.replace(htmlQuote.markerHtml, "")
+				.trim();
 		}
 	}
 	return {

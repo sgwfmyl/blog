@@ -33,7 +33,7 @@ export const commentConfig: CommentConfig = {
 		//   'enable'   —— 默认，允许访客匿名评论和用第三方 OAuth 登录评论，兼容性最佳。
 		//   'force'    —— 强制必须登录后才能评论，适合严格社区，关闭匿名评论。
 		//   'disable'  —— 禁止所有登录和 OAuth，仅允许匿名评论（填写昵称/邮箱），适用于极简留言。
-		login: "enable",
+		login: "force",
 		// 是否启用文章访问量统计功能
 		visitorCount: true,
 	},

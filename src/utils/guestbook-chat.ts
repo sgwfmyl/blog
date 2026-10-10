@@ -4,6 +4,11 @@ import type {
 	GuestbookEmojiPack,
 	GuestbookImageAttachment,
 } from "@/types/guestbook-chat";
+import {
+	MOMENT_QUOTE_RE,
+	parseMomentQuote,
+	parseMomentQuoteFromHtml,
+} from "@/utils/moment-chat";
 
 const REPLY_MARKER = /^<!--guestbook-reply:(\d+):([^>]*)-->\s*/u;
 const MARKDOWN_IMAGE = /!\[[^\]]*\]\([^\s)]+(?:\s+"[^"]*")?\)/gu;
@@ -270,6 +275,23 @@ export function normalizeGuestbookComment(
 ): GuestbookChatMessage {
 	const parsed = parseGuestbookMessageBody(comment.orig || comment.comment);
 
+	let momentQuote = parseMomentQuote(parsed.body);
+	let body = momentQuote
+		? parsed.body.replace(MOMENT_QUOTE_RE, "").trim()
+		: parsed.body;
+
+	// 游客请求拿不到原始 markdown（`orig` 缺失），正文是渲染后的 HTML，引用前缀会被转义/包进 blockquote
+	if (!momentQuote) {
+		const htmlQuote = parseMomentQuoteFromHtml(body);
+		if (htmlQuote) {
+			momentQuote = htmlQuote.quote;
+			body = body
+				.replace(`${htmlQuote.markerHtml}<br>`, "")
+				.replace(htmlQuote.markerHtml, "")
+				.trim();
+		}
+	}
+
 	const nick = comment.nick || "匿名访客";
 	const isAdmin =
 		comment.type === "administrator" || isAdminNick(nick, adminNicknames);
@@ -281,13 +303,14 @@ export function normalizeGuestbookComment(
 		nick,
 		avatar: comment.avatar || "",
 		link: normalizeGuestbookLink(comment.link),
-		body: parsed.body,
+		body,
 		createdAt: normalizeGuestbookTimestamp(comment.time),
 		browser: comment.browser,
 		os: comment.os,
 		addr: comment.addr,
 		label: comment.label,
 		isAdmin,
+		momentQuote,
 		replyToId: parsed.replyToId,
 		replyToNick: parsed.replyToNick,
 		status: comment.status,

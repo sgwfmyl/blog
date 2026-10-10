@@ -1,5 +1,7 @@
 import type { UserInfo } from "@waline/api";
 
+import type { MomentQuote } from "@/types/moment-chat";
+
 export type GuestbookMessageLocalState = "sending" | "failed";
 
 export type GuestbookAuthUser = UserInfo & {
@@ -42,6 +44,7 @@ export interface GuestbookChatMessage {
 	addr?: string;
 	label?: string;
 	isAdmin: boolean;
+	momentQuote?: MomentQuote | null;
 	replyToId?: string;
 	replyToNick?: string;
 	status?: string;
