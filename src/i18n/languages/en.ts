@@ -197,9 +197,7 @@ export const en: Translation = {
 	// Bangumi Categories
 	[Key.bangumiCategoryBook]: "Book",
 	[Key.bangumiCategoryAnime]: "Anime",
-	[Key.bangumiCategoryMusic]: "Music",
 	[Key.bangumiCategoryGame]: "Game",
-	[Key.bangumiCategoryReal]: "Real",
 
 	// Bangumi Data Update
 	[Key.bangumiLastUpdated]: "Data updated at",

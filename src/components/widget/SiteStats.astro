@@ -37,14 +37,8 @@ const animeCount = bangumi.filter(
 const bookCount = bangumi.filter(
 	(item) => item.data.category === "book",
 ).length;
-const musicCount = bangumi.filter(
-	(item) => item.data.category === "music",
-).length;
 const gameCount = bangumi.filter(
 	(item) => item.data.category === "game",
-).length;
-const realCount = bangumi.filter(
-	(item) => item.data.category === "real",
 ).length;
 
 // 统计生活数据
@@ -56,10 +50,10 @@ const placesCount = lifeEntries.filter((entry) =>
 	isIn(entry.id, "places"),
 ).length;
 
-// 记录次数 = 影视 + 书籍 + 游戏 + 音乐 + 现实 + 足迹
+// 记录次数 = 影视 + 书籍 + 游戏 + 足迹
 // （笔记本相关数量按加密口径不计入，与 LifeStats 一致）
 const recordCount =
-	animeCount + bookCount + gameCount + musicCount + realCount + placesCount;
+	animeCount + bookCount + gameCount + placesCount;
 
 // 计算总字数（中文字符 + 英文字母，去掉代码块/内联代码/空白）
 function countWords(text: string | undefined): number {

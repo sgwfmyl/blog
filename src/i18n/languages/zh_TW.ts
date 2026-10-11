@@ -195,9 +195,7 @@ export const zh_TW: Translation = {
 	// 番組分類
 	[Key.bangumiCategoryBook]: "書籍",
 	[Key.bangumiCategoryAnime]: "動畫",
-	[Key.bangumiCategoryMusic]: "音樂",
 	[Key.bangumiCategoryGame]: "遊戲",
-	[Key.bangumiCategoryReal]: "三次元",
 
 	// 番組數據更新
 	[Key.bangumiLastUpdated]: "數據更新於",

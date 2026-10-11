@@ -152,9 +152,9 @@ const getDynamicNavBarConfig = (): NavBarConfig => {
 
 			// 友链
 			LinkPreset.Friends,
-			
-			// 赞助
-			...(siteConfig.pages.sponsor ? [LinkPreset.Sponsor] : []),
+
+			// 赞助（已隐藏入口，直接访问 /sponsor/ 仍可打开页面）
+			//...(siteConfig.pages.sponsor ? [LinkPreset.Sponsor] : []),
 		],
 	});
 

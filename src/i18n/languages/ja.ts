@@ -198,9 +198,7 @@ export const ja: Translation = {
 	// バングミカテゴリ
 	[Key.bangumiCategoryBook]: "本",
 	[Key.bangumiCategoryAnime]: "アニメ",
-	[Key.bangumiCategoryMusic]: "音楽",
 	[Key.bangumiCategoryGame]: "ゲーム",
-	[Key.bangumiCategoryReal]: "実写",
 
 	// バングミデータ更新
 	[Key.bangumiLastUpdated]: "データ更新",

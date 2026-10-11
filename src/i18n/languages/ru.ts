@@ -199,9 +199,7 @@ export const ru: Translation = {
 	// Категории Бангуми
 	[Key.bangumiCategoryBook]: "Книга",
 	[Key.bangumiCategoryAnime]: "Аниме",
-	[Key.bangumiCategoryMusic]: "Музыка",
 	[Key.bangumiCategoryGame]: "Игра",
-	[Key.bangumiCategoryReal]: "Реальный",
 
 	// Обновление данных Бангуми
 	[Key.bangumiLastUpdated]: "Данные обновлены",

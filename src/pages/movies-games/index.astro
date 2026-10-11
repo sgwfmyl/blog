@@ -64,7 +64,7 @@ interface MgItem {
 }
 
 const mgItems: MgItem[] = customBangumi
-	.filter((item) => ["anime", "game", "real"].includes(item.data.category))
+	.filter((item) => ["anime", "game"].includes(item.data.category))
 	.map((item) => {
 		const { data, id } = item;
 		const imageSrc =

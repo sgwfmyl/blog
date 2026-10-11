@@ -77,7 +77,7 @@ const bangumiCollection = defineCollection({
 			title: z.string(),
 			name_cn: z.string().optional(),
 			category: z
-				.enum(["book", "anime", "music", "game", "real"])
+				.enum(["book", "anime", "game"])
 				.default("anime"),
 			subcategory: z.enum(["movie", "tv", "anime", "documentary"]).optional(),
 			status: z.number().min(1).max(5).default(2), // 1: 想看, 2: 看过, 3: 在看, 4: 搁置, 5: 抛弃
@@ -87,12 +87,6 @@ const bangumiCollection = defineCollection({
 			comment: z.string().optional(),
 			tags: z.array(z.string()).optional().default([]),
 			published: z.date().optional(),
-			// Music-specific fields
-			artist: z.string().optional(),
-			audioUrl: z.string().optional(),
-			lrcUrl: z.string().optional(),
-			metingServer: z.string().optional(),
-			metingId: z.string().optional(),
 		}),
 });
 

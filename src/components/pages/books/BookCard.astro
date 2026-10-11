@@ -24,17 +24,17 @@ const sc = statusConfig[status] || { color: "#999", label: "" };
 const scoreText = score > 0 ? `${score}`.replace(/\.0$/, "") : "";
 ---
 
-<a href={link} class="nb-book group" title={title}>
-	<div class="nb-book-inner">
-		<div class="nb-book-cover">
-			<div class="nb-book-illustration">
+<a href={link} class="bk-card group" title={title}>
+	<div class="bk-card-inner">
+		<div class="bk-card-cover">
+			<div class="bk-card-illustration">
 				<img
 					src={coverImage}
 					alt={title}
-					class="nb-book-illustration-img"
+					class="bk-card-illustration-img"
 					loading="lazy"
 				/>
-				<div class="nb-book-bind" aria-hidden="true"></div>
+				<div class="bk-card-bind" aria-hidden="true"></div>
 
 				<!-- Status label top-left -->
 				<span class="book-status-tag" style={`background: ${sc.color};`}>
@@ -50,15 +50,18 @@ const scoreText = score > 0 ? `${score}`.replace(/\.0$/, "") : "";
 				)}
 			</div>
 		</div>
-		<div class="nb-book-pages" aria-hidden="true"></div>
-		<div class="nb-book-back" aria-hidden="true"></div>
+		<div class="bk-card-pages" aria-hidden="true"></div>
+		<div class="bk-card-back" aria-hidden="true"></div>
 	</div>
 </a>
 
 <style>
 	/* ===== 3D 书本卡片（复用笔记本页造型，封面整铺无文字区）===== */
+	/* 类名前缀用 bk-card-*（books 专用），避免与 notebooks.css 全局同名
+	   .nb-book-* 类冲突：Astro 7 作用域样式是 :where(.astro-xxx) 零特异性，
+	   同名规则会被后加载的全局样式覆盖（曾导致封面只显示上方 56% 被裁切） */
 	/* --book-depth 由 Bookshelf 的 --shelf-book-depth 变量（继承）覆盖 */
-	.nb-book {
+	.bk-card {
 		--book-depth: var(--shelf-book-depth, 42px);
 		display: block;
 		width: 100%;
@@ -68,19 +71,19 @@ const scoreText = score > 0 ? `${score}`.replace(/\.0$/, "") : "";
 	}
 
 /* 书体：3D 旋转层。比例取微信读书封面实测 250×360（25/36），保证封面整图无裁剪 */
-.nb-book-inner {
+.bk-card-inner {
 	position: relative;
 	width: 100%;
 	aspect-ratio: 25 / 36;
 		transform-style: preserve-3d;
 		transition: transform 550ms ease-out;
 	}
-	.nb-book:hover .nb-book-inner {
+	.bk-card:hover .bk-card-inner {
 		transform: rotateY(-30deg) scale(1.09) translateX(-14px);
 	}
 
 	/* 书本主体：白色纸张为基底 */
-	.nb-book-cover {
+	.bk-card-cover {
 		position: absolute;
 		inset: 0;
 		display: flex;
@@ -96,26 +99,25 @@ const scoreText = score > 0 ? `${score}`.replace(/\.0$/, "") : "";
 			inset 0 1.8px 1.8px hsla(0, 0%, 100%, 0.6),
 			inset 3.6px 0 3.6px rgba(0, 0, 0, 0.08);
 	}
-	:root.dark .nb-book-cover {
+	:root.dark .bk-card-cover {
 		background: #171717;
 		border-color: rgba(255, 255, 255, 0.1);
 	}
 
 /* 封皮：封面图整铺（无白色文字区）
-   占位背景必须显式声明：notebooks.css 全局给同名类设了 --book-color 红色底，
-   不覆盖会在封面图加载前透出红色 */
-.nb-book-illustration {
+   占位背景必须显式声明：笔记本卡片有同款浅灰渐变，不覆盖会在封面图加载前透出底色 */
+.bk-card-illustration {
 	position: relative;
 	flex: 1 1 auto;
 	min-height: 0;
 	overflow: hidden;
 	background: linear-gradient(135deg, oklch(0.93 0 0), oklch(0.87 0 0));
 }
-:root.dark .nb-book-illustration {
+:root.dark .bk-card-illustration {
 	background: linear-gradient(135deg, oklch(0.25 0 0), oklch(0.19 0 0));
 }
 
-	.nb-book-illustration-img {
+	.bk-card-illustration-img {
 		width: 100%;
 		height: 100%;
 		object-fit: cover;
@@ -125,7 +127,7 @@ const scoreText = score > 0 ? `${score}`.replace(/\.0$/, "") : "";
 	}
 
 	/* 书脊绑带（插画区左侧高光竖条） */
-	.nb-book-bind {
+	.bk-card-bind {
 		position: absolute;
 		top: 0;
 		bottom: 0;
@@ -141,7 +143,7 @@ const scoreText = score > 0 ? `${score}`.replace(/\.0$/, "") : "";
 	}
 
 	/* 右侧纸张厚度（白色纸纹，rotateY(90deg) 立起，left 自适应书宽） */
-	.nb-book-pages {
+	.bk-card-pages {
 		position: absolute;
 		top: 3px;
 		left: calc(100% - var(--book-depth) / 2 - 3px);
@@ -152,7 +154,7 @@ const scoreText = score > 0 ? `${score}`.replace(/\.0$/, "") : "";
 	}
 
 	/* 封底（平移到书厚度的后方）——灰白色纸质封底 */
-	.nb-book-back {
+	.bk-card-back {
 		position: absolute;
 		inset: 0;
 		border-radius: 0.375rem;
@@ -160,7 +162,7 @@ const scoreText = score > 0 ? `${score}`.replace(/\.0$/, "") : "";
 		box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.18);
 		transform: translateZ(calc(-1 * var(--book-depth)));
 	}
-	:root.dark .nb-book-back {
+	:root.dark .bk-card-back {
 		background: #3a3a3a;
 		box-shadow: inset 0 0 6px rgba(255, 255, 255, 0.08);
 	}

@@ -167,8 +167,6 @@ export async function getArchiveList(): Promise<ArchiveItem[]> {
 				.replace(/\.(md|mdx|markdown)$/i, "");
 			if (b.data.category === "book") {
 				link = `/books/${slug}/`;
-			} else if (b.data.category === "music") {
-				link = "/music/";
 			} else {
 				link = "/movies-games/";
 			}

@@ -194,9 +194,7 @@ export const zh_CN: Translation = {
 	// 番组分类
 	[Key.bangumiCategoryBook]: "书籍",
 	[Key.bangumiCategoryAnime]: "影视",
-	[Key.bangumiCategoryMusic]: "音乐",
 	[Key.bangumiCategoryGame]: "游戏",
-	[Key.bangumiCategoryReal]: "三次元",
 
 	// 番组数据更新
 	[Key.bangumiLastUpdated]: "上次更新：",

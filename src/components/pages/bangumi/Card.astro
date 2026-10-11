@@ -34,17 +34,14 @@ const getStatusText = (type: number) => {
 	switch (type) {
 		case 1:
 			if (subjectType === 1) return i18n(I18nKey.bangumiStatusBookWish);
-			if (subjectType === 3) return i18n(I18nKey.bangumiStatusMusicWish);
 			if (subjectType === 4) return i18n(I18nKey.bangumiStatusGameWish);
 			return i18n(I18nKey.bangumiStatusWish);
 		case 2:
 			if (subjectType === 1) return i18n(I18nKey.bangumiStatusBookRead);
-			if (subjectType === 3) return i18n(I18nKey.bangumiStatusMusicListened);
 			if (subjectType === 4) return i18n(I18nKey.bangumiStatusGamePlayed);
 			return i18n(I18nKey.bangumiStatusWatched);
 		case 3:
 			if (subjectType === 1) return i18n(I18nKey.bangumiStatusBookReading);
-			if (subjectType === 3) return i18n(I18nKey.bangumiStatusMusicListening);
 			if (subjectType === 4) return i18n(I18nKey.bangumiStatusGamePlaying);
 			return i18n(I18nKey.bangumiStatusWatching);
 		case 4:
@@ -152,9 +149,6 @@ const subType = item.subject_type;
 	}
 	.bm-card[data-type="4"] .bm-cover {
 		aspect-ratio: 3/2;
-	}
-	.bm-card[data-type="3"] .bm-cover {
-		aspect-ratio: 1/1;
 	}
 	.bm-img {
 		width: 100%;

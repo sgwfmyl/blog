@@ -207,9 +207,7 @@ enum I18nKey {
 	// 番组分类
 	bangumiCategoryBook = "bangumiCategoryBook",
 	bangumiCategoryAnime = "bangumiCategoryAnime",
-	bangumiCategoryMusic = "bangumiCategoryMusic",
 	bangumiCategoryGame = "bangumiCategoryGame",
-	bangumiCategoryReal = "bangumiCategoryReal",
 
 	// 番组数据更新
 	bangumiLastUpdated = "bangumiLastUpdated",
