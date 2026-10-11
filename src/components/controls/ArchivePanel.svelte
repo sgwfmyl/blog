@@ -228,10 +228,9 @@ function groupByYearMonth(ps: Post[]): YearGroup[] {
 }
 
 function getItemUrl(post: Post): string {
-	// 动态详情页路由是 /moments/{id}/（src/pages/moments/[slug].astro），
-	// 外部动态（ext- 前缀）无详情页，指向动态列表
+	// 动态没有独立详情页，统一指向动态列表（普通说说直接跳 /moments/）
 	if (post.type === "moment") {
-		return post.id.startsWith("ext-") ? "/moments/" : `/moments/${post.id}/`;
+		return "/moments/";
 	}
 	if (post.type && post.type !== "post") {
 		return (
