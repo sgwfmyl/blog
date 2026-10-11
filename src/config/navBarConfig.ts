@@ -70,7 +70,7 @@ const getDynamicNavBarConfig = (): NavBarConfig => {
 				icon: "material-symbols:menu-book-outline",
 			},
 			// 朋友圈
-			LinkPreset.Circle,
+			/*LinkPreset.Circle*/
 		],
 	});
 

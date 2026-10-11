@@ -123,7 +123,7 @@ export const sidebarLayoutConfig: SidebarLayoutConfig = {
 			// 组件类型：生活统计小组件
 			type: "lifeStats",
 			// 是否启用该组件
-			enable: false,
+			enable: true,
 			// 组件位置
 			position: "sticky",
 			// 是否在文章详情页显示
@@ -170,7 +170,7 @@ export const sidebarLayoutConfig: SidebarLayoutConfig = {
 		{
 			// 组件类型：抖音热搜
 			type: "douyinHot",
-			enable: true,
+			enable: false,
 			position: "top",
 			showOnPostPage: false,
 		},
