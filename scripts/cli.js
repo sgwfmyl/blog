@@ -132,37 +132,6 @@ const commands = [
 			),
 	},
 	{
-		name: "cover",
-		desc: "AI 批量生成文章封面（黑板粉笔手绘风）",
-		usage:
-			"pnpm cli cover [--dry-run] [--limit=3] [--force] [--only=分类] [--provider=dashscope|gemini]",
-		// NODE_USE_ENV_PROXY=1 让 Node 24 原生 fetch 认 HTTPS_PROXY（走 gemini 时需要）；
-		// 没配代理变量时它不生效，所以对 dashscope 直连无影响。
-		run: (args) => {
-			// 拼成单条命令字符串：同时传 args 和 shell:true 会触发 Node DEP0190 警告
-			const target = resolve(__dirname, "生成封面", "index.ts");
-			return spawn(
-				`pnpm exec tsx --env-file=.env "${target}" ${args.join(" ")}`,
-				{
-					stdio: "inherit",
-					shell: true,
-					env: {
-						...process.env,
-						NODE_USE_ENV_PROXY: process.env.NODE_USE_ENV_PROXY || "1",
-					},
-				},
-			);
-		},
-		prompt: async (q) => {
-			const mode = await q(
-				"模式 (1=先预览提示词 2=试做3张 3=全部补齐，默认1): ",
-			);
-			if (mode === "2") return ["--limit=3"];
-			if (mode === "3") return [];
-			return ["--dry-run"];
-		},
-	},
-	{
 		name: "nav",
 		desc: "添加网站导航条目（自动获取 ICO 图标）",
 		usage: "pnpm cli nav [--url=https://example.com]",

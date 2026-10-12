@@ -4,7 +4,7 @@ on:
     - cron: "23 3 * * 0"   # 每周日凌晨 3:23
   workflow_dispatch:
   push:
-    branches: [main]
+    branches: [lh]
     paths: ["src/content/friends/**"]
 
 permissions:

@@ -68,6 +68,7 @@ src/.opencode
 .pnpm-store/
 .zcode/
 .superpowers/
+.mimosa/
 
 # 本地维护的插件目录（AstrBot BlogWriter 等，独立 git 仓库，不随博客仓库提交）
 /plug-in/

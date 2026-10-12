@@ -2,9 +2,9 @@ name: Build and Check
 
 on:
   push:
-    branches: [ main ]
+    branches: [ lh ]
   pull_request:
-    branches: [ main ]
+    branches: [ lh ]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}

@@ -1,4 +1,4 @@
-# CLAUDE.md — Firefly 博客工程规范
+# CLAUDE.md — 博客工程规范
 
 > 本文件是 AI 助手在本仓库中工作的唯一权威指令。所有开发行为必须遵守以下规范。
 
@@ -18,7 +18,6 @@
 | `pnpm icons` | 重新生成图标（scripts/生成图标，build 自动前置执行） |
 | `pnpm compress-images` | 压缩图片（`--dry-run` 预检）；另有 rename-images / import-wallpapers 图片脚本 |
 | `pnpm cli` | 仓库工具 CLI（scripts/cli.js） |
-| `pnpm cli cover [--dry-run] [--limit=N] [--force] [--only=分类] [--provider=dashscope\|gemini\|mock]` | AI 批量生成文章封面（scripts/生成封面，黑板粉笔手绘风，详见第 2 节「文章封面生成」） |
 | `pnpm cli desc` | AI 批量补全文章摘要（scripts/生成摘要，需 `DASHSCOPE_API_KEY`） |
 | `node scripts/友链截图/index.mjs [友链id] [--force]` | 站点截图（Playwright，伪装真实浏览器/字体+网络空闲等待/3 次尝试；产物 public/assets/friends-shots/{id小写}.webp；Action 每周日全量 + push friends 变化自动跑） |
 | `node scripts/友链状态检测/index.mjs` | 友链延迟检测（产物 public/friends-status.json；Action 每天自动跑） |
@@ -32,21 +31,21 @@
 
 | 项 | 值 |
 |---|---|
-| 名称 | Firefly v6.6.13 — "lh的博客" |
+| 名称 | "lh的博客" |
 | 框架 | Astro 7.1.6 + Svelte 5 + Tailwind CSS v4 |
 | 包管理 | pnpm 9.14.4 (ESM, `preinstall` 强制) |
 | 运行时 | Node.js >= 22 |
 | 部署 | **EdgeOne Pages**（GitHub 集成自动构建并托管 blog.tsh520.cn，2026-09-04 从 GitHub Pages 迁移，见 `docs/deploy-edgeone-pages.md`；GitHub Pages 的遗留配置 `pages.yml` 与 `public/CNAME` 已于 2026-09-21 删除，GitHub Pages 站点内容保留但不再更新） |
-| 线上 | https://blog.tsh520.cn/ |
-| 后台 | PagesCMS 自托管（Vercel + EdgeOne 加速）：https://cms.tsh520.cn/（配置见第 19 节） |
-| 来源 | Fork 自 CuteLeaf/Firefly ← saicaca/fuwari，已深度定制为独立演化 |
+| 线上 | https://blog.5484826.xyz/ |
+| 后台 | PagesCMS 自托管（Vercel）：https://cms.5484826.xyz/（配置见第 19 节） |
+| 来源 | Fork自 tianshihao2003/dumplingandcakeblog  ← CuteLeaf/Firefly，已深度定制为独立演化 |
 
 > ⚠️ **Astro 版本已升级至 7.x**（`feat/astro-7-upgrade` 已合并），勿再按 6.4.x 文档操作。
 
 ---
 
 ## 2. 目录结构
-
+    
 ```
 src/
 ├── assets/images/       # 头像、封面等构建时图片
@@ -98,9 +97,8 @@ src/
 .pages.yml                # PagesCMS 后台配置（11 集合声明，见第 19 节）
 .claude/settings.json     # 命令白名单（分类器不可用时不卡 Bash）
 pagefind.yml              # Pagefind 索引排除配置（katex、搜索面板等）
-scripts/                  # 开发脚本：12 个中文命名脚本目录（生成图标/新建文章/生成摘要/生成封面/转WebP/添加导航/下载影视/下载音乐/回填友链字段/友链截图/友链状态检测/TTS服务）+ cli.js、vision.mjs（图片识别）、compress-images.mjs、rename-images.mjs、import-wallpapers.mjs、check-svelte-warnings.mjs（脚本清单见第 0 节；生成封面 见第 2 节「文章封面生成」；TTS服务 为 edge-tts 朗读服务，部署产物，教程见 docs/deploy-edge-tts.md）
+scripts/                  # 开发脚本：10 个中文命名脚本目录（生成图标/新建文章/生成摘要/转WebP/添加导航/下载影视/下载音乐/友链截图/友链状态检测/TTS服务）+ cli.js、vision.mjs（图片识别）、compress-images.mjs、rename-images.mjs、import-wallpapers.mjs、check-svelte-warnings.mjs（脚本清单见第 0 节；TTS服务 为 edge-tts 朗读服务，部署产物，教程见 docs/deploy-edge-tts.md）
 docs/                     # 部署文档（deploy-pagescms-vercel.md 等）+ superpowers/{specs,plans}（改版设计稿与实现计划，2026-09-30 起）
-write_places.cjs          # 一次性脚本：生成 life/places 足迹页
 ```
 
 **禁止在 `components/` 根目录平铺组件文件，必须放入对应功能域子目录。**
@@ -112,35 +110,21 @@ write_places.cjs          # 一次性脚本：生成 life/places 足迹页
 | 目录 | 用途 |
 |------|------|
 | `covers/` | 文章随机封面池（62 张，`coverImageConfig.randomCoverImage` 从中随机取，文件名 1.webp 起编号） |
-| `post-covers/` | **每篇文章的专属封面**（`pnpm cli cover` 生成，见下方「文章封面生成」）；与上面的随机池分开，避免被随机逻辑抽中 |
 | `home/main/`、`home/portrait/` | 首页套图（hero 数据图 / 竖版背景） |
 | `emoji/` | 表情与小图标（openai-dark/light.png 等） |
-| `icons/` | 组件图标（profile.png 等） |
 | `notebooks/` | 笔记本照片（编号 webp） |
 | `sponsors/` | 赞助二维码 |
 | `loading/` | 页面加载图 |
-| `moments-cover.jpg` | 说说页封面 |
+| `bg/` | 组件的背景图池 |
 
 **`src/assets/images/`**（需 Astro 优化的小图）：
-- `avatars/` 首页头像池；`backgrounds/desktop|mobile/` 背景图池；`avatar.webp`/`avatar2.webp` 上/下班头像；`cover.avif` 封面兜底；`firefly.png` 导航 Logo
+- `avatars/` 首页头像池；`backgrounds/desktop|mobile/` 背景图池；`avatar.webp`/`avatar2.webp` 上/下班头像；`cover.avif` 封面兜底；`logo01dark.svg` 导航 Logo
 
 **硬性规则**：
 - 目录英文小写 kebab-case 按功能分组；**禁止拼音/中文目录、顶层散放文件**
 - 文件名英文小写+连字符，**禁止空格、括号、拼音**
 - 转 webp 后删原始 png/jpg；新增图片必须进对应功能目录
 - 移动/重命名图片必须同步改全部引用，grep 旧路径验证零残留
-
-### 文章封面生成（2026-09-21）
-
-`pnpm cli cover`（脚本 `scripts/生成封面/index.ts`，tsx 运行）批量给缺封面的文章生成「黑板粉笔手绘风」专属封面，并把 `image:` 写回 frontmatter。要点：
-
-- **提示词**改自 tblog.mmzhiku.xyz 公开的「黑板封面」模板；风格集中在脚本顶部 `STYLE_TEMPLATE` 相关常量（`MASCOT` 是封面里的固定角色形象，换吉祥物改这里）
-- **负向提示词里故意不含「文字」**：参考站原模板带了「文字」，会压制封面上的大标题，抄的时候必须删掉（脚本内已有注释标注）
-- **provider**：`dashscope`（qwen-image，默认，走 `DASHSCOPE_API_KEY`，国内直连）/ `gemini`（Nano Banana，走 `GEMINI_API_KEY` + `HTTPS_PROXY`，Node 24 靠 `NODE_USE_ENV_PROXY=1` 让原生 fetch 认代理，cli.js 已自动设置）/ `mock`（不联网，生成纯色占位图，用于验证流水线）
-- **文件名必须 ASCII**：脚本取相对路径的 ASCII 片段 + 8 位路径哈希（`makeOutName`）。中文标题会退化成 `cover-<hash>.webp`，这是为满足上文「禁止中文文件名」硬性规则；哈希跨平台稳定，重跑不会改名
-- **安全**：`writeImageField` 只改 frontmatter 区间。仓库里有若干篇讲封面配置的教程，**正文示例里也含 `image:` 开头的行**，全文件正则替换会改坏正文（已用 `博客指南/博客使用指南.md` 实测验证：diff 必须恰好 1 行新增、0 删除）
-- **`image` 字段**：`src/content.config.ts` 里是 `z.string()`，`processCoverImageSync` 原样返回，所以本地路径 `/assets/images/post-covers/x.webp` 与外部图床 URL 都可用
-- 可反复中断续跑：已有 `image:` 的文章默认跳过，`--force` 才覆盖
 
 ---
 
@@ -203,13 +187,9 @@ Layout.astro          ← HTML 骨架：<html>, <head>, <body>, 全局组件, �
 | bills | 账单 |
 | schedules | 日程 |
 
-> 友链页支撑系统（2026-08）：`.github/workflows/friend-status.yml`（每天 5:17 检测友链延迟 → public/friends-status.json，四档 fast/ok/slow/down）与 `friend-screenshots.yml`（每周日 3:23 全量补漏 + push main 变更 `src/content/friends/**` 时自动触发，Playwright 截图 → public/assets/friends-shots/{contentId}.webp，伪装真实浏览器 + load 后等字体就绪、网络空闲（6s 超时兜底）与 2s 缓冲，失败 3 次尝试）。前端 fetch 状态 JSON 注入徽标，无 JSON/无截图时优雅降级（卡片退化为纯头像卡）。改 friends 集合结构时注意同步这两个脚本（正则读 frontmatter）。**截图文件名必须是全小写**（Astro glob loader 的 entry id 为全小写 slug，脚本已按 `md 文件名.toLowerCase()` 输出；含大写的 webp 在 Windows dev 误判存在导致 404，线上 Linux 则直接退化）。
-
-> **友链卡片改版（2026-09-30）**：卡片换成「圆角头像（44px 圆角方块）+ 名字」一行（`src/components/features/FriendCard.astro` + `src/styles/components/friend-card.css`），**去掉了**卡片的截图背景 / 描述 / 域名 / 状态徽标与卡片外框（悬浮只留极淡底色 + 名字染主题色）；整页宽度从 932px 放宽到**视口 4/5**（`src/styles/features/no-sidebar-pages.css` 的 friends 段）。
-> - ⚠️ **悬浮时的站点截图预览（`#friend-preview`）是保留功能**，站长明确要它：靠卡片上的 `data-screenshot` 触发，`friend-preview.css` 与 `friends.astro` 里的预览脚本都没动（白边 2px 也保持原样）。只删了卡片自己的截图背景层。
-> - ⚠️ **朋友圈抓取点必须保留**：`.friend-card` 的 `data-title` / `data-siteurl` 与 `.friend-card-avatar__img` 的 `data-src` —— 解析器（`hexo-circle-of-friends` 的 `css_rules.yaml`）就靠它们，2026-08 曾因改 class 停更 6 天。
-
-> ⚠️ **朋友圈数据链路（强制提醒义务）**：友链朋友圈页（`/circle/`）的数据来自 `cir.tsh520.cn/data.json`，由独立仓库 `E:\GithubProgect\OtherRunProject\hexo-circle-of-friends`（GitHub: tianshihao2003/hexo-circle-of-friends）每 2 小时生成并提交。该程序的 firefly 主题解析器**依赖本博客友链页卡片结构**（`css_rules.yaml`）：名字=[`.friend-card`]`data-title`、链接=[`.friend-card`]`data-siteurl`、头像=[`.friend-card-avatar__img`]`data-src`。**凡是修改友链页卡片 HTML/friends 集合字段/友链 Card 组件结构，必须同步检查并提醒站长**：一是确认 `css_rules.yaml` 的 firefly 选择器仍匹配新结构（必要时同步修改并推送到 hexo-circle-of-friends 仓库）；二是验证「data.json 的 last_updated_time 与文章数」确实更新（抓一次页面或等下一轮 Action）。2026-08 曾因友链卡 class 从 `.friend-card-name/.friend-card-link` 改为 data 属性导致朋友圈停更 6 天，务必引以为戒。
+> **友链页设计**（页面结构 / 卡片形态 / 悬浮站点预览 / 状态检测与截图支撑系统 / 朋友圈数据链路等）已整理为开发文档 → [友链页设计说明](/docs/友链/)（源文件 `src/content/docs/docs/友链.md`）；友链内容字段与录入规范见 [内容 / 友链](/docs/内容/友链/)。
+>
+> ⚠️ **朋友圈抓取点（强制提醒义务）**：`.friend-card` 的 `data-title` / `data-siteurl` 与 `.friend-card-avatar__img` 的 `data-src` 是 `hexo-circle-of-friends` 解析器（`css_rules.yaml` 的 firefly 选择器）的取值点。**凡修改友链页卡片 HTML / `friends` 集合字段 / 友链 Card 组件结构，必须同步检查 `css_rules.yaml` 选择器并提醒站长**（必要时同步修改并推送到 `hexo-circle-of-friends` 仓库，并验证 `data.json` 的 `last_updated_time` 与文章数确实更新），否则朋友圈 `/circle/` 停更（2026-08 曾因改 class 停更 6 天）。完整设计见开发文档「友链页设计说明」与 §15 反模式清单。
 
 > **分类系统（2026-08-20 文件夹即分类）**：`posts` 的 `category` 已从 `src/content.config.ts` 的 Zod schema 移除，分类 100% 由 `src/utils/category-tree.ts#getCategoryFromId(entry.id)` 的文件夹路径推导（`编程学习/Java学习` → `CategoryNode{fullPath, count, directCount, children}`），URL 分段编码 `src/utils/url-utils.ts#getCategoryUrl` + 路由 `src/pages/categories/[...category].astro`（catch-all，子树聚合 `startsWith(parent+"/")`），卡片 `src/components/widget/CategoryFolders.astro` 递归树（有子展开看子树/无子整卡跳转，已删右侧跳转按钮），`.pages.yml` 已删 `category` 字段，`scripts/新建文章/index.js` 不再写 `category`，Obsidian 插件 `plug-in/Obsidian/obsidian-category-autofill` 已废弃写入（`logic.ts#getTargetCategory` 恒返回 null，模板移除 `category`）。**禁止再写 `frontmatter.category`，分类只靠建文件夹**。
 
@@ -834,7 +814,7 @@ return controller;
 | dev 下 Astro island hydrate 报 `504 (Outdated Optimize Dep)` | 组件 onMount 永不执行，UI 卡初始状态（如评论"加载中…"、按钮无反应），SSR 输出却正常，极具迷惑性 | 删除 `node_modules/.vite` 后重启 `pnpm dev` |
 | 不做参考调研就盲猜写代码 / 排查问题 | 反复试错浪费大量时间（2026-08 评论功能教训） | 见 §14.5「先参考，后编写」 |
 | 验收通过后仍过度验证（`pnpm check`/`pnpm build` 通过且浏览器实测关键路径正常后，还继续用多种方式重复验证同一数据链路，如抓网络日志逐请求对比第三方 API） | 大量时间产出零新增价值（2026-08 笔记本评论回复验证教训：UI 已正确显示回复关系即证明 Waline 数据正确，无需再深挖服务端返回结构） | 验收标准达成即停；仅当出现新的错误证据（新报错、行为异常）时才继续排查 |
-| 改友链页 `friend-card` 卡片结构/友链 Card 组件，未同步 `hexo-circle-of-friends` 的 `css_rules.yaml` firefly 选择器 | 朋友圈（/circle/）数据停更（2026-08 曾停更 6 天） | 见 §3.4「朋友圈数据链路（强制提醒义务）」 |
+| 改友链页 `friend-card` 卡片结构/友链 Card 组件，未同步 `hexo-circle-of-friends` 的 `css_rules.yaml` firefly 选择器 | 朋友圈（/circle/）数据停更（2026-08 曾停更 6 天） | 见 §3.5「朋友圈抓取点（强制提醒义务）」与开发文档「友链页设计说明」 |
 | CI 中 Biome 用 `version: latest` 或版本与 package.json 不一致 | 规则漂移导致"本地绿 CI 红"（2026-08 实测：2.3 vs 2.5 的 useAltText 升级为 error） | setup-biome action 不指定 version，自动读取 package.json 版本 |
 | 手写 `frontmatter.category` 或用 Obsidian 插件再写 category | 2026-08-20 后分类已改为文件夹即分类（`category-tree.ts`），frontmatter 再写会被忽略且 `.pages.yml` 未声明字段保存时丢弃 | 分类只靠 `src/content/posts/父/子/xxx.md` 建文件夹，勿写 frontmatter |
 | 修改博客各功能 frontmatter 字段（`src/content.config.ts` 的 zod schema / `.pages.yml` / 页面 `normalizeImages`/`getGridCols` 等展示逻辑）未同步 AstrBot 插件 `plug-in/AstrBot/AstrBot BlogWriter` 的 `build_*_md` 生成逻辑 | 插件写入的旧格式导致页面 `images` 为空、归档卡片/灯箱不显示或 zod 校验失败（如 2026-09-27 笔记从正文 `![](url)` 改为 `images` 数组，前端已用 `images` 宫格展示） | 凡改动 moments/bangumi/life/notebooks/album/daohang/bills/schedules 等集合的字段名、类型或渲染约定，必须立即检查并同步更新插件的 `blog_writer_core.py:build_*_md` 与 `tests/test_core.py`，并提醒站长同步发布插件新版本 |
@@ -903,7 +883,7 @@ scope: layout | config | i18n | styles | utils | components | content
 
 ## 19. PagesCMS 后台（2026-08 接入）
 
-博客后台使用 **PagesCMS 自托管**（Vercel 部署 + EdgeOne 加速），后台地址 `https://cms.tsh520.cn/`。
+博客后台使用 **PagesCMS 自托管**（Vercel 部署），后台地址 `https://cms.5484826.xyz/`。
 
 ### 架构
 
@@ -941,7 +921,6 @@ EdgeOne Pages（GitHub 集成自动构建：pnpm build → dist/，需配 13 个
    - 升级/降级依赖 → 更新第 16 节技术栈版本
    - 发现新的坑/规范/反模式 → 写入对应章节（或第 15 节反模式清单）
    - 完成模块/功能 → 按第 21 节更新 `changelog`，按第 22 节做收尾
-   - **Obsidian 插件 `plug-in/Obsidian/obsidian-image-manager/` 功能变更 → 必须同步更新博客文章 `src/content/posts/技术分享/Obsidian插件系列-ImageManager图床上传管理指南.md`（功能说明/设置项/操作步骤），并在文末"版本历史"加一行；同时升插件 manifest.json 版本号并重新 `pnpm build`**
 3. **新增规范**（本次添加）：文档不准确时（数字过时、功能删除等），及时修正，禁止"文档写的和实际不一致还照着做"
 4. **验证**：提交前跑 `pnpm build`；文档修改与代码修改在同一提交或相邻提交
 
@@ -977,7 +956,7 @@ description: 一句话概括（显示在列表页）
 模块/功能完成后，必须做收尾，**不确定就问**（问站长“怎么做”）。
 
 **必做清单**：
-1. **该清的清理**：删一次性脚本/临时文件（如 `scripts/migrate/*.mjs`、`write_places.cjs` 残留）、`node_modules/.vite` 缓存验证、未用到的 `*.test.mjs`、废弃的 `category` frontmatter 残留 `grep -rn "category:" src/content/posts` 验证 0 命中；新增的本地目录（`.superpowers/` 等）不在 `src` 则应进 `.gitignore`（2026-02 bills/schedules 教训）；**涉密检查**：新增/改动的密钥、Token、密码一律放 `.env`（已 gitignore），提交前用 `grep -rnE "sk-[a-zA-Z0-9]{20,}|AKID[a-zA-Z0-9]+" <改动文件>` 与 `git ls-files` 复核零硬编码、零误跟踪（2026-08-30 GitGuardian 密钥泄露教训，见 §15 反模式清单）
+1. **该清的清理**：删一次性脚本/临时文件（如 `scripts/migrate/*.mjs`、临时脚手架 .cjs 残留）、`node_modules/.vite` 缓存验证、未用到的 `*.test.mjs`、废弃的 `category` frontmatter 残留 `grep -rn "category:" src/content/posts` 验证 0 命中；新增的本地目录（`.superpowers/` 等）不在 `src` 则应进 `.gitignore`（2026-02 bills/schedules 教训）；**涉密检查**：新增/改动的密钥、Token、密码一律放 `.env`（已 gitignore），提交前用 `grep -rnE "sk-[a-zA-Z0-9]{20,}|AKID[a-zA-Z0-9]+" <改动文件>` 与 `git ls-files` 复核零硬编码、零误跟踪（2026-08-30 GitGuardian 密钥泄露教训，见 §15 反模式清单）
 2. **该保留的保留**：保留可复用工具（如 `src/utils/category-tree.ts`）、保留 `docs/superpowers/plans/*.md` 计划文档、保留 `plug-in/` 插件的独立 git 历史
 3. **该问的就问**：删/留边界模糊时（如 `plug-in/Obsidian` 是否彻底废弃还是保留 no-op）、是否需要数据迁移二次校验、是否需要提醒用户 `Obsidian Ctrl+P 重载` / `FlClash 代理` 等，**不知道就问，不要猜**
 4. **文档同步**：同步 `CLAUDE.md` 第 2/16/18/21 节、`.pages.yml` 与 `src/content.config.ts` 对齐校验、`README` 涉及变动的

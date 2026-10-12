@@ -2,7 +2,7 @@
 version: "v1.60.3"
 date: 2026-10-11
 time: "16:36"
-type: style
+type: improvement
 description: 隐藏赞助页面的导航入口（桌面端「关于」下拉与移动端菜单），直接访问 /sponsor/ 仍可打开
 ---
 
