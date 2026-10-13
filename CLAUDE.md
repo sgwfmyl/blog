@@ -35,7 +35,7 @@
 | 框架 | Astro 7.1.6 + Svelte 5 + Tailwind CSS v4 |
 | 包管理 | pnpm 9.14.4 (ESM, `preinstall` 强制) |
 | 运行时 | Node.js >= 22 |
-| 部署 | **EdgeOne Pages**（GitHub 集成自动构建并托管 blog.tsh520.cn，2026-09-04 从 GitHub Pages 迁移，见 `docs/deploy-edgeone-pages.md`；GitHub Pages 的遗留配置 `pages.yml` 与 `public/CNAME` 已于 2026-09-21 删除，GitHub Pages 站点内容保留但不再更新） |
+| 部署 | **Cloudflare Workers Static Assets**（本地/CI 手动 `pnpm build` + `wrangler deploy`，托管 blog.5484826.xyz，2026-10 从 EdgeOne Pages 迁移，见 `docs/deploy-cloudeflare-workers.md`；GitHub Actions 的 `build.yml` 仅作 CI 质量门；GitHub Pages 遗留配置 `pages.yml` 与 `public/CNAME` 已于 2026-09-21 删除） |
 | 线上 | https://blog.5484826.xyz/ |
 | 后台 | PagesCMS 自托管（Vercel）：https://cms.5484826.xyz/（配置见第 19 节） |
 | 来源 | Fork自 tianshihao2003/dumplingandcakeblog  ← CuteLeaf/Firefly，已深度定制为独立演化 |
@@ -819,7 +819,7 @@ return controller;
 | 手写 `frontmatter.category` 或用 Obsidian 插件再写 category | 2026-08-20 后分类已改为文件夹即分类（`category-tree.ts`），frontmatter 再写会被忽略且 `.pages.yml` 未声明字段保存时丢弃 | 分类只靠 `src/content/posts/父/子/xxx.md` 建文件夹，勿写 frontmatter |
 | 修改博客各功能 frontmatter 字段（`src/content.config.ts` 的 zod schema / `.pages.yml` / 页面 `normalizeImages`/`getGridCols` 等展示逻辑）未同步 AstrBot 插件 `plug-in/AstrBot/AstrBot BlogWriter` 的 `build_*_md` 生成逻辑 | 插件写入的旧格式导致页面 `images` 为空、归档卡片/灯箱不显示或 zod 校验失败（如 2026-09-27 笔记从正文 `![](url)` 改为 `images` 数组，前端已用 `images` 宫格展示） | 凡改动 moments/bangumi/life/notebooks/album/daohang/bills/schedules 等集合的字段名、类型或渲染约定，必须立即检查并同步更新插件的 `blog_writer_core.py:build_*_md` 与 `tests/test_core.py`，并提醒站长同步发布插件新版本 |
 | 把 API Key / Token / 密码硬编码进任何被 git 跟踪的文件（scripts/、注释、markdown 都算），或轻信注释里"会被 .gitignore 保护"的声明而不实测 | 公开仓库全历史可读，GitGuardian 告警、密钥被扫描器批量收割滥用（2026-08-30 GitGuardian 事故：DashScope Key 硬编码在 `scripts/生成摘要/index.ts` 长期公开，声明受 .gitignore 保护但实际从未生效） | 密钥一律放 `.env`（已 gitignore）+ `process.env.XXX` 读取，脚本调用带 `--env-file=.env`，`.env.example` 只留空模板；新增任何疑似含密钥的文件，提交前必须实测 `git check-ignore <path>` 与 `git ls-files <path>` 确认未被跟踪；一旦泄露：**先去对应控制台吊销重发（唯一根治）**，再从代码清除，git 历史清理通常不必要且代价大 |
-| 用文件 mtime 做集合排序/展示的兜底依据 | CI（EdgeOne/GitHub Actions）每次全新 clone，所有文件 mtime 都等于构建时刻、比任何业务日期都新——缺字段的旧条目会永远霸占"最新"区块（2026-09 友链页"新朋友"事故） | 排序只认 frontmatter 业务字段（如 friends 的 `added`）；字段缺失时构建期 `console.warn` 并让条目落到最后 |
+| 用文件 mtime 做集合排序/展示的兜底依据 | CI（GitHub Actions）每次全新 clone，所有文件 mtime 都等于构建时刻、比任何业务日期都新——缺字段的旧条目会永远霸占"最新"区块（2026-09 友链页"新朋友"事故） | 排序只认 frontmatter 业务字段（如 friends 的 `added`）；字段缺失时构建期 `console.warn` 并让条目落到最后 |
 | 拿 Astro content 集合的 `item.id` 拼磁盘路径 / 匹配 public 静态文件 | id 是 github-slugger 规则（小写 + 移除标点、空格转连字符），与磁盘文件名不一致（`39-胡超，作品集.md` → id `39-胡超作品集`、`33-RAGNote.md` → `33-ragnote`），Linux CI 大小写敏感必失配 | 文件名 ↔ id 换算必须走同一 slug 规则（截图脚本 `scripts/友链截图/index.mjs` 已内置 github-slugger）；新增含大写/标点文件名的友链后核对 `public/assets/friends-shots/` 截图命名 |
 | 组件作用域样式用与全局 CSS（如 `src/styles/pages/notebooks.css`）相同的类名，试图覆盖全局 | Astro 7 作用域样式经 `:where(.astro-xxx)` 包裹**零特异性**（`.nb-book-inner:where(.astro-x)` 与全局 `.nb-book-inner` 同为 0,1,0），平级时后加载的全局样式胜出，组件"覆盖"全部静默失效（2026-10-11 书架封面只显示上方 56% 被裁切事故） | 覆盖全局的组件类一律用**该页面专用前缀**（如书架 `bk-card-*`），不与全局同名牌碰撞；确需覆盖全局时改用 `main.css` 导入的全局样式 + 更高特异性选择器（如 `.shelf-grid .nb-book-inner`） |
 
@@ -894,16 +894,16 @@ Vercel（PagesCMS 实例，绑定 cms-origin.tsh520.cn）
     ↓ GitHub API 写回
 仓库 main 分支（内容文件）
     ↓ GitHub Webhook
-EdgeOne Pages（GitHub 集成自动构建：pnpm build → dist/，需配 13 个构建环境变量）
+（无自动构建：内容更新需手动 pnpm build → wrangler deploy，见 docs/deploy-cloudeflare-workers.md）
     ↓
-博客站点（EdgeOne Pages 托管，https://blog.tsh520.cn）
+博客站点（Cloudflare Workers 静态托管，https://blog.5484826.xyz）
 ```
 
 - **源站域名分离**：Vercel 绑定 `cms-origin.tsh520.cn`（DNS → vercel.app），用户域名 `cms.tsh520.cn` 走 EdgeOne（回源 Host = cms-origin）——Vercel 的域名验证机制要求 DNS 持续指向它，不能直接套 CDN
 - **配置声明**：仓库根目录 `.pages.yml` 声明 12 个内容集合（posts 按分类拆 13 个集合、moments/friends/apps/daohang/album/ziyuan 拆 2/life 拆 3、tombstones 2026-08 新增），字段与 `src/content.config.ts` 的 zod 对齐
 - **自定义字段**：imgbed（图床上传，走服务端代理）+ amap-geocode（高德坐标，保存时展开为 lat/lng）——在 pagescms 仓库（`E:\GithubProgect\MyRunProject\pagescms`）的 `fields/custom/` 定义，注册在 `fields/registry.ts`
 - **凭证**：Vercel 环境变量（GITHUB_APP_*、IMAGEBED_*、AMAP_KEY 等）；图床/高德代理路由在 pagescms 的 `app/api/` 下（凭证服务端持有）
-- **朗读服务**：EdgeOne Pages 构建环境变量新增 `PUBLIC_TTS_SERVER`（第 13 个，指向自建 edge-tts 服务，部署见 `docs/deploy-edge-tts.md`）；留空时文章朗读自动降级浏览器系统语音
+- **朗读服务**：构建环境变量新增 `PUBLIC_TTS_SERVER`（第 13 个，指向自建 edge-tts 服务，部署见 `docs/deploy-edge-tts.md`）；留空时文章朗读自动降级浏览器系统语音
 - **修改 .pages.yml 后**：字段必须与 zod 对齐（merge: false，未声明字段保存时被丢弃）；校验脚本已随 Decap 遗留一并删除——**当前 .pages.yml 的字段对齐靠手动检查 + 构建验证**
 
 > ⚠️ 曾使用 Decap CMS（public/admin/ 目录 + config.yml）；该遗留已随 `validate-sveltia-config.mjs` 等脚本于 2026-08 删除，现统一用 PagesCMS。

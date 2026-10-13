@@ -1,0 +1,67 @@
+# 生产部署：Cloudflare Workers Static Assets
+# push lh / 手动触发 → pnpm build（注入 Secrets 中的构建期变量）→ wrangler deploy
+# 与 docs/deploy-cloudeflare-workers.md 保持一致；缺失的构建期变量会让对应功能静默降级
+
+name: Deploy to Cloudflare Workers
+
+on:
+  push:
+    branches: [ lh ]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  # 部署不取消进行中的任务，避免留下中间版本
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    name: Build & Deploy
+    steps:
+      - name: Setup Node.js
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0 (Node 24)
+        with:
+          node-version: 22
+
+      - name: Checkout
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0 (Node 24)
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@a8198c4bff370c8506180b035930dea56dbd5288 # v5 (Node 24)
+        with:
+          run_install: false # Disable auto-install
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # 构建期注入（对应本地 .env；见 docs/deploy-cloudeflare-workers.md 第三节）
+      - name: Run Astro Build
+        env:
+          PUBLIC_AMAP_KEY: ${{ secrets.PUBLIC_AMAP_KEY }}
+          PUBLIC_AMAP_KEY_PLACES: ${{ secrets.PUBLIC_AMAP_KEY_PLACES }}
+          PUBLIC_UMAMI_BASE: ${{ secrets.PUBLIC_UMAMI_BASE }}
+          PUBLIC_UMAMI_USERNAME: ${{ secrets.PUBLIC_UMAMI_USERNAME }}
+          PUBLIC_UMAMI_PASSWORD: ${{ secrets.PUBLIC_UMAMI_PASSWORD }}
+          PUBLIC_UMAMI_WEBSITE_ID: ${{ secrets.PUBLIC_UMAMI_WEBSITE_ID }}
+          PUBLIC_UMAMI_SHARE_ID: ${{ secrets.PUBLIC_UMAMI_SHARE_ID }}
+          PUBLIC_WALINE_SERVER: ${{ secrets.PUBLIC_WALINE_SERVER }}
+          PUBLIC_IMAGEBED_URL: ${{ secrets.PUBLIC_IMAGEBED_URL }}
+          PUBLIC_IMAGEBED_AUTH_CODE: ${{ secrets.PUBLIC_IMAGEBED_AUTH_CODE }}
+          PUBLIC_IMAGEBED_CHANNEL: ${{ secrets.PUBLIC_IMAGEBED_CHANNEL }}
+          PUBLIC_IMAGEBED_CHANNEL_NAME: ${{ secrets.PUBLIC_IMAGEBED_CHANNEL_NAME }}
+          PUBLIC_IMAGEBED_UPLOAD_FOLDER: ${{ secrets.PUBLIC_IMAGEBED_UPLOAD_FOLDER }}
+          PUBLIC_IMAGEBED_API_TOKEN: ${{ secrets.PUBLIC_IMAGEBED_API_TOKEN }}
+          PUBLIC_TTS_SERVER: ${{ secrets.PUBLIC_TTS_SERVER }}
+          GATE_PASSWORD: ${{ secrets.GATE_PASSWORD }}
+        run: pnpm build
+
+      - name: Deploy to Cloudflare Workers
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: deploy

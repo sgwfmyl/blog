@@ -27,7 +27,7 @@ Cloudflare Workers Static Assets（wrangler.toml 的 assets.directory 指向 dis
 ### 1. 环境
 
 - Node.js ≥ 22（与 `build.yml` 的 CI 一致）
-- Cloudflare 账号；博客域名 `5484826.xyz`（或其子域 `blog.5484826.xyz`）已接入 Cloudflare DNS（Workers 自定义域要求域名由 Cloudflare 托管，见第三节）   
+- Cloudflare 账号；博客域名 `5484826.xyz`（或其子域 `blog.5484826.xyz`）已接入 Cloudflare DNS（Workers 自定义域要求域名由 Cloudflare 托管，见第三节）
 
 ### 2. 安装 wrangler 并登录
 
@@ -47,7 +47,7 @@ compatibility_date = "2026-10-13"
 
 [assets]
 directory = "./dist"                  # pnpm build 的产物目录
-not_found_handling = "404.html"       # 使用 Astro 自研的 dist/404.html
+not_found_handling = "404-page"     # 使用 Astro 自研的 dist/404.html（wrangler 4.x 合法值，旧值 "404.html" 已不被识别）
 ```
 
 > 本项目 `trailingSlash: "always"`，产物是 `xxx/index.html` 结构；Workers 静态资产对 `/xxx/` 请求自动命中 `xxx/index.html`，天然兼容，无需 SPA 回退。
@@ -61,23 +61,23 @@ not_found_handling = "404.html"       # 使用 Astro 自研的 dist/404.html
 - 本地构建：照抄 `.env.example` 生成 `.env` 填齐（已 gitignore，不会误提交）
 - CI 构建：放到 GitHub 仓库 **Settings → Secrets and variables → Actions**
 
-| 变量名 | 用途 |
-|---|---|
-| `PUBLIC_AMAP_KEY` | 高德地图 |
-| `PUBLIC_AMAP_KEY_PLACES` | 高德地点 |
-| `PUBLIC_UMAMI_BASE` | Umami 统计地址 |
-| `PUBLIC_UMAMI_USERNAME` | Umami 服务端代理账号 |
-| `PUBLIC_UMAMI_PASSWORD` | Umami 服务端代理密码 |
-| `PUBLIC_UMAMI_WEBSITE_ID` | Umami 站点 ID |
-| `PUBLIC_UMAMI_SHARE_ID` | Umami 分享 ID（首页统计 fallback） |
-| `PUBLIC_WALINE_SERVER` | Waline 评论后端地址 |
-| `PUBLIC_IMAGEBED_URL` | 图床地址 |
-| `PUBLIC_IMAGEBED_AUTH_CODE` | 图床上传鉴权码 |
-| `PUBLIC_IMAGEBED_CHANNEL` | 留言图片上传渠道（telegram/cfr2/huggingface 等），空则用图床默认 |
-| `PUBLIC_IMAGEBED_CHANNEL_NAME` | 渠道名称（多渠道场景），空则不传 |
-| `PUBLIC_IMAGEBED_UPLOAD_FOLDER` | 留言图片上传目录，空则传根目录 |
-| `PUBLIC_IMAGEBED_API_TOKEN` | 图床 API Token |
-| `PUBLIC_TTS_SERVER` | 文章朗读 TTS 服务地址，留空降级浏览器系统语音 |
+| 变量名                             | 用途                                            |
+| ------------------------------- | --------------------------------------------- |
+| `PUBLIC_AMAP_KEY`               | 高德地图                                          |
+| `PUBLIC_AMAP_KEY_PLACES`        | 高德地点                                          |
+| `PUBLIC_UMAMI_BASE`             | Umami 统计地址                                    |
+| `PUBLIC_UMAMI_USERNAME`         | Umami 服务端代理账号                                 |
+| `PUBLIC_UMAMI_PASSWORD`         | Umami 服务端代理密码                                 |
+| `PUBLIC_UMAMI_WEBSITE_ID`       | Umami 站点 ID                                   |
+| `PUBLIC_UMAMI_SHARE_ID`         | Umami 分享 ID（首页统计 fallback）                    |
+| `PUBLIC_WALINE_SERVER`          | Waline 评论后端地址                                 |
+| `PUBLIC_IMAGEBED_URL`           | 图床地址                                          |
+| `PUBLIC_IMAGEBED_AUTH_CODE`     | 图床上传鉴权码                                       |
+| `PUBLIC_IMAGEBED_CHANNEL`       | 留言图片上传渠道（telegram/cfr2/huggingface 等），空则用图床默认 |
+| `PUBLIC_IMAGEBED_CHANNEL_NAME`  | 渠道名称（多渠道场景），空则不传                              |
+| `PUBLIC_IMAGEBED_UPLOAD_FOLDER` | 留言图片上传目录，空则传根目录                               |
+| `PUBLIC_IMAGEBED_API_TOKEN`     | 图床 API Token                                  |
+| `PUBLIC_TTS_SERVER`             | 文章朗读 TTS 服务地址，留空降级浏览器系统语音                     |
 
 > 缺失任何变量构建仍会成功，但对应功能静默降级（评论无后端、统计空白），务必逐项核对。
 
@@ -119,8 +119,7 @@ Workers **自定义域名**要求域名的 DNS 由 Cloudflare 托管（即 `5484
 
 1. Cloudflare Dashboard → Add a site 添加 `5484826.xyz`，按指引在域名注册商处把 NS 改为 Cloudflare 分配的两个地址，等待生效
 2. Cloudflare Dashboard → Workers & Pages → 进入本项目 → Settings → Domains → 添加 `blog.5484826.xyz`，等待证书签发与校验（自动，一般分钟级）
-3. **剥离旧配置**：把 `blog.5484826.xyz` 从旧 EdgeOne 侧移除（旧 EdgeOne 站点加速/Pages 的解析与加速配置删除，避免同一域名双源冲突）
-4. 验证：`nslookup blog.5484826.xyz` 确认解析指向 Cloudflare，浏览器实测关键路径，观察 1-2 天
+3. 验证：`nslookup blog.5484826.xyz` 确认解析指向 Cloudflare，浏览器实测关键路径，观察 1-2 天
 
 ## 六、迁移记录
 
@@ -135,10 +134,11 @@ Workers **自定义域名**要求域名的 DNS 由 Cloudflare 托管（即 `5484
 
 ## 七、常见问题
 
-| 问题 | 排查 |
-|---|---|
-| 构建失败 | 先看 Node 版本是否 ≥ 22、pnpm 是否 9.14.x、构建命令是否为 `pnpm build`；与 `build.yml` 的 CI 行为对照 |
-| 功能静默缺失（评论/统计空白） | 检查构建时 `.env` / CI secrets 是否逐项填齐（见第三节表）；确认不是配到了 Workers runtime 而非构建期 |
-| 上线了但线上没变化 | Workers 无自动构建：确认执行了 `wrangler deploy` 且成功（`wrangler deployments list` 看最新一次） |
-| 需要换域名 | 改 `src/config/siteConfig.ts` 的 `site_url`（sitemap/robots/RSS/canonical 自动跟随）+ Dashboard 重新绑定域名；注意 `src/config/musicConfig.ts` 等硬编码的 `*.5484826.xyz` 子域不受影响 |
-| 404 页不生效 | 确认 `wrangler.toml` 里 `[assets] not_found_handling = "404.html"`（Astro 自研 404 页输出为 `dist/404.html`） |
+| 问题              | 排查                                                                                                                                                         |
+| --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 构建失败            | 先看 Node 版本是否 ≥ 22、pnpm 是否 9.14.x、构建命令是否为 `pnpm build`；与 `build.yml` 的 CI 行为对照                                                                              |
+| 功能静默缺失（评论/统计空白） | 检查构建时 `.env` / CI secrets 是否逐项填齐（见第三节表）；确认不是配到了 Workers runtime 而非构建期                                                                                      |
+| 上线了但线上没变化       | Workers 无自动构建：确认执行了 `wrangler deploy` 且成功（`wrangler deployments list` 看最新一次）                                                                               |
+| 需要换域名           | 改 `src/config/siteConfig.ts` 的 `site_url`（sitemap/robots/RSS/canonical 自动跟随）+ Dashboard 重新绑定域名；注意 `src/config/musicConfig.ts` 等硬编码的 `*.5484826.xyz` 子域不受影响 |
+| 404 页不生效        | 确认 `wrangler.toml` 里 `[assets] not_found_handling = "404-page"`（Astro 自研 404 页输出为 `dist/404.html`，wrangler 4.x 不再识别 `"404.html"` 这个旧取值）                    |
+
