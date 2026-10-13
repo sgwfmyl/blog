@@ -73,9 +73,9 @@ curl https://tts.tsh520.cn/health
 ## 六、博客端配置
 
 1. 本地 `.env` 加：`PUBLIC_TTS_SERVER=https://tts.tsh520.cn`
-2. **EdgeOne Pages 控制台** → 项目 → 环境变量：新增 `PUBLIC_TTS_SERVER=https://tts.tsh520.cn`（线上构建的关键；与其余 13 个变量放一起）
-3. push main 触发 EdgeOne 构建 → 文章页出现「朗读」按钮
-4. （可选）GitHub 仓库 Variable 加 `PUBLIC_TTS_SERVER`：仅当希望 CI 的 `build.yml` 构建产物也带上；不加不影响 CI 通过
+2. 线上部署（Cloudflare Workers Static Assets，手动构建）：在本地 `.env` 配好 `PUBLIC_TTS_SERVER` 后执行 `pnpm build && pnpm wrangler deploy`，产物即携带该变量（构建期环境变量无需配置为 Workers 密钥，见 `docs/deploy-cloudeflare-workers.md`）
+3. `pnpm build && pnpm wrangler deploy` 成功 → 线上文章页出现「朗读」按钮
+4. （可选）GitHub 仓库 Variable 加 `PUBLIC_TTS_SERVER`：仅当期望 CI 的 `build.yml` 构建产物也带上；不加不影响 CI 通过（CI 仅作质量门）
 
 ## 七、验收清单
 
@@ -115,5 +115,5 @@ du -sh cache
 
 ## 十、停用 / 回滚
 
-- 博客端：删 EdgeOne 的 `PUBLIC_TTS_SERVER`，或把 `src/config/ttsConfig.ts` 的 `enable` 改为 `false`
+- 博客端：删本地 `.env` 的 `PUBLIC_TTS_SERVER` 后重新 `pnpm build && pnpm wrangler deploy`，或把 `src/config/ttsConfig.ts` 的 `enable` 改为 `false`
 - 服务端：`docker compose down` + 移除 Nginx server 块

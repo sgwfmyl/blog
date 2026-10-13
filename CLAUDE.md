@@ -234,7 +234,7 @@ Layout.astro          ← HTML 骨架：<html>, <head>, <body>, 全局组件, �
 
 ### 3.9 文章朗读（TTS，2026-09-15 新增）
 
-文章页提取正文（自动跳过代码块/表格/公式）→ `POST PUBLIC_TTS_SERVER/tts` 流式合成 mp3 → `<audio>` 播放（倍速 0.8x~2x + 7 种音色，选择记忆），服务不可用时降级浏览器 Web Speech 系统语音。服务端代码与部署见 `docs/deploy-edge-tts.md`（`scripts/TTS服务/`，CORS 白名单含 blog.tsh520.cn 与本地 dev 端口 4500）；开关在 `src/config/ttsConfig.ts`。
+文章页提取正文（自动跳过代码块/表格/公式）→ `POST PUBLIC_TTS_SERVER/tts` 流式合成 mp3 → `<audio>` 播放（倍速 0.8x~2x + 7 种音色，选择记忆），服务不可用时降级浏览器 Web Speech 系统语音。服务端代码与部署见 `docs/deploy-edge-tts.md`（`scripts/TTS服务/`，CORS 白名单含 blog.5484826.xyz 与本地 dev 端口 4500）；开关在 `src/config/ttsConfig.ts`。
 
 ---
 
@@ -888,9 +888,9 @@ scope: layout | config | i18n | styles | utils | components | content
 ### 架构
 
 ```text
-用户访问 cms.tsh520.cn（DNS → EdgeOne 加速）
-    ↓ EdgeOne 回源（Host: cms-origin.tsh520.cn）
-Vercel（PagesCMS 实例，绑定 cms-origin.tsh520.cn）
+用户访问 cms.5484826.xyz（DNS → Cloudflare 加速）
+    ↓ Cloudflare 回源（Host: cms-origin.5484826.xyz）
+Vercel（PagesCMS 实例，绑定 cms-origin.5484826.xyz）
     ↓ GitHub API 写回
 仓库 main 分支（内容文件）
     ↓ GitHub Webhook
@@ -899,7 +899,7 @@ Vercel（PagesCMS 实例，绑定 cms-origin.tsh520.cn）
 博客站点（Cloudflare Workers 静态托管，https://blog.5484826.xyz）
 ```
 
-- **源站域名分离**：Vercel 绑定 `cms-origin.tsh520.cn`（DNS → vercel.app），用户域名 `cms.tsh520.cn` 走 EdgeOne（回源 Host = cms-origin）——Vercel 的域名验证机制要求 DNS 持续指向它，不能直接套 CDN
+- **源站域名分离**：Vercel 绑定 `cms-origin.5484826.xyz`（DNS → vercel.app），用户域名 `cms.5484826.xyz` 走 Cloudflare（回源 Host = cms-origin）——Vercel 的域名验证机制要求 DNS 持续指向它，不能直接套 CDN
 - **配置声明**：仓库根目录 `.pages.yml` 声明 12 个内容集合（posts 按分类拆 13 个集合、moments/friends/apps/daohang/album/ziyuan 拆 2/life 拆 3、tombstones 2026-08 新增），字段与 `src/content.config.ts` 的 zod 对齐
 - **自定义字段**：imgbed（图床上传，走服务端代理）+ amap-geocode（高德坐标，保存时展开为 lat/lng）——在 pagescms 仓库（`E:\GithubProgect\MyRunProject\pagescms`）的 `fields/custom/` 定义，注册在 `fields/registry.ts`
 - **凭证**：Vercel 环境变量（GITHUB_APP_*、IMAGEBED_*、AMAP_KEY 等）；图床/高德代理路由在 pagescms 的 `app/api/` 下（凭证服务端持有）

@@ -1,9 +1,0 @@
-# 自定义响应头（EdgeOne Pages 支持）
-# config.yml 必须不缓存：Decap 后台靠它识别集合，CDN/浏览器缓存会导致
-# 配置更新后后台仍用旧配置（表现为集合列表不更新）
-/admin/config.yml
-  Cache-Control: no-cache, no-store, must-revalidate
-
-# widget 脚本带版本号访问（index.html 里 ?v= 参数），不缓存避免旧代码
-/admin/widgets/*
-  Cache-Control: no-cache
