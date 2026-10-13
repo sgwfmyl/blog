@@ -1,25 +1,26 @@
 # Cloudflare Workers 部署指南（Workers Static Assets）
 
-> 博客生产部署方案：**Cloudflare Workers Static Assets**。本地/CI 执行 `pnpm build` 产出 `dist/`，再用 `wrangler deploy` 把静态资源上传到 Workers 边缘托管，线上地址 `https://blog.5484826.xyz/`。
+> 博客生产部署方案：**Cloudflare Workers Static Assets**。日常由 GitHub Actions 自动部署：push main/`lh` 分支 → `pnpm build` 产出 `dist/` → `wrangler deploy` 上传到 Workers 边缘托管，线上地址 `https://blog.5484826.xyz/`。
 > 本文档是操作手册（2026-10 由 EdgeOne Pages 手册改写而来，EdgeOne 迁移记录见第四节）。
 
 ## 一、部署架构
 
 ```text
-本地（或 CI）：
-    1. 准备 .env（13+ 个构建期 PUBLIC_* 变量）
+GitHub Actions（.github/workflows/deploy.yml，push 分支自动触发）：
+    1. 读取仓库 Actions Secrets（构建期 PUBLIC_* 变量，见第三节）
     2. pnpm build → dist/（生成图标 → astro build → pagefind）
-    3. wrangler deploy（上传 dist/ 为 Workers 静态资源）
+    3. wrangler deploy（用 CLOUDFLARE_API_TOKEN 上传 dist/ 为 Workers 静态资源）
         ↓
 Cloudflare Workers Static Assets（wrangler.toml 的 assets.directory 指向 dist/）
     ↓ 自定义域名绑定（blog.5484826.xyz）
 用户浏览器
 ```
 
+- **自动部署**：push 到 `lh` 分支自动触发构建+上线，无需手动 `wrangler deploy`（流程见 `.github/workflows/deploy.yml`）
 - **构建与托管分离**：Astro 是构建期静态生成（`import.meta.env.PUBLIC_*` 在构建时注入），所以必须先构建再上传；Workers 运行时只是把 `dist/` 作为静态资源分发，不参与渲染
-- **无自动构建**：push main 不会自动触发上线。每次内容/代码更新后，需手动（或自建 CI）重新 `pnpm build` + `wrangler deploy`——这是与旧 EdgeOne Pages 集成最大的区别
 - 边缘分发：Workers 本身即全球边缘网络，无需额外 CDN 层
-- GitHub Actions 的 `build.yml` 仍保留作 CI 质量门（`astro check` + `pnpm build`，与线上构建一致）
+- GitHub Actions 的 `build.yml` 仍保留作 CI 质量门（`astro check` + `pnpm build`，与线上构建一致）；`biome.yml` 作代码质量门
+- 手动回滚/临时部署仍可用本地 `wrangler deploy` 或 `wrangler rollback`（见第四节）
 - 后台 PagesCMS 独立部署在 Vercel（`cms.5484826.xyz`），只写 git 仓库，与博客托管无关（见 `deploy-pagescms-vercel.md`）
 
 ## 二、前置准备（首次一次性）
@@ -59,7 +60,14 @@ not_found_handling = "404-page"     # 使用 Astro 自研的 dist/404.html（wra
 这些是 **Astro 构建期变量**（代码里 `import.meta.env.PUBLIC_*`，构建时被替换进产物），必须在 `pnpm build` 时存在。**不要**把它们配成 Workers 的 runtime secrets——Workers 运行时对已经静态化输出的页面不起作用：
 
 - 本地构建：照抄 `.env.example` 生成 `.env` 填齐（已 gitignore，不会误提交）
-- CI 构建：放到 GitHub 仓库 **Settings → Secrets and variables → Actions**
+- CI 构建（自动部署）：放到 GitHub 仓库 **Settings → Secrets and variables → Actions**。除下表构建期变量外，还需两个部署凭据：
+
+  | Secret 名 | 用途 |
+  |---|---|
+  | `CLOUDFLARE_API_TOKEN` | Cloudflare（Dashboard → My Profile → API Tokens，`Edit Cloudflare Workers` 权限），`wrangler deploy` 认证 |
+  | `CLOUDFLARE_ACCOUNT_ID` | Cloudflare Workers & Pages 页面右侧的 Account ID |
+
+  > 修改变量值时，`.env` 与 GitHub Secrets **需两处同步改**，否则线上仍用旧值（CI 是独立于本地的数据源）。
 
 | 变量名                             | 用途                                            |
 | ------------------------------- | --------------------------------------------- |
@@ -97,10 +105,22 @@ pnpm preview      # astro preview，验证 dist/ 行为（尾斜杠路由、404�
 
 ### 3. 部署
 
+**方式一：自动部署（日常，推荐）**
+
+push 到 `lh` 分支即触发 GitHub Actions（`.github/workflows/deploy.yml`）自动 `pnpm build` + `wrangler deploy`，无需本地操作。查看与回滚：
+
 ```bash
-wrangler deploy   # 上传 dist/ → 自动分配 *.workers.dev 子域，用预览域验证
-wrangler deployments list   # 查看历史部署
+wrangler deployments list          # 查看历史部署
+wrangler rollback                  # 线上回滚到上一个部署版本（秒级）
 ```
+
+**方式二：手动部署（本地/CI，备用）**
+
+```bash
+wrangler deploy   # 用 .env 本地构建后上传 → 自动分配 *.workers.dev 子域，用预览域验证
+```
+
+> 注意：本地手动部署用的是 `.env` 变量，自动部署用的是 GitHub Secrets——两者需保持一致，避免线上线下行为差异。
 
 ### 4. 首次部署验证清单
 
@@ -124,13 +144,14 @@ Workers **自定义域名**要求域名的 DNS 由 Cloudflare 托管（即 `5484
 ## 六、迁移记录
 
 - **2026-09-04**：GitHub Pages → **EdgeOne Pages**（GitHub 集成自动构建托管；`pages.yml` 与 `public/CNAME` 于 2026-09-21 补删）
-- **2026-10**：EdgeOne Pages → **Cloudflare Workers Static Assets**（本手册改写；手动/CI 构建上传，不再自动随 push 构建）
+- **2026-10**：EdgeOne Pages → **Cloudflare Workers Static Assets**（本手册改写；先手动部署，后启用 GitHub Actions 自动部署）
 
 注意事项：
 
-- 友链状态检测每日 5:17 自动 commit `public/friends-status.json`、友链截图在 friends 内容变化时自动提交，只会触发 GitHub Actions，**不会自动上线**；上线需重新 `pnpm build` + `wrangler deploy`
-- PagesCMS 后台在后台编辑保存同样 push main，属正常；同样需手动部署才生效
+- 友链状态检测每日 5:17 自动 commit `public/friends-status.json`、友链截图在 friends 内容变化时自动提交，会触发 GitHub Actions + **自动上线**（push 到 `lh` 即触发 `deploy.yml`）
+- PagesCMS 后台在后台编辑保存也会 push main/lh，属正常；同样会自动上线
 - 回滚：`wrangler rollback` 回退到上一个部署版本（秒级）；或本地重新构建后 `wrangler deploy`
+- 若审计/定格需求不想某次改动立刻上线，可在 GitHub Actions → `deploy.yml` → Run workflow 手动控制，或临时暂停该 workflow
 
 ## 七、常见问题
 
@@ -138,7 +159,7 @@ Workers **自定义域名**要求域名的 DNS 由 Cloudflare 托管（即 `5484
 | --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 构建失败            | 先看 Node 版本是否 ≥ 22、pnpm 是否 9.14.x、构建命令是否为 `pnpm build`；与 `build.yml` 的 CI 行为对照                                                                              |
 | 功能静默缺失（评论/统计空白） | 检查构建时 `.env` / CI secrets 是否逐项填齐（见第三节表）；确认不是配到了 Workers runtime 而非构建期                                                                                      |
-| 上线了但线上没变化       | Workers 无自动构建：确认执行了 `wrangler deploy` 且成功（`wrangler deployments list` 看最新一次）                                                                               |
+| 上线了但线上没变化       | 检查 GitHub Actions → `deploy.yml` 是否跑绿（`wrangler deployments list` 看最新一次带新内容）；若红，看是否构建期 Secrets 缺失；回滚用 `wrangler rollback` |
 | 需要换域名           | 改 `src/config/siteConfig.ts` 的 `site_url`（sitemap/robots/RSS/canonical 自动跟随）+ Dashboard 重新绑定域名；注意 `src/config/musicConfig.ts` 等硬编码的 `*.5484826.xyz` 子域不受影响 |
 | 404 页不生效        | 确认 `wrangler.toml` 里 `[assets] not_found_handling = "404-page"`（Astro 自研 404 页输出为 `dist/404.html`，wrangler 4.x 不再识别 `"404.html"` 这个旧取值）                    |
 
