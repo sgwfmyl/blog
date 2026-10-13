@@ -422,4 +422,15 @@ export const ja: Translation = {
 		"読み上げサービスが利用できないため、システム音声に切り替えました",
 	[Key.ttsNoServer]: "読み上げサービス未設定、システム音声を使用します",
 	[Key.ttsTruncated]: "記事が長いため、一部を省略して読み上げます",
+
+	// 管理者ログインモジュール
+	[Key.admin]: "管理",
+	[Key.adminPasswordPlaceholder]: "管理者パスワードを入力",
+	[Key.adminLogin]: "ログイン",
+	[Key.adminLogout]: "ログアウト",
+	[Key.adminWrongPassword]: "パスワードが違います",
+	[Key.adminCooldown]: "試行回数が多すぎます。{seconds}秒後にお試しください",
+	[Key.adminPrivateSpace]: "プライベート空間",
+	[Key.adminLoginHint]: "管理者モードです。非公開コンテンツにアクセスできます",
+	[Key.adminLoginFailed]: "ログインに失敗しました。後でもう一度お試しください",
 };

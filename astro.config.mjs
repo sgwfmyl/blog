@@ -215,6 +215,11 @@ export default defineConfig({
 					return false;
 				}
 
+				// 私密空间不收录（需要登录的动态内容）
+				if (pathname === "/private" || pathname.startsWith("/private/")) {
+					return false;
+				}
+
 				if (pathname === "/sponsor/" && !siteConfig.pages.sponsor) {
 					return false;
 				}

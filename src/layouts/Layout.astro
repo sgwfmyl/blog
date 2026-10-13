@@ -9,6 +9,7 @@ import MusicManager from "@components/features/MusicManager.astro";
 import PageLoader from "@components/features/PageLoader.astro";
 import SakuraEffect from "@components/features/SakuraEffect.astro";
 import ConfigCarrier from "@components/layout/ConfigCarrier.astro";
+import AuthManager from "@components/security/AuthManager.svelte";
 
 import {
 	backgroundWallpaper,
@@ -454,6 +455,9 @@ const siteLang = lang.replace("_", "-");
 
     <!-- Search Modal -->
     <SearchModal client:idle />
+
+    <!-- 管理员登录弹窗（Swup 容器外常驻） -->
+    <AuthManager client:idle />
   </body>
 </html>
 

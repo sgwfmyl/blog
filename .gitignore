@@ -64,6 +64,9 @@ src/.opencode
 
 .env*
 
+# wrangler 本地运行时 secrets（对应 .dev.vars.example 模板，不入库）
+.dev.vars
+
 # local tool state
 .wrangler/
 .pnpm-store/

@@ -424,4 +424,16 @@ export const ru: Translation = {
 	[Key.ttsFallback]: "Сервис чтения недоступен, переключено на системный голос",
 	[Key.ttsNoServer]: "Сервис чтения не настроен, используется системный голос",
 	[Key.ttsTruncated]: "Текст длинный: чтение частично сокращено",
+
+	// Модуль входа администратора
+	[Key.admin]: "Админ",
+	[Key.adminPasswordPlaceholder]: "Введите пароль администратора",
+	[Key.adminLogin]: "Войти",
+	[Key.adminLogout]: "Выйти",
+	[Key.adminWrongPassword]: "Неверный пароль",
+	[Key.adminCooldown]: "Слишком много попыток, повторите через {seconds} сек.",
+	[Key.adminPrivateSpace]: "Приватное пространство",
+	[Key.adminLoginHint]:
+		"Режим администратора включён — доступен приватный контент",
+	[Key.adminLoginFailed]: "Не удалось войти, попробуйте позже",
 };

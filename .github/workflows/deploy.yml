@@ -56,7 +56,6 @@ jobs:
           PUBLIC_IMAGEBED_UPLOAD_FOLDER: ${{ secrets.PUBLIC_IMAGEBED_UPLOAD_FOLDER }}
           PUBLIC_IMAGEBED_API_TOKEN: ${{ secrets.PUBLIC_IMAGEBED_API_TOKEN }}
           PUBLIC_TTS_SERVER: ${{ secrets.PUBLIC_TTS_SERVER }}
-          GATE_PASSWORD: ${{ secrets.GATE_PASSWORD }}
         run: pnpm build
 
       - name: Deploy to Cloudflare Workers
@@ -65,3 +64,16 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           command: deploy
+          # 运行时 Worker Secrets（非构建期变量）：名称须与下方 env 一一对应
+          secrets: |
+            ADMIN_PASSWORD
+            AUTH_SECRET
+            GH_PAT
+            GH_OWNER
+            GH_REPO
+        env:
+          ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+          AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
+          GH_PAT: ${{ secrets.GH_PAT }}
+          GH_OWNER: ${{ secrets.GH_OWNER }}
+          GH_REPO: ${{ secrets.GH_REPO }}

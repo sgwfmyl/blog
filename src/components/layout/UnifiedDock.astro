@@ -8,8 +8,8 @@ import { musicPlayerConfig } from "@/config/musicConfig";
 import I18nKey from "@/i18n/i18nKey";
 import { i18n } from "@/i18n/translation";
 import { getCategoryList, getTagList } from "@/utils/content-utils";
-import { getCategoryUrl, getTagUrl } from "@/utils/url-utils";
 import { getMergedMusicPlaylist } from "@/utils/music-playlist";
+import { getCategoryUrl, getTagUrl } from "@/utils/url-utils";
 
 interface Props {
 	headings?: unknown;
@@ -77,6 +77,10 @@ const dockMusicPlaylist = JSON.stringify(musicTracks);
       <span class="ud-theme-light"><Icon name="material-symbols:wb-sunny-outline-rounded" is:inline /></span>
       <span class="ud-theme-dark" style="display:none"><Icon name="material-symbols:dark-mode-outline-rounded" is:inline /></span>
       <span class="ud-tooltip">主题</span>
+    </button>
+    <button class="ud-btn" id="ud-auth-btn" type="button" aria-label="管理">
+      <Icon name="material-symbols:lock-outline-rounded" is:inline />
+      <span class="ud-tooltip">管理</span>
     </button>
   </div>
 
@@ -257,6 +261,7 @@ const dockMusicPlaylist = JSON.stringify(musicTracks);
 .ud-stack[data-expanded="true"] .ud-btn:nth-child(3) { transition-delay: 90ms; }
 .ud-stack[data-expanded="true"] .ud-btn:nth-child(4) { transition-delay: 120ms; }
 .ud-stack[data-expanded="true"] .ud-btn:nth-child(5) { transition-delay: 150ms; }
+.ud-stack[data-expanded="true"] .ud-btn:nth-child(6) { transition-delay: 180ms; }
 
 .ud-tooltip {
   position: absolute;
@@ -296,6 +301,8 @@ const dockMusicPlaylist = JSON.stringify(musicTracks);
 </style>
 
 <script>
+  import { requestAuthModalOpen } from "@/utils/auth-modal-controller";
+
   let _udAbort: AbortController | null = null;
 
   function bindUnifiedDock() {
@@ -404,6 +411,11 @@ const dockMusicPlaylist = JSON.stringify(musicTracks);
     document.getElementById("ud-top-btn")?.addEventListener("click", (e) => {
       e.stopPropagation();
       window.scroll({ top: 0, behavior: "smooth" });
+    });
+
+    document.getElementById("ud-auth-btn")?.addEventListener("click", (e) => {
+      e.stopPropagation();
+      requestAuthModalOpen();
     });
 
     document.getElementById("ud-friends-plus-btn")?.addEventListener("click", (e) => {

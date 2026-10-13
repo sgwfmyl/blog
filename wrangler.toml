@@ -1,6 +1,12 @@
 name = "blog"
 compatibility_date = "2026-10-13"
+main = "worker/index.ts"
 
 [assets]
 directory = "./dist"
 not_found_handling = "404-page"
+
+# 管理员认证 / 私密内容缓存 KV（wrangler kv namespace create ADMIN_KV 后填入 id）
+[[kv_namespaces]]
+binding = "ADMIN_KV"
+id = "915eb0640df644678621ea2b77177061"

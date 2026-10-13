@@ -153,7 +153,76 @@ Workers **自定义域名**要求域名的 DNS 由 Cloudflare 托管（即 `5484
 - 回滚：`wrangler rollback` 回退到上一个部署版本（秒级）；或本地重新构建后 `wrangler deploy`
 - 若审计/定格需求不想某次改动立刻上线，可在 GitHub Actions → `deploy.yml` → Run workflow 手动控制，或临时暂停该 workflow
 
-## 七、常见问题
+## 七、运行时 Worker Secrets / KV / 私密内容源（管理员认证模块，2026-10-14 新增）
+
+站点现有一个 main Worker（`worker/index.ts`）：路径以 `/api/` 开头走认证 / 私密内容 API，其余路径 `env.ASSETS.fetch()` 回退托管静态产物（现有公开页面行为零改变）。
+
+### 1. 运行时 Secrets（配到 Worker，非构建期变量）
+
+这些是 **Worker 运行时**读取的密钥。**不要**放进第三节的构建期变量表、也不要配成构建环境变量——静态页面在构建时就定稿，运行时 Secret 只对 `/api/*` 请求生效：
+
+| Secret        | 用途                                                          |
+| ------------- | ----------------------------------------------------------- |
+| `ADMIN_PASSWORD` | 管理员登录密码（仅密码登录）                                              |
+| `AUTH_SECRET` | Cookie HMAC 签名密钥（随机 ≥32 字节，生成一次永久保存，更换后全部会话失效）               |
+| `GH_PAT`      | GitHub 私有仓库只读 fine-grained PAT（仅授予内容仓库 Contents 读取权限）          |
+| `GH_OWNER`    | 私有仓库归属，如 `sgwfmyl`                                          |
+| `GH_REPO`     | 私有仓库名，如 `blog-private`                                     |
+
+配置位置：
+- **线上**：GitHub 仓库 Settings → Secrets 新增同名 5 项，`deploy.yml` 的 wrangler-action `secrets` 输入 + `env` 已声明自动注入；也可在 Cloudflare Dashboard → Workers → blog → Settings → Variables and Secrets 手工配置
+- **本地调试**：复制 `.dev.vars.example` 为 `.dev.vars`（已 gitignore，不会误提交）填入
+
+### 2. KV Namespace（登录限流 + 私密内容缓存）
+
+`wrangler.toml` 已声明 `[[kv_namespaces]] binding = "ADMIN_KV"`。首次部署前创建并回填 id：
+
+```bash
+pnpm wrangler kv namespace create ADMIN_KV   # 输出 {"id": "..."}，填入 wrangler.toml
+```
+
+用途：登录失败限流（按客户端 IP 计数，连续 5 次失败冷却 30s）+ GitHub 内容缓存（TTL 300s，规避 GitHub API 限流）。
+
+### 3. GitHub 私有仓库内容源
+
+隐藏内容存放在**私有仓库**（如 `blog-private`），**绝不能放进博客公开仓库**（否则等于公开）。仓库内结构：
+
+```text
+private/
+├── nav.json            # 隐藏导航条目（数组，字段对齐 daohang：name/url/icon/description/tags/category）
+├── pages/index.json    # 私密文章索引 [{slug, title, date}]
+└── pages/<slug>.md     # 私密文章（frontmatter title/date/description + markdown 正文）
+```
+
+Worker 用 `GH_PAT` 通过 GitHub Contents API 按需拉取；`/api/private/*` 未登录一律 401，前端游客态也不发请求——隐藏内容永远不出现在部署产物与抓包结果中。
+
+### 4. 前端认证与私密页
+
+- 登录入口：右下角坞站 / 移动菜单「管理」按钮 → 密码弹窗；成功后 7 天免输（HttpOnly 签名 Cookie `blog_admin`）
+- `/private/` 私密文章索引；`/private/<slug>` 私密文章：游客看到登录门，管理员动态拉取渲染
+- `/projects/` 网站导航：登录后自动合并注入远端 `nav.json` 条目（参与搜索 / 标签 / 分类筛选）
+- sitemap 已排除 `/private`，私密页 head 带 `noindex, nofollow`（防收录）
+
+### 5. 本地 wrangler dev 调试
+
+```bash
+pnpm build && pnpm wrangler dev
+```
+
+wrangler 读取 `.dev.vars` 的 5 个 Secret，托管 `dist/` + 运行 worker，可完整调试登录 / 限流 / 私密页 / 导航注入链路。日常写公开内容仍用 `pnpm dev`。
+
+### 6. 故障排查
+
+| 现象 | 排查 |
+|---|---|
+| 登录返回 401 | 密码错误，或 `ADMIN_PASSWORD` 未配置到 Worker secrets（本地看 `.dev.vars`，线上看 GitHub Secrets / Dashboard） |
+| 连续登录失败提示冷却 | 正常限流：连续 5 次失败冷却 30s（按 IP），等待后重试 |
+| 私密内容 502 `fetch_failed` | `GH_PAT / GH_OWNER / GH_REPO` 配置错误、PAT 权限不足（需 Contents 只读）或仓库路径不对 |
+| 游客访问 `/private/` 只见登录门 | 正常设计：未登录不发内容请求，登录后自动加载 |
+| 登录态突然失效 | Cookie 7 天过期，或 `AUTH_SECRET` 被更换（换密钥会使全部会话失效） |
+| 登录后导航页无远端条目 | 确认私有仓库 `private/nav.json` 存在且 JSON 为数组；Worker 日志看是否 502 |
+
+## 八、常见问题
 
 | 问题              | 排查                                                                                                                                                         |
 | --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |

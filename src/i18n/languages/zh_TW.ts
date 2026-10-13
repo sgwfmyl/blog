@@ -414,4 +414,15 @@ export const zh_TW: Translation = {
 	[Key.ttsFallback]: "朗讀服務無法使用，已切換系統語音",
 	[Key.ttsNoServer]: "未設定朗讀服務，使用系統語音",
 	[Key.ttsTruncated]: "文章較長，已截斷部分內容朗讀",
+
+	// 管理員登入模組
+	[Key.admin]: "管理",
+	[Key.adminPasswordPlaceholder]: "請輸入管理員密碼",
+	[Key.adminLogin]: "登入",
+	[Key.adminLogout]: "登出",
+	[Key.adminWrongPassword]: "密碼錯誤，請重試",
+	[Key.adminCooldown]: "嘗試過於頻繁，請 {seconds} 秒後重試",
+	[Key.adminPrivateSpace]: "私密空間",
+	[Key.adminLoginHint]: "已進入管理員模式，可存取私密內容",
+	[Key.adminLoginFailed]: "登入失敗，請稍後重試",
 };

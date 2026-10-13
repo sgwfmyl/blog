@@ -1,0 +1,329 @@
+---
+import { Icon } from "astro-icon/components";
+import PageTitle from "@/components/common/PageTitle.astro";
+import MainGridLayout from "@/layouts/MainGridLayout.astro";
+
+// 私密空间只有一个静态壳（/private/）：内容全部动态加载。
+// 详情路径 /private/<slug> 由 Worker 在运行时把请求回退到这个壳，
+// 页面脚本再从 pathname 提取 slug 拉取（见 worker/index.ts 的 /private 回退分支）。
+export const getStaticPaths = () => [{ params: { slug: undefined } }];
+---
+
+<MainGridLayout title="私密空间" description="管理员私密空间">
+
+  <!-- 不让搜索引擎收录私密页面 -->
+  <script slot="head" is:inline>
+    (function () {
+      if (window.__privatePageNoindex) return;
+      window.__privatePageNoindex = true;
+      var meta = document.createElement("meta");
+      meta.name = "robots";
+      meta.content = "noindex, nofollow";
+      document.head.appendChild(meta);
+    })();
+  </script>
+
+  <!-- 页面交互脚本必须放在 Swup 容器内（MainGridLayout slot 里），
+       Swup 换页进入时才会执行（CLAUDE.md §15） -->
+  <script slot="head" is:inline>
+    (function () {
+      /* 一次性绑定 document 级监听（head 脚本在 Swup 换页时可能被重新插入） */
+      if (window.__privatePageBound) return;
+      window.__privatePageBound = true;
+
+      function currentSlug() {
+        var m = window.location.pathname.match(/^\/private\/([\w-]+)\/?$/);
+        return m ? m[1] : "";
+      }
+
+      function escapeHtml(s) {
+        return String(s).replace(/[&<>"']/g, function (c) {
+          return {
+            "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
+          }[c];
+        });
+      }
+
+      function renderList(items) {
+        if (!items || !items.length) {
+          return '<p class="private-empty">暂无私密内容</p>';
+        }
+        return (
+          '<ul class="private-list">' +
+          items
+            .map(function (it) {
+              return (
+                '<li class="private-list__item">' +
+                '<a class="private-list__link" href="/private/' +
+                encodeURIComponent(it.slug) +
+                '/">' +
+                escapeHtml(it.title || it.slug) +
+                "</a>" +
+                (it.date
+                  ? '<span class="private-list__date">' + escapeHtml(it.date) + "</span>"
+                  : "") +
+                "</li>"
+              );
+            })
+            .join("") +
+          "</ul>"
+        );
+      }
+
+      function loadContent(slug) {
+        var contentEl = document.getElementById("private-content");
+        if (!contentEl) return;
+        contentEl.hidden = false;
+        contentEl.innerHTML = '<p class="private-loading">加载中…</p>';
+
+        var url = slug
+          ? "/api/private/pages/" + encodeURIComponent(slug)
+          : "/api/private/pages";
+
+        fetch(url, { credentials: "same-origin" })
+          .then(function (r) {
+            return r.json();
+          })
+          .then(function (data) {
+            if (!data || data.ok === false) {
+              contentEl.innerHTML = '<p class="private-error">内容加载失败</p>';
+              return;
+            }
+            if (slug) {
+              contentEl.innerHTML = "";
+              var renderer = window.__fireflyPrivateRenderer;
+              if (renderer) {
+                renderer.renderMarkdown(data.data, contentEl).catch(function () {
+                  contentEl.innerHTML = '<p class="private-error">内容渲染失败</p>';
+                });
+              } else {
+                contentEl.textContent = data.data;
+              }
+            } else {
+              contentEl.innerHTML = renderList(data.data);
+            }
+          })
+          .catch(function () {
+            contentEl.innerHTML = '<p class="private-error">内容加载失败</p>';
+          });
+      }
+
+      function refresh() {
+        var slug = currentSlug();
+        var contentEl = document.getElementById("private-content");
+        var gateEl = document.getElementById("private-login-gate");
+        if (!contentEl || !gateEl) return;
+
+        fetch("/api/auth/me", { credentials: "same-origin" })
+          .then(function (r) {
+            return r.json();
+          })
+          .then(function (data) {
+            if (data && data.admin) {
+              gateEl.hidden = true;
+              loadContent(slug);
+            } else {
+              contentEl.hidden = true;
+              gateEl.hidden = false;
+            }
+          })
+          .catch(function () {
+            contentEl.hidden = true;
+            gateEl.hidden = false;
+          });
+      }
+
+      document.addEventListener("click", function (ev) {
+        var btn = ev.target.closest("#private-login-btn");
+        if (!btn) return;
+        document.dispatchEvent(new CustomEvent("firefly:auth-modal-open"));
+      });
+
+      // 登录成功后自动刷新（AuthModal 登录成功时 dispatch）
+      document.addEventListener("firefly:auth-logged-in", refresh);
+
+      function reinit() {
+        refresh();
+      }
+
+      if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", refresh);
+      } else {
+        refresh();
+      }
+      document.addEventListener("astro:page-load", reinit);
+      document.addEventListener("astro:after-swap", reinit);
+      document.addEventListener("swup:content:replaced", reinit);
+    })();
+  </script>
+
+  <div class="flex w-full rounded-(--radius-large) overflow-clip relative min-h-32">
+    <div class="card-base z-10 px-4 py-6 md:px-9 relative w-full">
+      <div class="mb-8">
+        <PageTitle
+          title="私密空间"
+          eyebrow="Private"
+          description="仅管理员可见的动态内容"
+        />
+      </div>
+
+      <!-- 内容容器：管理员登录后由脚本动态注入（列表 / markdown） -->
+      <div id="private-content" class="private-content"></div>
+
+      <!-- 游客登录门 -->
+      <div id="private-login-gate" class="private-gate" hidden>
+        <Icon name="material-symbols:lock-outline-rounded" is:inline class="private-gate__icon" />
+        <p class="private-gate__text">私密空间需要管理员身份</p>
+        <button type="button" id="private-login-btn" class="private-gate__btn">
+          打开登录
+        </button>
+      </div>
+    </div>
+  </div>
+
+</MainGridLayout>
+
+<style>
+  /* ============================================
+   * 私密空间：加载 / 错误 / 列表 / 登录门
+   * ============================================ */
+
+  .private-content[hidden],
+  .private-gate[hidden] {
+    display: none;
+  }
+
+  .private-loading,
+  .private-error,
+  .private-empty {
+    padding: 2.5rem 1rem;
+    text-align: center;
+    font-size: 0.875rem;
+    color: var(--content-meta);
+  }
+
+  /* 私密文章列表 */
+  .private-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 0;
+    margin: 0;
+    list-style: none;
+  }
+
+  .private-list__item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.625rem 0.875rem;
+    border: 1px solid var(--line-divider);
+    border-radius: 0.75rem;
+    transition: background-color 200ms ease, border-color 200ms ease;
+  }
+
+  .private-list__item:hover {
+    background: var(--btn-plain-bg-hover);
+    border-color: var(--btn-plain-bg-hover);
+  }
+
+  .private-list__link {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: var(--deep-text);
+    text-decoration: none;
+  }
+
+  .private-list__link:hover {
+    color: var(--primary);
+  }
+
+  .private-list__date {
+    margin-left: auto;
+    flex: 0 0 auto;
+    font-size: 0.75rem;
+    color: var(--content-meta);
+  }
+
+  /* 登录门 */
+  .private-gate {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 3rem 1rem;
+    border: 1px dashed var(--line-divider);
+    border-radius: 1rem;
+    text-align: center;
+  }
+
+  .private-gate__icon {
+    font-size: 2.5rem;
+    color: var(--content-meta);
+  }
+
+  .private-gate__text {
+    margin: 0;
+    font-size: 0.9375rem;
+    color: var(--deep-text);
+  }
+
+  .private-gate__btn {
+    padding: 0.625rem 1.5rem;
+    border: none;
+    border-radius: 0.75rem;
+    background: var(--deep-text);
+    color: var(--page-bg);
+    font-family: inherit;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 150ms ease;
+  }
+
+  .private-gate__btn:hover {
+    opacity: 0.85;
+  }
+
+  /* 私密文章 markdown 正文：间距收窄，保持与普通文章一致的排版 token */
+  .private-content {
+    line-height: 1.75;
+    font-size: 0.9375rem;
+    color: var(--deep-text);
+    word-break: break-word;
+  }
+
+  .private-content :global(pre),
+  .private-content :global(code) {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+
+  .private-content :global(img) {
+    max-width: 100%;
+    border-radius: 0.5rem;
+  }
+
+  .private-content :global(blockquote) {
+    margin: 0;
+    padding: 0.25rem 1rem;
+    border-left: 3px solid var(--line-divider);
+    color: var(--content-meta);
+  }
+
+  .private-content :global(table) {
+    border-collapse: collapse;
+    width: 100%;
+    font-size: 0.875rem;
+  }
+
+  .private-content :global(th),
+  .private-content :global(td) {
+    border: 1px solid var(--line-divider);
+    padding: 0.375rem 0.625rem;
+    text-align: left;
+  }
+</style>

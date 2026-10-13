@@ -49,13 +49,14 @@
 ```
 src/
 ├── assets/images/       # 头像、封面等构建时图片
-├── components/          # 按功能域组织的组件（147 个文件）
+├── components/          # 按功能域组织的组件（149 个文件）
 │   ├── analytics/       # GA, Clarity, Umami (3)
 │   ├── comment/         # 评论系统：index + 5 种后端 + 3 个弹窗组件 + NotebookComment 笔记本列表页自研评论区（笔记引用 >>QUOTE>> 编码 + Waline 树形回复 pid/rid/at + 表情 :item: 标记，昵称/邮箱必填） (10)
 │   ├── common/          # 跨域共享基础组件 (17)
 │   ├── controls/        # 交互控件：搜索、归档（类型 Tab 筛选）、主题、Dock (8)
 │   ├── features/        # 独立功能模块 (26, 含 music-visualizer/、ArticleTtsPlayer.svelte 文章朗读播放器)
 │   ├── layout/          # 布局组件：Navbar, Footer, SideBar, HomeHero... (19)
+│   ├── security/        # 管理员认证（2026-10-14 新增）：AuthManager（挂载点）+ AuthModal（密码弹窗） (2)
 │   ├── misc/            # License, RelatedPosts, SharePoster (3)
 │   ├── moments/         # 动态卡片与评论弹窗
 │   ├── bills/         # 账单/资金（7：Balance 年度结余横幅卡 + MonthlyFlow 月度流水（按日分组/月份筛选/分页）+ BillCalendar 账单日历（农历+每日收支）+ DailyTrend/ExpenseRank/IncomeCategory/MonthlySummary/YearlyFlow，按图两栏等比缩小）
@@ -68,13 +69,14 @@ src/
 │   ├── album/ apps/ bangumi/ changelog/ daohang/
 │   ├── friends/ life/ moments/ music/ posts/ spec/ ziyuan/  # music/ 为 JSON 歌单（2026-10-08 起替代 bangumi/music md，见 src/content/music/playlist.json）；spec/about.mdx 为组件化 Q&A；更新日志图谱组件（ChangelogGraph）用于 /changelog/ 页（2026-08-30 起不再嵌入关于页）
 │   └── life/notebooks/  # notebooks 集合物理位置（life 的子目录，2026-09-27 起归档改 card 流，支持 images 多图 12字展开 + 年份下拉联动热力图与列表）
-├── i18n/                # 国际化（5 种语言，330 个翻译键）
+├── i18n/                # 国际化（5 种语言，339 个翻译键）
 │   └── languages/       # en.ts, zh_CN.ts, zh_TW.ts, ja.ts, ru.ts
 ├── layouts/             # Layout.astro (591行), MainGridLayout.astro (305行)
 ├── notes/               # Obsidian 笔记（不发布）
-├── pages/               # 路由（38 个文件；admin 后台已删除，勿重建）
+├── pages/               # 路由（39 个文件；admin 后台已删除，勿重建）
 │   ├── api/             # JSON API (2)：calendar.json.ts, home-stats.json.ts
 │   ├── album/ bangumi/ books/ categories/ life/ moments/ posts/ // moments/[slug] 已删除
+│   ├── private/         # 私密空间（2026-10-14 新增，/private/ 与 /private/<slug>，游客见登录门，管理员动态拉取）
 │   └── 404, about, archive, apps, changelog, circle, debug-urls, friends,
 │       guestbook, life/notebooks, movies-games/, music, projects, search,
 │       sponsor, rss, robots.txt, og
@@ -89,13 +91,15 @@ src/
 │   ├── transitions/     # Swup 过渡动画
 │   └── vendor/          # 第三方覆盖
 ├── types/               # TypeScript 类型：config.ts, bangumi.ts, guestbook-chat.ts
-└── utils/               # 工具函数（41 个文件，含 changelog.ts / tag-graph 控制器 / tts-text 正文提取等）
-    ├── 8 个控制器模块   # 见第 10 节
-    └── 33 个业务工具    # content-utils, category-tree（文件夹即分类，多级 `a/b` 推导 + CategoryNode 树）, date-utils, image-utils, url-utils, tts-text（朗读正文提取）...
+└── utils/               # 工具函数（44 个文件，含 changelog.ts / tag-graph 控制器 / tts-text 正文提取等）
+    ├── 9 个控制器模块   # 见第 10 节（含 auth-modal-controller 认证弹窗控制器）
+    └── 35 个业务工具    # content-utils, category-tree（文件夹即分类，多级 `a/b` 推导 + CategoryNode 树）, date-utils, image-utils, url-utils, tts-text（朗读正文提取）, auth-store（登录态 store）, private-renderer（私密 markdown 渲染）...
 
 # 根目录其他重要文件
 .pages.yml                # PagesCMS 后台配置（11 集合声明，见第 19 节）
 .claude/settings.json     # 命令白名单（分类器不可用时不卡 Bash）
+worker/                   # main Worker（2026-10-14 新增）：/api/* 管理员认证 + 私密内容代理（GitHub 私有仓库 + KV 缓存），其余路径 ASSETS 回退；wrangler.toml 的 main 指向它
+.dev.vars.example         # 本地 wrangler 运行时 Secrets 模板（复制为 .dev.vars 填入，已 gitignore）
 pagefind.yml              # Pagefind 索引排除配置（katex、搜索面板等）
 scripts/                  # 开发脚本：9 个中文命名脚本目录（生成图标/新建文章/生成摘要/转WebP/添加导航/下载影视/友链截图/友链状态检测/TTS服务）+ cli.js、vision.mjs（图片识别）、compress-images.mjs、rename-images.mjs、import-wallpapers.mjs、check-svelte-warnings.mjs（脚本清单见第 0 节；TTS服务 为 edge-tts 朗读服务，部署产物，教程见 docs/deploy-edge-tts.md）
 docs/                     # 部署文档（deploy-pagescms-vercel.md 等）+ superpowers/{specs,plans}（改版设计稿与实现计划，2026-09-30 起）
@@ -235,6 +239,18 @@ Layout.astro          ← HTML 骨架：<html>, <head>, <body>, 全局组件, �
 ### 3.9 文章朗读（TTS，2026-09-15 新增）
 
 文章页提取正文（自动跳过代码块/表格/公式）→ `POST PUBLIC_TTS_SERVER/tts` 流式合成 mp3 → `<audio>` 播放（倍速 0.8x~2x + 7 种音色，选择记忆），服务不可用时降级浏览器 Web Speech 系统语音。服务端代码与部署见 `docs/deploy-edge-tts.md`（`scripts/TTS服务/`，CORS 白名单含 blog.5484826.xyz 与本地 dev 端口 4500）；开关在 `src/config/ttsConfig.ts`。
+
+### 3.10 管理员认证与私密空间（2026-10-14 新增）
+
+**目标**：区分管理员 / 游客；管理员可访问动态加载的隐藏内容（**不进入部署产物**，游客抓 dist 拿不到）。
+
+- **运行时认证**：部署为 Workers Static Assets + main Worker（`worker/index.ts`，`wrangler.toml` 的 `main`）。路径以 `/api/` 开头走认证 / 私密内容 API，其余 `env.ASSETS.fetch()` 回退（公开页面行为零改变）。
+- **登录**：纯密码（Secret `ADMIN_PASSWORD`，常量时间比较）；HttpOnly 签名 Cookie `blog_admin`（HMAC-SHA256(AUTH_SECRET)，7 天免输）；按客户端 IP 登录限流（KV 计数，连续 5 次失败冷却 30s）。
+- **内容源**：GitHub **私有仓库**（`GH_OWNER/GH_REPO`，只读 PAT `GH_PAT`）经 Contents API 按需拉取，KV（`ADMIN_KV`，TTL 300s）缓存。仓库结构：`private/nav.json`、`private/pages/index.json`、`private/pages/<slug>.md`。**绝不放私有内容进博客公开仓库**。
+- **前端**：登录态 store（`src/utils/auth-store.ts`，pub-sub 模块单例，`window.__fireflyAuthStore` 门面）；入口 = 坞站 / 移动菜单「管理」按钮（`requestAuthModalOpen`）；`AuthManager.svelte`（Layout.astro `client:idle` 挂载，Swup 容器外常驻）安装门面并初始化；`AuthModal.svelte` 密码弹窗（登录成功派发 `firefly:auth-logged-in` 事件）。
+- **私密页**：`/private/` 与 `/private/<slug>`（`src/pages/private/[...slug].astro`），游客见登录门、**不发内容请求**；管理员动态拉取并用 `window.__fireflyPrivateRenderer`（`src/utils/private-renderer.ts`，marked + DOMParser 白名单 sanitize）渲染。head 带 `noindex`，sitemap 已排除 `/private`。
+- **导航页合并注入**：`projects.astro` 登录后 fetch `/api/private/nav` 注入 `.nav-card`（缓存 `window.__navPrivateData`，按 `.nav-main` 标记保证单次注入），注入后派发 `swup:content:replaced` 触发 reinit 重新筛选。未登录零请求。
+- **Secrets 与 KV 配置**：见 `docs/deploy-cloudeflare-workers.md` 第七节（5 个运行时 Secrets + `wrangler kv namespace create ADMIN_KV` 回填 wrangler.toml）；本地调试 `.dev.vars`，线上 GitHub Actions Secrets（deploy.yml 的 wrangler-action `secrets` 输入注入）。
 
 ---
 
@@ -586,6 +602,10 @@ window.swup.hooks.on("content:replace", myHandler); // 每次导航都注册新�
 | `window.__fireflyMusic` | 音乐管理器单例 | MusicManager.astro |
 | `window.__fireflyPageLoader` | 页面加载器单例 | page-loader-controller.js |
 | `window.__fireflySearchModalController` | 搜索模态框控制器 | search-modal-controller.ts |
+| `window.__fireflyAuthModalController` | 认证弹窗控制器（含 `__fireflyAuthModalPendingOpen` 待开标记 / `__fireflyAuthModalUnbind` 解绑） | auth-modal-controller.ts |
+| `window.__fireflyAuthStore` | 管理员登录态 store 门面（getAuthState/initAuth/login/logout/subscribeAuth） | auth-store.ts |
+| `window.__fireflyPrivateRenderer` | 私密页 markdown 渲染器门面 | private-renderer.ts |
+| `window.__navPrivateData` | 导航页远端私有导航缓存（跨 Swup 导航复用） | projects.astro |
 | `window.__backToTopInited` | 返回顶部按钮 guard | BackToTop.astro |
 | `window.__typewriterHooksBound` | 打字机 Swup 钩子 guard | TypewriterText.astro |
 | `window.__fireflySakuraInited` | 樱花特效 guard | SakuraEffect.astro |
