@@ -58,64 +58,6 @@ const commands = [
 		},
 	},
 	{
-		name: "music",
-		desc: "下载音乐（Meting API 搜索下载，含歌词/封面/md）",
-		usage: 'pnpm cli music "歌名" ["歌手"] --md',
-		run: (args) =>
-			spawn(
-				"python",
-				[resolve(__dirname, "下载音乐", "fetch-lrc.py"), ...args],
-				{ stdio: "inherit" },
-			),
-		prompt: async (q) => {
-			const name = await q("歌名: ");
-			if (!name) return null;
-			const args = [name];
-			const artist = await q("歌手 (回车跳过): ");
-			if (artist) args.push(artist);
-			args.push("--md");
-			const server = await q("平台 (netease/tencent/kugou，默认 netease): ");
-			if (server) args.push(`--server=${server}`);
-			return args;
-		},
-	},
-	{
-		name: "lrc",
-		desc: "从本地 M4A 文件提取歌词/封面",
-		usage: "pnpm cli lrc <文件或目录>",
-		run: (args) =>
-			spawn(
-				"python",
-				[resolve(__dirname, "下载音乐", "extract-lrc.py"), ...args],
-				{ stdio: "inherit" },
-			),
-		prompt: async (q) => {
-			const path = await q("M4A 文件或目录路径: ");
-			return path ? [path] : null;
-		},
-	},
-	{
-		name: "batch-music",
-		desc: "批量下载音乐（QQ 音乐歌单文本 → 逐首下载）",
-		usage:
-			"pnpm cli batch-music <歌曲列表文件> [--server=netease] [--skip-existing] [--dry-run]",
-		run: (args) =>
-			spawn(
-				"python",
-				[resolve(__dirname, "下载音乐", "batch-download.py"), ...args],
-				{ stdio: "inherit" },
-			),
-		prompt: async (q) => {
-			const file = await q("歌曲列表文件路径 (或回车从剪贴板粘贴): ");
-			const args = file ? [file] : [];
-			const server = await q("平台 (netease/tencent/kugou，默认 netease): ");
-			if (server) args.push(`--server=${server}`);
-			const skip = await q("跳过已下载？(y/n，默认 y): ");
-			if (skip.toLowerCase() !== "n") args.push("--skip-existing");
-			return args;
-		},
-	},
-	{
 		name: "desc",
 		desc: "AI 批量生成文章摘要（调用千问 API）",
 		usage: "pnpm cli desc",
@@ -221,12 +163,11 @@ async function interactiveMenu() {
 				? commands[n - 1]
 				: commands.find((cmd) => cmd.name === choice || cmd.alias === choice);
 
-		// 未匹配时，猜测用户意图 —— 中文输入大概率是搜影视/音乐
+		// 未匹配时，猜测用户意图 —— 中文输入大概率是搜影视
 		if (!match && /[一-龥]/.test(choice)) {
-			console.log(`\n"${choice}" 可能是影视或音乐名称？`);
-			const guess = await q("  [m] 下载影视  [u] 下载音乐  [n] 取消 > ");
+			console.log(`\n"${choice}" 可能是影视名称？`);
+			const guess = await q("  [m] 下载影视  [n] 取消 > ");
 			if (guess === "m") match = commands.find((c) => c.name === "media");
-			else if (guess === "u") match = commands.find((c) => c.name === "music");
 		}
 
 		if (!match) {
