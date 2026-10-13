@@ -17,7 +17,9 @@ export interface TtsConfig {
 const rawServerUrl = import.meta.env.PUBLIC_TTS_SERVER || "";
 
 export const ttsConfig: TtsConfig = {
-	enable: true,
+	// 2026-10-14 起关闭：TTS 后端（scripts/TTS服务/）当前未部署，为避免误导暂隐藏朗读入口；
+	// 重新启用：改回 true 并在 .env 配置 PUBLIC_TTS_SERVER
+	enable: false,
 	serverUrl: rawServerUrl.replace(/\/+$/, ""),
 	defaultVoice: "zh-CN-XiaoxiaoNeural",
 	voices: [
