@@ -18,7 +18,7 @@
 | `pnpm icons` | 重新生成图标（scripts/生成图标，build 自动前置执行） |
 | `pnpm compress-images` | 压缩图片（`--dry-run` 预检）；另有 rename-images / import-wallpapers 图片脚本 |
 | `pnpm cli` | 仓库工具 CLI（scripts/cli.js） |
-| `pnpm cli desc` | AI 批量补全文章摘要（scripts/生成摘要，需 `DASHSCOPE_API_KEY`） |
+| `pnpm cli desc` | AI 批量补全文章摘要（scripts/生成摘要，经自建 new-api 中转站调用，需 `.env` 的 `AI_RELAY_URL`/`AI_RELAY_TOKEN`/`AI_MODEL`；中转站部署与渠道配置见「服务专项：new-api（AI 中转站）」） |
 | `node scripts/友链截图/index.mjs [友链id] [--force]` | 站点截图（Playwright，伪装真实浏览器/字体+网络空闲等待/3 次尝试；产物 public/assets/friends-shots/{id小写}.webp；Action 每周日全量 + push friends 变化自动跑） |
 | `node scripts/友链状态检测/index.mjs` | 友链延迟检测（产物 public/friends-status.json；Action 每天自动跑） |
 | `bash "scripts/TTS服务/自测.sh"` | 服务器上自测朗读服务（见 `docs/deploy-edge-tts.md`） |

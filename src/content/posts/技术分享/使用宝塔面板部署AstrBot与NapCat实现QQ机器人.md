@@ -5,7 +5,9 @@ tags:
   - 总结
   - 转载
 image: https://img.tsh520.cn/file/blog/post-covers/tech-17-bt-astrbot-napcat-qq.webp
-description: ""
+description: "最近折腾了下用宝塔面板+Docker部署QQ机器人，把AstrBot和NapCat组合起来玩。虽然流程有点绕，但按照步骤走其实不难，就是得注意腾讯的风控预警。成功后能通过WebUI配置聊天逻辑，挺适合想试试AI机器人又不想买云服务的朋友，有需要的可以试试看。"
+descriptionSource: ai
+
 ---
 此文章转载为这位大佬：[THW](https://blog.tianhw.top/posts/bt-astrbot-napcat/#%E7%99%BB%E5%BD%95-astrbot)
 ![697](https://img.tsh520.cn/file/blog/article/astrbot.webp)

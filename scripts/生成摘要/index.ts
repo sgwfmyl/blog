@@ -1,10 +1,14 @@
 /**
- * AI 摘要补全脚本 — 调用千问（Qwen）API 为缺失 description 的文章批量生成摘要
+ * AI 摘要补全脚本 — 调用自建 AI 中转站（new-api）为缺失 description 的文章批量生成摘要
  *
  * 用法：
  *   pnpm cli desc（内部等价于 npx tsx --env-file=.env scripts/生成摘要/index.ts）
  *
  * 只补全新文章（没有 description 的），已有 description 的跳过，不覆盖。
+ *
+ * 调用链路（2026-10 起经自建 new-api 中转站，OpenAI 兼容）：
+ *   本脚本 → new-api（ai.5484826.xyz/v1）→ 渠道（如 Cloudflare Workers AI 免费模型）
+ *   中转地址/令牌/模型名读自 .env 的 AI_RELAY_URL / AI_RELAY_TOKEN / AI_MODEL（均已 gitignore）。
  */
 
 import * as fs from "node:fs";
@@ -12,16 +16,34 @@ import * as path from "node:path";
 import matter from "gray-matter";
 
 // ============================================================
-// 配置：千问 API（密钥从环境变量 DASHSCOPE_API_KEY 读取，写在 .env（已 gitignore）。
-// 2026-08-30 GitGuardian 事故：密钥曾硬编码于此并被推送公开，已轮换——切勿再把密钥写进任何被跟踪的文件）
+// 配置：自建 new-api 中转站（OpenAI 兼容端点，本脚本不持有任何厂商密钥）。
+// 中转站部署与渠道配置见文档「服务专项：new-api（AI 中转站）」。
 // ============================================================
-const QWEN_API_KEY = process.env.DASHSCOPE_API_KEY ?? "";
-const QWEN_BASE_URL = "https://dashscope.aliyuncs.com/compatible-mode/v1";
-const QWEN_MODEL = "qwen-plus";
+// AI_RELAY_URL：中转站 OpenAI 兼容端点（如 https://ai.5484826.xyz/v1，不含尾斜杠）
+const RELAY_URL = (process.env.AI_RELAY_URL ?? "").replace(/\/+$/, "");
+// AI_RELAY_TOKEN：new-api 后台「令牌」页签创建的分发令牌
+const RELAY_TOKEN = process.env.AI_RELAY_TOKEN ?? "";
+// AI_MODEL：必须与 new-api 渠道「模型」填写的完整模型 ID 逐字一致
+// （如 Cloudflare Workers AI 免费模型 @cf/zai-org/glm-4.7-flash）
+const AI_MODEL = process.env.AI_MODEL ?? "";
 
-if (!QWEN_API_KEY) {
+if (!RELAY_URL) {
   console.error(
-    "❌  缺少 DASHSCOPE_API_KEY 环境变量：请在项目根目录 .env 中配置后再运行本脚本",
+    "❌  缺少 AI_RELAY_URL 环境变量：请在项目根目录 .env 中配置中转地址后再运行本脚本",
+  );
+  process.exit(1);
+}
+
+if (!RELAY_TOKEN) {
+  console.error(
+    "❌  缺少 AI_RELAY_TOKEN 环境变量：请在 new-api 后台创建令牌后填入 .env",
+  );
+  process.exit(1);
+}
+
+if (!AI_MODEL) {
+  console.error(
+    "❌  缺少 AI_MODEL 环境变量：请填入与 new-api 渠道「模型」一致的完整模型 ID（如 @cf/zai-org/glm-4.7-flash）",
   );
   process.exit(1);
 }
@@ -33,7 +55,7 @@ const MAX_CONTEXT_CHARS = 2600;
 const MAX_RETRIES = 2;
 
 // ============================================================
-// 千问系统提示词 — 生成"像人写的"博客摘要
+// 摘要系统提示词 — 生成"像人写的"博客摘要
 // ============================================================
 const SYSTEM_PROMPT = `你是一个以第一视角写作的个人博客作者。你的博客记录技术学习、日常生活和真实感悟。
 
@@ -64,23 +86,32 @@ function writeFrontmatter(
   source: "ai" | "manual",
 ): void {
   let fm = raw;
-  const hasDesc = /^description\s*:\s*/m.test(fm);
+  // 只把「有实际内容」的 description 视为已存在；空字符串占位仍需要补全
+  const parsedData = matter(fm).data as Record<string, unknown>;
+  const hasDesc =
+    typeof parsedData.description === "string" &&
+    parsedData.description.trim().length > 0;
   const hasSource = /^descriptionSource\s*:\s*/m.test(fm);
 
   if (!hasDesc) {
-    const closingIdx = fm.indexOf("---", 4);
-    if (closingIdx === -1) {
-      log("⚠️", `无法定位 frontmatter 结束位置: ${filePath}`);
-      return;
-    }
-    const beforeClose = fm.slice(0, closingIdx);
-    const afterClose = fm.slice(closingIdx);
-
     const safeDesc = description.includes('"')
       ? `"${description.replace(/"/g, '\\"')}"`
       : `"${description}"`;
 
-    fm = `${beforeClose.trimEnd()}\ndescription: ${safeDesc}\n\n${afterClose.trimStart()}`;
+    const descLine = /^description\s*:.*$/m;
+    if (descLine.test(fm)) {
+      // 已有 description 占位（含空字符串）→ 整行替换，避免重复行
+      fm = fm.replace(descLine, `description: ${safeDesc}`);
+    } else {
+      const closingIdx = fm.indexOf("---", 4);
+      if (closingIdx === -1) {
+        log("⚠️", `无法定位 frontmatter 结束位置: ${filePath}`);
+        return;
+      }
+      const beforeClose = fm.slice(0, closingIdx);
+      const afterClose = fm.slice(closingIdx);
+      fm = `${beforeClose.trimEnd()}\ndescription: ${safeDesc}\n\n${afterClose.trimStart()}`;
+    }
   }
 
   if (!hasSource) {
@@ -114,7 +145,7 @@ function extractContext(body: string, maxChars: number): string {
     : cleaned;
 }
 
-/** 调用千问 API 生成摘要（带重试） */
+/** 调用中转站生成摘要（带重试） */
 async function generateDescription(
   title: string,
   content: string,
@@ -124,20 +155,22 @@ async function generateDescription(
 
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
     try {
-      const resp = await fetch(`${QWEN_BASE_URL}/chat/completions`, {
+      const resp = await fetch(`${RELAY_URL}/chat/completions`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${QWEN_API_KEY}`,
+          Authorization: `Bearer ${RELAY_TOKEN}`,
         },
         body: JSON.stringify({
-          model: QWEN_MODEL,
+          model: AI_MODEL,
           messages: [
             { role: "system", content: SYSTEM_PROMPT },
             { role: "user", content: userMsg },
           ],
           temperature: 0.75,
-          max_tokens: 256,
+          // 1024：兼容推理型模型（如 @cf/zai-org/glm-4.7-flash）——思考会先消耗输出额度，
+          // 256 会被推理过程占满导致 content 为空、finish_reason=length
+          max_tokens: 1024,
         }),
       });
 
@@ -197,7 +230,7 @@ const POSTS_DIR = path.resolve("src/content/posts");
 
 async function main() {
   log("🚀", `AI 摘要补全脚本启动`);
-  log("📡", `模型: ${QWEN_MODEL}`);
+  log("📡", `模型: ${AI_MODEL}`);
   log("📂", `文章目录: ${POSTS_DIR}`);
 
   const mdFiles = collectMarkdownFiles(POSTS_DIR);
