@@ -14,7 +14,7 @@
     # 指定类型 (movie / tv / anime / documentary)
     python fetch-media.py "黑暗荣耀" --type=tv
 
-    # 快速模式（自动选第一个结果，status=看过，跳过确认）
+    # 快速模式（自动选第一个结果，status=已看，跳过确认）
     python fetch-media.py "你的名字" -y
 
     # 快速模式 + 预设状态和评分
@@ -29,8 +29,8 @@
 TMDB 搜不到时自动降级为手动模式，交互填写所有字段。
 
 默认 MD 输出目录: src/content/bangumi/anime/
-默认封面输出目录: scripts/img-anime/
-封面 CDN 地址: https://img.tsh520.cn/file/anime/
+封面不落本地：抓取后直接上传 CloudFlare ImgBed 图床（配置见根目录 .env 的 PUBLIC_IMAGEBED_*），md 的 image 用图床上传返回的真实 URL；
+上传目录固定为 blog/anime、渠道名 blog（影视封面专用）。
 
 TMDB API: https://developer.themoviedb.org/reference/intro/getting-started
 """
@@ -50,13 +50,17 @@ if sys.platform == "win32":
 # ── 配置 ──────────────────────────────────────────────
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 BLOG_BANGUMI_DIR = os.path.join(BASE_DIR, "src", "content", "bangumi", "anime")
-COVER_DIR = os.path.join(os.path.dirname(__file__), "img-anime")
-CDN_BASE = "https://img.tsh520.cn/file/anime"
 TMDB_API_KEY = "8a9a0dd41f7b6fe6d4d20f6cc9bd26f2"
+
+# 图床上传配置：读取根目录 .env 的 PUBLIC_IMAGEBED_*；
+# 渠道名称与上传目录为影视封面专用（不与评论区共用 blog / blog/comment）
+IMGBED_CHANNEL_NAME = "blog"
+IMGBED_UPLOAD_FOLDER = "影视/封面"
 TMDB_BASE = "https://api.themoviedb.org/3"
 TMDB_IMAGE_BASE = "https://image.tmdb.org/t/p/w500"
 
-STATUS_LABELS = {1: "想看", 2: "看过", 3: "在看", 4: "搁置", 5: "抛弃"}
+STATUS_LABELS = {1: "待看", 2: "已看", 3: "追更", 4: "搁置", 5: "弃坑"}
+STATUS_PROMPT = "  ".join("{}:{}".format(k, v) for k, v in STATUS_LABELS.items())
 
 GENRE_MAP = {
     28: "动作", 12: "冒险", 16: "动画", 35: "喜剧", 80: "犯罪",
@@ -69,45 +73,172 @@ GENRE_MAP = {
 
 # ── 工具函数 ──────────────────────────────────────────
 
-def human_size(n):
-    for u in ["B", "KB", "MB", "GB"]:
-        if n < 1024:
-            return "{:.0f} {}".format(n, u)
-        n /= 1024
-    return "{:.1f} GB".format(n)
-
-
-def download_file(url, filepath, label=""):
-    """下载文件带进度条，返回是否成功"""
+def fetch_bytes(url, referer=None, timeout=120):
+    """抓取远程二进制内容到内存（不落盘），返回 bytes 或 None"""
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+    }
+    if referer:
+        headers["Referer"] = referer
     try:
-        req = urllib.request.Request(url, headers={
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-            "Referer": url,
-        })
-        with urllib.request.urlopen(req, timeout=120) as resp:
-            total = int(resp.headers.get("Content-Length", 0))
-            with open(filepath, "wb") as f:
-                downloaded = 0
-                while True:
-                    chunk = resp.read(65536)
-                    if not chunk:
-                        break
-                    f.write(chunk)
-                    downloaded += len(chunk)
-                    if total > 0:
-                        pct = downloaded * 100 // total
-                        bar_len = 25
-                        filled = downloaded * bar_len // total
-                        bar = "=" * filled + ">" + " " * (bar_len - filled)
-                        print("\r  {} [{:3d}%] {} {}/{}".format(
-                            label, pct, bar, human_size(downloaded), human_size(total)), end="")
-                print()
-        return True
+        req = urllib.request.Request(url, headers=headers)
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            return resp.read()
     except Exception as e:
-        print("\n  下载失败: {}".format(e))
-        if os.path.exists(filepath):
-            os.remove(filepath)
-        return False
+        print("  抓取失败: {}".format(e))
+        return None
+
+
+def load_imgbed_config():
+    """从根目录 .env 读取图床上传配置（URL / 鉴权 / 渠道）"""
+    config = {
+        "url": os.environ.get("PUBLIC_IMAGEBED_URL", ""),
+        "token": os.environ.get("PUBLIC_IMAGEBED_API_TOKEN", ""),
+        "auth_code": os.environ.get("PUBLIC_IMAGEBED_AUTH_CODE", ""),
+        "channel": os.environ.get("PUBLIC_IMAGEBED_CHANNEL", ""),
+    }
+    env_path = os.path.join(BASE_DIR, ".env")
+    if os.path.exists(env_path):
+        with open(env_path, "r", encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if not line or line.startswith("#") or "=" not in line:
+                    continue
+                key, _, value = line.partition("=")
+                key = key.strip()
+                value = value.strip().strip('"').strip("'")
+                if key in (
+                    "PUBLIC_IMAGEBED_URL",
+                    "PUBLIC_IMAGEBED_API_TOKEN",
+                    "PUBLIC_IMAGEBED_AUTH_CODE",
+                    "PUBLIC_IMAGEBED_CHANNEL",
+                ):
+                    # 环境变量名 → config 键名的显式映射（避免去掉前缀后与短键名不一致）
+                    mapped = {
+                        "PUBLIC_IMAGEBED_URL": "url",
+                        "PUBLIC_IMAGEBED_API_TOKEN": "token",
+                        "PUBLIC_IMAGEBED_AUTH_CODE": "auth_code",
+                        "PUBLIC_IMAGEBED_CHANNEL": "channel",
+                    }[key]
+                    if not config[mapped]:
+                        config[mapped] = value
+    return config
+
+
+def upload_multi_part(url, fields, filename, content, content_type, headers=None):
+    """向图床 /upload 发送 multipart 上传，返回响应 bytes（b"..."）或 None"""
+    boundary = "----traebounds{}".format(abs(hash(url)) % 10 ** 8)
+    parts = []
+    for name, value in fields.items():
+        parts.append("--{}\r\nContent-Disposition: form-data; name=\"{}\"\r\n\r\n{}\r\n".format(
+            boundary, name, value).encode("utf-8"))
+    parts.append(
+        "--{}\r\nContent-Disposition: form-data; name=\"file\"; filename=\"{}\"\r\n"
+        "Content-Type: {}\r\n\r\n".format(boundary, filename, content_type).encode("utf-8"))
+    parts.append(content)
+    parts.append("\r\n--{}--\r\n".format(boundary).encode("utf-8"))
+    body = b"".join(parts)
+    merged = dict(headers or {})
+    # 必须带浏览器 UA：图床的 Cloudflare WAF 会拦截 Python-urllib 请求（Error 1010）
+    merged.setdefault("User-Agent",
+                      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
+    merged.update({
+        "Content-Type": "multipart/form-data; boundary={}".format(boundary),
+        "Content-Length": str(len(body)),
+    })
+    try:
+        req = urllib.request.Request(url, data=body, method="POST", headers=merged)
+        with urllib.request.urlopen(req, timeout=120) as resp:
+            return resp.read()
+    except Exception as e:
+        print("  上传失败: {}".format(e))
+        return None
+
+
+def upload_cover_to_imgbed(source_url, title, default_ext=".jpg"):
+    """抓取封面并上传到图床，返回可访问的图床完整 URL；无封面/失败返回 \"\" """
+    if not source_url:
+        print("  [无封面] 未获取到海报")
+        return ""
+    ext = default_ext
+    lowered = source_url.lower()
+    if lowered.endswith(".png") or "image/png" in lowered:
+        ext = ".png"
+    elif lowered.endswith(".webp") or "image/webp" in lowered:
+        ext = ".webp"
+
+    content = fetch_bytes(source_url, referer=source_url)
+    if content is None:
+        return ""
+
+    cfg = load_imgbed_config()
+    base = cfg["url"]
+    if not cfg["url"]:
+        print("  [配置缺失] 未配置 PUBLIC_IMAGEBED_URL（根目录 .env）")
+        return ""
+    base = base.removesuffix("/")
+    upload_url = "{}/upload".format(base)
+    # query 值需 URL 编码：目录名/渠道名可能含中文（urllib 对拼接后的整条中文 URL 做 ASCII 编码会抛错）
+    from urllib.parse import urlencode
+    query_params = {}
+    if cfg.get("channel"):
+        query_params["uploadChannel"] = cfg["channel"]
+    if IMGBED_CHANNEL_NAME:
+        query_params["channelName"] = IMGBED_CHANNEL_NAME
+    if IMGBED_UPLOAD_FOLDER:
+        query_params["uploadFolder"] = IMGBED_UPLOAD_FOLDER
+    if query_params:
+        upload_url += "?" + urlencode(query_params)
+
+    ctype_map = {".jpg": "image/jpeg", ".jpeg": "image/jpeg",
+                 ".png": "image/png", ".webp": "image/webp"}
+    content_type = ctype_map.get(ext, "image/jpeg")
+
+    fields = {"name": "{}{}".format(title, ext)}
+    if cfg.get("auth_code"):
+        fields["password"] = cfg["auth_code"]
+    headers = {"Accept": "application/json"}
+    if cfg.get("token"):
+        headers["Authorization"] = "Bearer {}".format(cfg["token"])
+
+    print("  上传封面到图床: {}{}".format(title, ext))
+    resp_body = upload_multi_part(
+        upload_url, fields, "{}{}".format(title, ext), content, content_type, headers)
+    if resp_body is None:
+        return ""
+    try:
+        payload = json.loads(resp_body.decode("utf-8"))
+    except Exception:
+        print("  上传响应解析失败")
+        return ""
+
+    # 兼容图床返回：数组取首个 src，相对路径拼图床 origin（与前端 resolveImgbedSrc 对齐）
+    def absolutize(src):
+        """把图床返回的相对 src 转成绝对 URL；图床存储路径可能含中文，需 URL 编码但保留 / 分隔符"""
+        if not src:
+            return ""
+        if src.startswith(("http://", "https://")):
+            return src
+        from urllib.parse import quote, urlsplit
+        encoded = quote(src, safe="/")  # 编码中文等非 ASCII，保留 / 目录分隔符
+        origin = "{}://{}".format(urlsplit(base).scheme, urlsplit(base).netloc)
+        return origin + (encoded if encoded.startswith("/") else "/" + encoded)
+
+    if isinstance(payload, list):
+        for item in payload:
+            if isinstance(item, dict) and item.get("src"):
+                return absolutize(item["src"])
+    # 兜底解析 {data:{links:{url}}} / {data:{url}} / {url}
+    def _find_url(obj):
+        if isinstance(obj, dict):
+            if isinstance(obj.get("url"), str) and obj["url"]:
+                return obj["url"]
+            for v in obj.values():
+                r = _find_url(v)
+                if r:
+                    return r
+        return ""
+    return absolutize(_find_url(payload))
 
 
 def tmdb_request(endpoint, api_key, params=None):
@@ -464,8 +595,11 @@ def process(query, api_key, user_type=None, fast_mode=False,
         print("  简介: {}...".format(overview[:120]))
     print("=" * 50)
 
-    # 5. 确认 / 填写字段
-    image_path = "https://img.tsh520.cn/file/anime/{}.jpg".format(title)
+    # 5. 上传封面到图床（获取真实可访问 URL，不落本地）
+    poster_url = ""
+    if poster_path:
+        poster_url = "{}{}".format(TMDB_IMAGE_BASE, poster_path)
+    image_path = upload_cover_to_imgbed(poster_url, title)
 
     if fast_mode:
         status = preset_status or 2
@@ -476,7 +610,7 @@ def process(query, api_key, user_type=None, fast_mode=False,
             status, STATUS_LABELS.get(status, "?"), score, tags))
     else:
         # status
-        print("\n状态: 1:想看 2:看过 3:在看 4:搁置 5:抛弃")
+        print("\n状态: {}".format(STATUS_PROMPT))
         if preset_status:
             status = preset_status
             print("  [预设] status = {} ({})".format(status, STATUS_LABELS.get(status, "?")))
@@ -509,20 +643,7 @@ def process(query, api_key, user_type=None, fast_mode=False,
         # comment
         comment = input("  评价/备注 (可选): ").strip()
 
-    # 6. 下载封面
-    os.makedirs(COVER_DIR, exist_ok=True)
-    cover_file = os.path.join(COVER_DIR, "{}.jpg".format(title))
-
-    if os.path.exists(cover_file):
-        print("\n  [跳过] 已有封面: {}.jpg".format(title))
-    elif poster_path:
-        poster_url = "{}{}".format(TMDB_IMAGE_BASE, poster_path)
-        print("\n  下载封面: {}.jpg".format(title))
-        download_file(poster_url, cover_file, "封面")
-    else:
-        print("\n  [无封面] 该影视无海报")
-
-    # 7. 生成 md
+    # 6. 生成 md
     os.makedirs(BLOG_BANGUMI_DIR, exist_ok=True)
     md_file = "{}.md".format(title)
     md_path = os.path.join(BLOG_BANGUMI_DIR, md_file)
@@ -613,7 +734,7 @@ def finalize(title, name_cn, subcategory, genre_tags, poster_url,
         print("\n快速模式: status={}({}), score={}, tags={}".format(
             status, STATUS_LABELS.get(status, "?"), score, tags))
     else:
-        print("\n状态: 1:想看 2:看过 3:在看 4:搁置 5:抛弃")
+        print("\n状态: {}".format(STATUS_PROMPT))
         if preset_status:
             status = preset_status
             print("  [预设] status = {} ({})".format(status, STATUS_LABELS.get(status, "?")))
@@ -643,26 +764,10 @@ def finalize(title, name_cn, subcategory, genre_tags, poster_url,
 
         comment = input("  评价/备注 (可选): ").strip()
 
-    # 下载封面
-    download_url = cover_url or poster_url
-    if download_url:
-        os.makedirs(COVER_DIR, exist_ok=True)
-        ext = ".jpg"
-        if download_url.lower().endswith(".png"):
-            ext = ".png"
-        elif download_url.lower().endswith(".webp"):
-            ext = ".webp"
-        cover_file = os.path.join(COVER_DIR, "{}{}".format(title, ext))
-        if os.path.exists(cover_file):
-            print("\n  [跳过] 已有封面: {}{}".format(title, ext))
-        else:
-            print("\n  下载封面: {}{}".format(title, ext))
-            download_file(download_url, cover_file, "封面")
-    else:
-        print("\n  [无封面] 未获取到海报")
+    # 上传封面到图床（获取真实可访问 URL，不落本地）
+    image_path = upload_cover_to_imgbed(cover_url or poster_url, title)
 
     # 生成 md
-    image_path = "https://img.tsh520.cn/file/anime/{}.jpg".format(title)
     os.makedirs(BLOG_BANGUMI_DIR, exist_ok=True)
     md_file = "{}.md".format(title)
     md_path = os.path.join(BLOG_BANGUMI_DIR, md_file)
@@ -702,7 +807,7 @@ def process_manual(title, user_type=None, fast_mode=False,
         subcategory = sc if sc in ("movie", "tv", "anime", "documentary") else "movie"
 
         # status
-        print("状态: 1:想看 2:看过 3:在看 4:搁置 5:抛弃")
+        print("状态: {}".format(STATUS_PROMPT))
         if preset_status:
             status = preset_status
             print("  [预设] status = {} ({})".format(status, STATUS_LABELS.get(status, "?")))
@@ -734,23 +839,12 @@ def process_manual(title, user_type=None, fast_mode=False,
         # cover URL (可选)
         cover_url_input = input("  封面图 URL (可选，回车跳过): ").strip()
 
-    # 下载封面（如果提供了 URL）
-    if cover_url_input:
-        os.makedirs(COVER_DIR, exist_ok=True)
-        ext = ".jpg"
-        if cover_url_input.lower().endswith(".png"):
-            ext = ".png"
-        elif cover_url_input.lower().endswith(".webp"):
-            ext = ".webp"
-        cover_file = os.path.join(COVER_DIR, "{}{}".format(title, ext))
-        print("  下载封面...")
-        download_file(cover_url_input, cover_file, "封面")
-    else:
-        if fast_mode:
-            print("  封面: [无] (手动模式下用 --cover-url= 参数传入)")
+    # 上传封面到图床（如果提供了 URL；获取真实可访问 URL，不落本地）
+    if not cover_url_input and fast_mode:
+        print("  封面: [无] (手动模式下用 --cover-url= 参数传入)")
+    image_path = upload_cover_to_imgbed(cover_url_input, title)
 
     # 生成 md
-    image_path = "{}/{}.jpg".format(CDN_BASE, title)
     os.makedirs(BLOG_BANGUMI_DIR, exist_ok=True)
     md_file = "{}.md".format(title)
     md_path = os.path.join(BLOG_BANGUMI_DIR, md_file)
