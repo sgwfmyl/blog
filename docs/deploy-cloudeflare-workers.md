@@ -48,6 +48,7 @@ compatibility_date = "2026-10-13"
 
 [assets]
 directory = "./dist"                  # pnpm build 的产物目录
+binding = "ASSETS"                    # 必须显式声明，否则 Worker 内 env.ASSETS 为 undefined（详情见下方坑点）
 not_found_handling = "404-page"     # 使用 Astro 自研的 dist/404.html（wrangler 4.x 合法值，旧值 "404.html" 已不被识别）
 ```
 
