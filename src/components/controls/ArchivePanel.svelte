@@ -2,11 +2,11 @@
 import { onMount, tick } from "svelte";
 import I18nKey from "@/i18n/i18nKey";
 import { i18n } from "@/i18n/translation";
-import { getPostUrlBySlug } from "@/utils/url-utils";
 import {
-	subscribePrivateMeta,
 	type PrivateMetaItem,
+	subscribePrivateMeta,
 } from "@/utils/private-meta-store";
+import { getPostUrlBySlug } from "@/utils/url-utils";
 
 interface Post {
 	id: string;
@@ -443,10 +443,9 @@ onMount(() => {
 	}
 	// 登录后合并私密内容：公开数据（props）与私密元数据（store）统一走同一套筛选/分组逻辑
 	const unsubscribeMeta = subscribePrivateMeta((meta) => {
-		mergedPosts = [
-			...sortedPosts,
-			...meta.items.map(toArchivePost),
-		].sort((a, b) => b.data.published.getTime() - a.data.published.getTime());
+		mergedPosts = [...sortedPosts, ...meta.items.map(toArchivePost)].sort(
+			(a, b) => b.data.published.getTime() - a.data.published.getTime(),
+		);
 		applyFilters(mergedPosts);
 		void tick().then(updateTabIndicator);
 	});

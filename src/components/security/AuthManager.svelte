@@ -1,8 +1,8 @@
 <script lang="ts">
 import { onMount } from "svelte";
 import { initAuth, installAuthStore } from "@/utils/auth-store";
-import { installPrivateRenderer } from "@/utils/private-renderer";
 import { installPrivateMetaStore } from "@/utils/private-meta-store";
+import { installPrivateRenderer } from "@/utils/private-renderer";
 import AuthModal from "./AuthModal.svelte";
 
 /**
