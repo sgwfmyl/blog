@@ -244,7 +244,7 @@ Layout.astro          ← HTML 骨架：<html>, <head>, <body>, 全局组件, �
 
 **目标**：区分管理员 / 游客；管理员可访问动态加载的隐藏内容（**不进入部署产物**，游客抓 dist 拿不到）。
 
-- **运行时认证**：部署为 Workers Static Assets + main Worker（`worker/index.ts`，`wrangler.toml` 的 `main`）。路径以 `/api/` 开头走认证 / 私密内容 API，其余 `env.ASSETS.fetch()` 回退（公开页面行为零改变）。
+- **运行时认证**：部署为 Workers Static Assets + main Worker（`worker/index.ts`，`wrangler.toml` 的 `main`）。路径以 `/api/` 开头走认证 / 私密内容 API，其余 `env.ASSETS.fetch()` 回退（公开页面行为零改变）。**注意 `[assets]` 必须显式声明 `binding = "ASSETS"`**：缺失时存在静态文件路径由平台直接返回（如 `/private/` 正常），但 `/private/<slug>` 等不存在路径进入 Worker 后 `env.ASSETS` 为 undefined，抛 `TypeError` 返回 1101（2026-10-15 踩坑）。
 - **登录**：纯密码（Secret `ADMIN_PASSWORD`，常量时间比较）；HttpOnly 签名 Cookie `blog_admin`（HMAC-SHA256(AUTH_SECRET)，7 天免输）；按客户端 IP 登录限流（KV 计数，连续 5 次失败冷却 30s）。
 - **内容源**：GitHub **私有仓库**（`GH_OWNER/GH_REPO` = `sgwfmyl/blog-private`，只读 PAT `GH_PAT`）经 Contents API 按需拉取，KV（`ADMIN_KV`，TTL 300s）缓存。仓库结构：`private/nav.json`、`private/meta.json`（私密内容统一元数据索引，供前端融合）、`private/pages/index.json`（旧结构兼容）、`private/pages/<slug>.md`（slug 支持子目录路径，如 `私密/xxx`）。**绝不放私有内容进博客公开仓库**。本地编辑时仓库克隆在根目录 `private-content/`（独立 git 仓库，`.gitignore` 已忽略，构建期不读取；内容更新后 push 到私有仓库即可）。
 - **前端**：登录态 store（`src/utils/auth-store.ts`，pub-sub 模块单例，`window.__fireflyAuthStore` 门面）；入口 = 坞站 / 移动菜单「管理」按钮（`requestAuthModalOpen`）；`AuthManager.svelte`（Layout.astro `client:idle` 挂载，Swup 容器外常驻）安装门面并初始化；`AuthModal.svelte` 密码弹窗（登录成功派发 `firefly:auth-logged-in` 事件）。

@@ -4,6 +4,7 @@ main = "worker/index.ts"
 
 [assets]
 directory = "./dist"
+binding = "ASSETS"
 not_found_handling = "404-page"
 
 # 管理员认证 / 私密内容缓存 KV（wrangler kv namespace create ADMIN_KV 后填入 id）
