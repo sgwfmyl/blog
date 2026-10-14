@@ -77,6 +77,10 @@ src/.opencode
 # 本地维护的插件目录（AstrBot BlogWriter 等，独立 git 仓库，不随博客仓库提交）
 /plug-in/
 
+# 私密内容仓库本地映射（sgwfmyl/blog-private 的克隆，独立 git 仓库，不随博客仓库提交；
+# 构建期不读取，Worker 运行时经 GitHub API 按需拉取）
+/private-content/
+
 # 本地 AI 工具目录备份（从 src 移出，避免被构建器解析）
 .local-skill-backup/
 
