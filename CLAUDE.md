@@ -246,7 +246,7 @@ Layout.astro          ← HTML 骨架：<html>, <head>, <body>, 全局组件, �
 
 - **运行时认证**：部署为 Workers Static Assets + main Worker（`worker/index.ts`，`wrangler.toml` 的 `main`）。路径以 `/api/` 开头走认证 / 私密内容 API，其余 `env.ASSETS.fetch()` 回退（公开页面行为零改变）。
 - **登录**：纯密码（Secret `ADMIN_PASSWORD`，常量时间比较）；HttpOnly 签名 Cookie `blog_admin`（HMAC-SHA256(AUTH_SECRET)，7 天免输）；按客户端 IP 登录限流（KV 计数，连续 5 次失败冷却 30s）。
-- **内容源**：GitHub **私有仓库**（`GH_OWNER/GH_REPO`，只读 PAT `GH_PAT`）经 Contents API 按需拉取，KV（`ADMIN_KV`，TTL 300s）缓存。仓库结构：`private/nav.json`、`private/meta.json`（私密内容统一元数据索引，供前端融合）、`private/pages/index.json`（旧结构兼容）、`private/pages/<slug>.md`（slug 支持子目录路径，如 `私密/xxx`）。**绝不放私有内容进博客公开仓库**。
+- **内容源**：GitHub **私有仓库**（`GH_OWNER/GH_REPO` = `sgwfmyl/blog-private`，只读 PAT `GH_PAT`）经 Contents API 按需拉取，KV（`ADMIN_KV`，TTL 300s）缓存。仓库结构：`private/nav.json`、`private/meta.json`（私密内容统一元数据索引，供前端融合）、`private/pages/index.json`（旧结构兼容）、`private/pages/<slug>.md`（slug 支持子目录路径，如 `私密/xxx`）。**绝不放私有内容进博客公开仓库**。本地编辑时仓库克隆在根目录 `private-content/`（独立 git 仓库，`.gitignore` 已忽略，构建期不读取；内容更新后 push 到私有仓库即可）。
 - **前端**：登录态 store（`src/utils/auth-store.ts`，pub-sub 模块单例，`window.__fireflyAuthStore` 门面）；入口 = 坞站 / 移动菜单「管理」按钮（`requestAuthModalOpen`）；`AuthManager.svelte`（Layout.astro `client:idle` 挂载，Swup 容器外常驻）安装门面并初始化；`AuthModal.svelte` 密码弹窗（登录成功派发 `firefly:auth-logged-in` 事件）。
 - **私密页**：`/private/` 与 `/private/<slug>`（`src/pages/private/[...slug].astro`），游客见登录门、**不发内容请求**；管理员动态拉取并用 `window.__fireflyPrivateRenderer`（`src/utils/private-renderer.ts`，marked + DOMParser 白名单 sanitize）渲染。head 带 `noindex`，sitemap 已排除 `/private`。
 - **导航页合并注入**：`projects.astro` 登录后 fetch `/api/private/nav` 注入 `.nav-card`（缓存 `window.__navPrivateData`，按 `.nav-main` 标记保证单次注入），注入后派发 `swup:content:replaced` 触发 reinit 重新筛选。未登录零请求。
