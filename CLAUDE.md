@@ -93,7 +93,7 @@ src/
 ├── types/               # TypeScript 类型：config.ts, bangumi.ts, guestbook-chat.ts
 └── utils/               # 工具函数（44 个文件，含 changelog.ts / tag-graph 控制器 / tts-text 正文提取等）
     ├── 9 个控制器模块   # 见第 10 节（含 auth-modal-controller 认证弹窗控制器）
-    └── 35 个业务工具    # content-utils, category-tree（文件夹即分类，多级 `a/b` 推导 + CategoryNode 树）, date-utils, image-utils, url-utils, tts-text（朗读正文提取）, auth-store（登录态 store）, private-renderer（私密 markdown 渲染）...
+    └── 35 个业务工具    # content-utils, category-tree（文件夹即分类，多级 `a/b` 推导 + CategoryNode 树）, date-utils, image-utils, url-utils, tts-text（朗读正文提取）, auth-store（登录态 store）, private-renderer（私密 markdown 渲染）, private-meta-store（私密元数据 store，驱动公开视图融合）...
 
 # 根目录其他重要文件
 .pages.yml                # PagesCMS 后台配置（11 集合声明，见第 19 节）
@@ -246,10 +246,11 @@ Layout.astro          ← HTML 骨架：<html>, <head>, <body>, 全局组件, �
 
 - **运行时认证**：部署为 Workers Static Assets + main Worker（`worker/index.ts`，`wrangler.toml` 的 `main`）。路径以 `/api/` 开头走认证 / 私密内容 API，其余 `env.ASSETS.fetch()` 回退（公开页面行为零改变）。
 - **登录**：纯密码（Secret `ADMIN_PASSWORD`，常量时间比较）；HttpOnly 签名 Cookie `blog_admin`（HMAC-SHA256(AUTH_SECRET)，7 天免输）；按客户端 IP 登录限流（KV 计数，连续 5 次失败冷却 30s）。
-- **内容源**：GitHub **私有仓库**（`GH_OWNER/GH_REPO`，只读 PAT `GH_PAT`）经 Contents API 按需拉取，KV（`ADMIN_KV`，TTL 300s）缓存。仓库结构：`private/nav.json`、`private/pages/index.json`、`private/pages/<slug>.md`。**绝不放私有内容进博客公开仓库**。
+- **内容源**：GitHub **私有仓库**（`GH_OWNER/GH_REPO`，只读 PAT `GH_PAT`）经 Contents API 按需拉取，KV（`ADMIN_KV`，TTL 300s）缓存。仓库结构：`private/nav.json`、`private/meta.json`（私密内容统一元数据索引，供前端融合）、`private/pages/index.json`（旧结构兼容）、`private/pages/<slug>.md`（slug 支持子目录路径，如 `私密/xxx`）。**绝不放私有内容进博客公开仓库**。
 - **前端**：登录态 store（`src/utils/auth-store.ts`，pub-sub 模块单例，`window.__fireflyAuthStore` 门面）；入口 = 坞站 / 移动菜单「管理」按钮（`requestAuthModalOpen`）；`AuthManager.svelte`（Layout.astro `client:idle` 挂载，Swup 容器外常驻）安装门面并初始化；`AuthModal.svelte` 密码弹窗（登录成功派发 `firefly:auth-logged-in` 事件）。
 - **私密页**：`/private/` 与 `/private/<slug>`（`src/pages/private/[...slug].astro`），游客见登录门、**不发内容请求**；管理员动态拉取并用 `window.__fireflyPrivateRenderer`（`src/utils/private-renderer.ts`，marked + DOMParser 白名单 sanitize）渲染。head 带 `noindex`，sitemap 已排除 `/private`。
 - **导航页合并注入**：`projects.astro` 登录后 fetch `/api/private/nav` 注入 `.nav-card`（缓存 `window.__navPrivateData`，按 `.nav-main` 标记保证单次注入），注入后派发 `swup:content:replaced` 触发 reinit 重新筛选。未登录零请求。
+- **私密内容公开视图融合（2026-10-15）**：私密元数据 store（`src/utils/private-meta-store.ts`，pub-sub 单例，`window.__fireflyPrivateMetaStore` 门面）内部订阅登录态——登录拉取 `/api/private/meta`、退出清空。消费组件均为「构建期公开数据 props + 登录后 store 合并」：归档页 `ArchivePanel.svelte`（私密条目并入筛选/分组/排序，带「密」徽标）、最近更新 `RecentItemsList.svelte`、侧边栏分类 `CategoriesList.svelte` / 标签 `TagsList.svelte`、分类页文件夹树 `CategoryFoldersTree.svelte`。私密分类链接统一指向 `/archive/?category=xx` 与归档页联动。**私密条目 schema 定义在 Worker 端（meta.json 约定），禁止加入 `src/content.config.ts`（构建期泄密）**。
 - **Secrets 与 KV 配置**：见 `docs/deploy-cloudeflare-workers.md` 第七节（5 个运行时 Secrets + `wrangler kv namespace create ADMIN_KV` 回填 wrangler.toml）；本地调试 `.dev.vars`，线上 GitHub Actions Secrets（deploy.yml 的 wrangler-action `secrets` 输入注入）。
 
 ---
@@ -605,6 +606,7 @@ window.swup.hooks.on("content:replace", myHandler); // 每次导航都注册新�
 | `window.__fireflyAuthModalController` | 认证弹窗控制器（含 `__fireflyAuthModalPendingOpen` 待开标记 / `__fireflyAuthModalUnbind` 解绑） | auth-modal-controller.ts |
 | `window.__fireflyAuthStore` | 管理员登录态 store 门面（getAuthState/initAuth/login/logout/subscribeAuth） | auth-store.ts |
 | `window.__fireflyPrivateRenderer` | 私密页 markdown 渲染器门面 | private-renderer.ts |
+| `window.__fireflyPrivateMetaStore` | 私密内容元数据 store 门面（getPrivateMeta/loadPrivateMeta/resetPrivateMeta/subscribePrivateMeta） | private-meta-store.ts |
 | `window.__navPrivateData` | 导航页远端私有导航缓存（跨 Swup 导航复用） | projects.astro |
 | `window.__backToTopInited` | 返回顶部按钮 guard | BackToTop.astro |
 | `window.__typewriterHooksBound` | 打字机 Swup 钩子 guard | TypewriterText.astro |

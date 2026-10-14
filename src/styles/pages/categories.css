@@ -222,6 +222,24 @@
 	line-height: 1.5;
 }
 
+/* 私密分类节点：登录后注入的私密分类，名称用主色 + 「密」徽标 */
+.category-folder[data-private] .category-folder__name {
+	color: var(--primary);
+}
+
+.category-folder__private-badge {
+	display: inline-block;
+	margin-left: 0.375rem;
+	padding: 0 0.375rem;
+	border: 1px solid var(--primary);
+	border-radius: 0.375rem;
+	color: var(--primary);
+	font-size: 0.6875rem;
+	font-weight: 700;
+	line-height: 1.25rem;
+	vertical-align: 0.1em;
+}
+
 .category-folder__chevron {
 	width: 1.5rem;
 	height: 1.5rem;

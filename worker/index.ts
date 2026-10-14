@@ -13,8 +13,15 @@
  *
  * 内容源约定（私有仓库内）：
  * - private/nav.json         隐藏导航条目（数组）
- * - private/pages/index.json 私密文章索引 [{slug,title,date}]
- * - private/pages/<slug>.md  私密文章 markdown（frontmatter title/date/description + 正文）
+ * - private/meta.json        私密内容统一元数据索引（数组），供前端登录后与公开内容融合：
+ *                            [{ slug, type, title, date, tags, category?, url? }]
+ *                            - slug：详情标识，可含子目录路径（如 "私密/观影记录"），
+ *                              对应 private/pages/<slug>.md
+ *                            - type：post | moment | bangumi | life（与公开归档类型对齐）
+ *                            - url：可选，默认 /private/<slug>/
+ * - private/pages/index.json 私密文章索引 [{slug,title,date}]（旧结构，兼容保留）
+ * - private/pages/<slug>.md  私密文章 markdown（frontmatter title/date/description + 正文，
+ *                            slug 支持子目录路径，如 private/pages/私密/xxx.md）
  */
 
 /** 最小化 KV / ASSETS 类型，避免引入 @cloudflare/workers-types 依赖 */
@@ -47,7 +54,7 @@ const COOKIE_TTL_SECONDS = 7 * 24 * 60 * 60; // 7 天免输
 const KV_CACHE_TTL = 300; // GitHub 内容缓存 5 分钟，规避 API 限流
 const RATE_MAX_FAILURES = 5;
 const RATE_COOLDOWN_SECONDS = 30;
-const SLUG_PATTERN = /^[\w-]+$/;
+const SLUG_PATTERN = /^[\w\u4e00-\u9fa5\-/]+$/;
 
 /* ------------------------------------------------------------------ */
 /* 工具函数                                                             */
@@ -271,13 +278,15 @@ async function handlePrivate(
 
 	if (path === "/api/private/nav") {
 		ghPath = "private/nav.json";
+	} else if (path === "/api/private/meta") {
+		ghPath = "private/meta.json";
 	} else if (path === "/api/private/pages") {
 		ghPath = "private/pages/index.json";
 	} else if (path.startsWith("/api/private/pages/")) {
 		const slug = decodeURIComponent(
 			path.slice("/api/private/pages/".length),
 		).replace(/\/+$/, "");
-		if (!SLUG_PATTERN.test(slug)) {
+		if (!SLUG_PATTERN.test(slug) || slug.includes("..")) {
 			return json({ ok: false, error: "bad_slug" }, { status: 400 });
 		}
 		ghPath = `private/pages/${slug}.md`;

@@ -32,8 +32,15 @@ export const getStaticPaths = () => [{ params: { slug: undefined } }];
       window.__privatePageBound = true;
 
       function currentSlug() {
-        var m = window.location.pathname.match(/^\/private\/([\w-]+)\/?$/);
-        return m ? m[1] : "";
+        // slug 支持子目录路径（如 /private/私密/观影记录/），至少一个字符才算详情页
+        // pathname 为编码形式，先 decode 一次，后续 loadContent 的 encodeURIComponent 恰好还原为 URL 编码
+        var m = window.location.pathname.match(/^\/private\/(.+)\/?$/);
+        if (!m) return "";
+        try {
+          return decodeURIComponent(m[1]);
+        } catch (e) {
+          return m[1];
+        }
       }
 
       function escapeHtml(s) {
