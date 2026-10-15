@@ -28,6 +28,7 @@ for (const p of posts) {
 
 const availableYears = Array.from(yearsSet).sort((a, b) => b - a);
 const defaultYear = availableYears[0] ?? currentYear;
+const publicMaxCount = Math.max(1, ...Array.from(postCountByDate.values()));
 
 function getLevel(count: number, maxCount: number): number {
 	if (count === 0) return 0;
@@ -147,7 +148,7 @@ const allYearsData: YearData[] = availableYears.map((y) => ({
             {yd.weeks.map((week) => (
               <div class="heatmap-week">
                 {week.map((cell) => (
-                  <div class={`heatmap-cell level-${cell.level}`} title={cell.visible ? `${cell.key} · ${cell.count} 篇` : ""} style={cell.visible ? "" : "visibility:hidden"}></div>
+                  <div class={`heatmap-cell level-${cell.level}`} data-date={cell.key} data-count={cell.count} data-visible={cell.visible} title={cell.visible ? `${cell.key} · ${cell.count} 篇` : ""} style={cell.visible ? "" : "visibility:hidden"}></div>
                 ))}
               </div>
             ))}
@@ -198,8 +199,74 @@ const allYearsData: YearData[] = availableYears.map((y) => ({
   }
 </script>
 
-<style>
-.archive-heatmap { --cell-size: 14px; --cell-gap: 3px; }
+	<script is:inline define:vars={{ publicMaxCount }}>
+		(function () {
+			function getLevel(count, maxCount) {
+				if (count === 0) return 0;
+				if (maxCount <= 1) return 1;
+				var r = count / maxCount;
+				if (r <= 0.25) return 1;
+				if (r <= 0.5) return 2;
+				if (r <= 0.75) return 3;
+				return 4;
+			}
+
+			function privateDateCounts() {
+				var store = window.__fireflyPrivateMetaStore;
+				if (!store) return {};
+				var map = {};
+				store.getPrivateMeta().items.forEach(function (it) {
+					if (it.type !== "post" || !it.date) return;
+					var d = String(it.date).slice(0, 10);
+					map[d] = (map[d] || 0) + 1;
+				});
+				return map;
+			}
+
+			/** 幂等合并：data-count 恒为公开基线，叠加私密日期后重算 level 与 title */
+			function applyMerge() {
+				var cells = document.querySelectorAll("#archive-heatmap .heatmap-cell");
+				if (!cells.length) return;
+				var priv = privateDateCounts();
+				var maxCount = publicMaxCount;
+				for (var d in priv) {
+					if (priv[d] > maxCount) maxCount = priv[d];
+				}
+				cells.forEach(function (el) {
+					if (el.getAttribute("data-visible") !== "true") return;
+					var date = el.getAttribute("data-date");
+					var base = parseInt(el.getAttribute("data-count") || "0", 10);
+					var count = base + (priv[date] || 0);
+					var level = getLevel(count, maxCount);
+					el.classList.remove("level-0", "level-1", "level-2", "level-3", "level-4");
+					el.classList.add("level-" + level);
+					el.setAttribute("title", date + " · " + count + " 篇");
+				});
+			}
+
+			function boot() {
+				var store = window.__fireflyPrivateMetaStore;
+				if (!store) return;
+				store.subscribePrivateMeta(applyMerge);
+				applyMerge();
+			}
+
+			// 订阅只注册一次（脚本随 SPA 导航重新执行，防止重复订阅）
+			if (!window.__privateArchiveHeatmapBound) {
+				window.__privateArchiveHeatmapBound = true;
+				if (window.__fireflyPrivateMetaStore) {
+					boot();
+				} else {
+					window.addEventListener("firefly:private-meta-store-ready", boot, { once: true });
+				}
+			}
+			// 每次进入本页都对当前 DOM 重新应用合并（未登录时私密为空，无副作用）
+			applyMerge();
+		})();
+	</script>
+
+	<style>
+	.archive-heatmap { --cell-size: 14px; --cell-gap: 3px; }
 /* 年份导航样式全局化：归档页把年份按钮渲染在标题行（组件外部） */
 :global(.heatmap-year-nav) { display: flex; gap: 6px; flex-wrap: wrap; }
 :global(.heatmap-year-btn) { font-size: 0.8rem; font-weight: 600; padding: 0.15rem 0.6rem; border-radius: 0.375rem; border: 1px solid var(--line-color, oklch(0.82 0 0)); background: transparent; color: var(--content-meta); cursor: pointer; transition: all 0.15s ease; }

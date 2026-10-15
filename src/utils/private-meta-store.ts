@@ -10,6 +10,7 @@
  */
 
 import { getAuthState, subscribeAuth } from "./auth-store";
+import { buildPrivateStats, type PrivateStatsBundle } from "./private-stats";
 
 export type PrivateMetaItem = {
 	/** 详情标识，可含子目录路径（如 "私密/观影记录"），对应私有仓库 private/pages/<slug>.md */
@@ -40,6 +41,8 @@ export type PrivateMetaStoreFacade = {
 	loadPrivateMeta: () => Promise<void>;
 	resetPrivateMeta: () => void;
 	subscribePrivateMeta: (listener: PrivateMetaListener) => () => void;
+	/** 私密条目统计口径（供统计组件内联脚本折算增量） */
+	getStats: () => PrivateStatsBundle;
 };
 
 type PrivateMetaWindow = Window & {
@@ -145,6 +148,7 @@ export function installPrivateMetaStore(windowRef?: Window): void {
 		loadPrivateMeta,
 		resetPrivateMeta,
 		subscribePrivateMeta,
+		getStats: () => buildPrivateStats(state.items),
 	};
 
 	subscribeAuth((auth) => {
@@ -158,4 +162,9 @@ export function installPrivateMetaStore(windowRef?: Window): void {
 	if (getAuthState().isAdmin && !state.loaded) {
 		void loadPrivateMeta();
 	}
+
+	// 门面就绪事件：统计组件的内联脚本（无法 import 模块）靠它等待订阅入口
+	targetWindow.dispatchEvent(
+		new CustomEvent("firefly:private-meta-store-ready"),
+	);
 }

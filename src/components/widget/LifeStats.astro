@@ -37,24 +37,32 @@ const notebookFolders = new Set(
 const notebooksCount = notebookFolders.size;
 
 // 构建统计数据
-const stats: { icon: string; label: string; value: number; suffix?: string }[] =
-	[
-		{
-			icon: "material-symbols:apartment",
-			label: "去过城市",
-			value: visitedCities,
-		},
-		{
-			icon: "material-symbols:book-outline",
-			label: "笔记本数",
-			value: notebooksCount,
-		},
-		{
-			icon: "material-symbols:location-on-outline",
-			label: "足迹记录",
-			value: placesCount,
-		},
-	];
+const stats: {
+	icon: string;
+	label: string;
+	value: number;
+	suffix?: string;
+	id: string;
+}[] = [
+	{
+		icon: "material-symbols:apartment",
+		label: "去过城市",
+		value: visitedCities,
+		id: "city-count",
+	},
+	{
+		icon: "material-symbols:book-outline",
+		label: "笔记本数",
+		value: notebooksCount,
+		id: "notebook-count",
+	},
+	{
+		icon: "material-symbols:location-on-outline",
+		label: "足迹记录",
+		value: placesCount,
+		id: "place-count",
+	},
+];
 ---
 
 <WidgetLayout name="生活统计" id="life-stats" class={className} style={style}>
@@ -70,7 +78,7 @@ const stats: { icon: string; label: string; value: number; suffix?: string }[] =
 					</span>
 				</div>
 				<div class="flex items-center">
-					<span class="text-base font-bold text-neutral-900 dark:text-neutral-100">
+					<span class="text-base font-bold text-neutral-900 dark:text-neutral-100" data-stat-id={stat.id}>
 						{stat.value}
 					</span>
 					{stat.suffix && (
@@ -83,3 +91,38 @@ const stats: { icon: string; label: string; value: number; suffix?: string }[] =
 		))}
 	</div>
 </WidgetLayout>
+
+<script is:inline define:vars={{ publicPlaces: placesCount }}>
+	(function () {
+		if (window.__privateLifeStatsBound) return;
+		window.__privateLifeStatsBound = true;
+
+		function setStat(id, value) {
+			document.querySelectorAll('[data-stat-id="' + id + '"]').forEach(function (el) {
+				el.textContent = String(value);
+			});
+		}
+
+		function mergePrivate() {
+			var store = window.__fireflyPrivateMetaStore;
+			if (!store) return;
+			var stats = store.getStats();
+			if (!stats || !stats.life.length) return;
+			// 私密生活条目计入足迹记录（城市/笔记本无法从元数据口径判定，保持基准值）
+			setStat("place-count", publicPlaces + stats.life.length);
+		}
+
+		function boot() {
+			var store = window.__fireflyPrivateMetaStore;
+			if (!store) return;
+			store.subscribePrivateMeta(function () { mergePrivate(); });
+			mergePrivate();
+		}
+
+		if (window.__fireflyPrivateMetaStore) {
+			boot();
+		} else {
+			window.addEventListener("firefly:private-meta-store-ready", boot, { once: true });
+		}
+	})();
+</script>
