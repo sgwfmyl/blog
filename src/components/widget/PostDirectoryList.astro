@@ -595,6 +595,79 @@ const { rows } = walk(root);
 
 		window.fireflyUpdatePostDirectories = updatePostDirectories;
 
+		/* ===== 私密文章注入（登录后把私密文章以「私密」文件夹插入目录树） ===== */
+		function escapeHtmlAttr(s) {
+			return String(s).replace(/[&<>"']/g, function (c) {
+				return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+			});
+		}
+
+		var PRIVATE_FOLDER_SVG =
+			'<svg class="pd-folder-icon-closed" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/></svg>';
+		var PRIVATE_FOLDER_OPEN_SVG =
+			'<svg class="pd-folder-icon-open" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20 6h-8l-2-2H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 12H4V8h16v10z"/></svg>';
+		var PRIVATE_ARTICLE_SVG =
+			'<svg class="pd-icon pd-icon-article" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>';
+
+		/** 幂等注入：先移除旧注入再重建（登出/无私密文章时清空） */
+		function injectPrivatePosts() {
+			var store = window.__fireflyPrivateMetaStore;
+			var posts = store ? store.getStats().posts : [];
+			var lists = document.querySelectorAll(".post-directory-list");
+			if (!lists.length) return;
+
+			document.querySelectorAll(".pd-private-root").forEach(function (el) {
+				el.remove();
+			});
+			if (!posts.length) return;
+
+			var folderHtml =
+				'<li class="pd-folder pd-private-root" style="--depth: 0" data-folder-id="folder-private" data-has-current="false" tabindex="0">' +
+				'<span class="pd-icon pd-icon-folder" aria-hidden="true" data-state="closed">' +
+				PRIVATE_FOLDER_SVG + PRIVATE_FOLDER_OPEN_SVG + "</span>" +
+				'<span class="pd-name">私密</span></li>';
+
+			var itemsHtml = posts
+				.map(function (p) {
+					var slug = p.slug || "";
+					var title = p.title || slug;
+					return (
+						'<li class="pd-item" data-depth="1">' +
+						'<a href="/private/' + encodeURIComponent(slug) + '/" class="pd-row pd-link" style="--depth: 1" data-post-slug="' +
+						escapeHtmlAttr(slug) + '" title="' + escapeHtmlAttr(title) + '">' +
+						PRIVATE_ARTICLE_SVG + '<span class="pd-title">' + escapeHtmlAttr(title) + "</span></a></li>"
+					);
+				})
+				.join("");
+
+			lists.forEach(function (root) {
+				var tree = root.querySelector(".post-directory-tree");
+				if (!tree) return;
+				tree.insertAdjacentHTML("afterbegin", folderHtml + itemsHtml);
+			});
+
+			// 重新绑定手风琴并初始化折叠状态
+			if (window.fireflyUpdatePostDirectories) {
+				window.fireflyUpdatePostDirectories();
+			}
+		}
+
+		function bootPrivateMerge() {
+			var store = window.__fireflyPrivateMetaStore;
+			if (!store) return;
+			store.subscribePrivateMeta(injectPrivatePosts);
+			injectPrivatePosts();
+		}
+
+		if (!window.__privatePostDirectoryBound) {
+			window.__privatePostDirectoryBound = true;
+			if (window.__fireflyPrivateMetaStore) {
+				bootPrivateMerge();
+			} else {
+				window.addEventListener("firefly:private-meta-store-ready", bootPrivateMerge, { once: true });
+			}
+		}
+
 		if (!window.__fireflyPostDirectoryBound) {
 			window.__fireflyPostDirectoryBound = true;
 			document.addEventListener("astro:page-load", function () {
@@ -613,5 +686,8 @@ const { rows } = walk(root);
 		} else {
 			setTimeout(updatePostDirectories, 0);
 		}
+
+		// 每次脚本执行（含 SPA 导航进入含本组件的页面）都对当前 DOM 重新应用注入
+		injectPrivatePosts();
 	})();
 </script>

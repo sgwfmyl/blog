@@ -52,8 +52,7 @@ const placesCount = lifeEntries.filter((entry) =>
 
 // 记录次数 = 影视 + 书籍 + 游戏 + 足迹
 // （笔记本相关数量按加密口径不计入，与 LifeStats 一致）
-const recordCount =
-	animeCount + bookCount + gameCount + placesCount;
+const recordCount = animeCount + bookCount + gameCount + placesCount;
 
 // 计算总字数（中文字符 + 英文字母，去掉代码块/内联代码/空白）
 function countWords(text: string | undefined): number {
@@ -117,32 +116,38 @@ const stats = [
 		icon: "material-symbols:article-outline",
 		label: i18n(I18nKey.siteStatsPostCount),
 		value: posts.length,
+		id: "post-count",
 	},
 	{
 		icon: "material-symbols:local-cafe-outline",
 		label: i18n(I18nKey.moments),
 		value: moments.length,
+		id: "moment-count",
 	},
 	{
 		icon: "material-symbols:edit-note-outline",
 		label: "记录次数",
 		value: recordCount,
+		id: "record-count",
 	},
 	{
 		icon: "material-symbols:folder-outline",
 		label: i18n(I18nKey.siteStatsCategoryCount),
 		value: categories.length,
+		id: "category-count",
 	},
 	{
 		icon: "material-symbols:label-outline",
 		label: i18n(I18nKey.siteStatsTagCount),
 		value: tags.length,
+		id: "tag-count",
 	},
 	{
 		icon: "material-symbols:text-ad-outline-rounded",
 		label: i18n(I18nKey.siteStatsTotalWords),
 		value: totalWords,
 		formatted: true,
+		id: "total-words",
 	},
 	{
 		icon: "material-symbols:calendar-clock-outline",
@@ -161,6 +166,10 @@ const stats = [
 		id: "last-update",
 	},
 ];
+
+// 私密合并基准：公开分类/标签名集合（供脚本计算私密独有增量）
+const publicCategoryNames = categories.map((c) => c.name);
+const publicTagNames = tags.map((t) => t.name);
 ---
 
 <WidgetLayout name={i18n(I18nKey.siteStats)} id="site-stats" class={className} style={style}>
@@ -193,7 +202,62 @@ const stats = [
   </div>
 </WidgetLayout>
 
-<script is:inline define:vars={{ siteStartDate, latestActivityDate, todayText }}>
+<script is:inline define:vars={{ siteStartDate, latestActivityDate, todayText, publicCategoryNames, publicTagNames, publicPosts: posts.length, publicMoments: moments.length, publicRecord: recordCount, publicCategories: categories.length, publicTags: tags.length }}>
+  function setStatValue(id, value) {
+    document.querySelectorAll('[data-stat-id="' + id + '"]').forEach(function (element) {
+      element.textContent = Number(value).toLocaleString();
+    });
+  }
+
+  /** 合并私密条目增量：文章/动态/记录/分类/标签/最近活动日期 */
+  function mergePrivateStats() {
+    var store = window.__fireflyPrivateMetaStore;
+    if (!store) return;
+    var stats = store.getStats();
+    if (!stats || !stats.posts.length && !stats.moments.length && !stats.bangumi.length && !stats.life.length) return;
+
+    setStatValue("post-count", publicPosts + stats.posts.length);
+    setStatValue("moment-count", publicMoments + stats.moments.length);
+    setStatValue("record-count", publicRecord + stats.bangumi.length + stats.life.length);
+
+    // 分类/标签只叠加私密独有部分（与公开去重）
+    var pubCats = new Set(publicCategoryNames);
+    var extraCats = stats.categories.filter(function (c) { return !pubCats.has(c); }).length;
+    setStatValue("category-count", publicCategories + extraCats);
+
+    var pubTags = new Set(publicTagNames);
+    var extraTags = stats.tags.filter(function (t) { return !pubTags.has(t); }).length;
+    setStatValue("tag-count", publicTags + extraTags);
+
+    // 最近活动日期：私密日期更新则重算 last-update（latestActivityDate 已含公开集合）
+    if (stats.latestDate) {
+      var mergedLatest = latestActivityDate
+        ? new Date(Math.max(new Date(latestActivityDate).getTime(), new Date(stats.latestDate).getTime()))
+        : new Date(stats.latestDate);
+      updateLastUpdate(mergedLatest);
+    }
+  }
+
+  function updateLastUpdate(latestActivity) {
+    var today = new Date();
+    var timeSinceLastActivity = Math.abs(today.getTime() - latestActivity.getTime());
+    var daysSinceLastUpdate = Math.floor(timeSinceLastActivity / (1000 * 60 * 60 * 24));
+
+    document.querySelectorAll('[data-stat-id="last-update"]').forEach(function (element) {
+      if (daysSinceLastUpdate === 0) {
+        element.textContent = todayText;
+        if (element.nextElementSibling) {
+          element.nextElementSibling.style.display = 'none';
+        }
+      } else {
+        element.textContent = daysSinceLastUpdate.toString();
+        if (element.nextElementSibling) {
+          element.nextElementSibling.style.display = '';
+        }
+      }
+    });
+  }
+
   function updateDynamicStats() {
     const today = new Date();
 
@@ -207,27 +271,24 @@ const stats = [
       element.textContent = diffDays.toString();
     });
 
-    // 更新最后活动时间（全部内容集合的最新日期）
+    // 更新最后活动时间（全部内容集合的最新日期；私密合并会在登录后覆盖为更大的日期）
     if (latestActivityDate) {
       const lastActivity = new Date(latestActivityDate);
-      const timeSinceLastActivity = Math.abs(today.getTime() - lastActivity.getTime());
-      const daysSinceLastUpdate = Math.floor(timeSinceLastActivity / (1000 * 60 * 60 * 24));
-
-      const lastUpdateElements = document.querySelectorAll('[data-stat-id="last-update"]');
-      lastUpdateElements.forEach((element) => {
-        if (daysSinceLastUpdate === 0) {
-          element.textContent = todayText;
-          if (element.nextElementSibling) {
-            element.nextElementSibling.style.display = 'none';
-          }
-        } else {
-          element.textContent = daysSinceLastUpdate.toString();
-          if (element.nextElementSibling) {
-            element.nextElementSibling.style.display = '';
-          }
-        }
-      });
+      updateLastUpdate(lastActivity);
     }
+
+    // 登录态下把私密条目统计进去（门面尚未就绪时由 ready 事件再触发）
+    mergePrivateStats();
+  }
+
+  function bootPrivateMerge() {
+    var store = window.__fireflyPrivateMetaStore;
+    if (!store) return;
+    // 已拉取过元数据则立即合并一次；之后由 store 的订阅持续同步
+    store.subscribePrivateMeta(function () {
+      mergePrivateStats();
+    });
+    mergePrivateStats();
   }
 
   // 页面加载时更新
@@ -237,4 +298,10 @@ const stats = [
   document.addEventListener("swup:content:replaced", () => {
     setTimeout(updateDynamicStats, 100);
   });
+
+  if (window.__fireflyPrivateMetaStore) {
+    bootPrivateMerge();
+  } else {
+    window.addEventListener("firefly:private-meta-store-ready", bootPrivateMerge, { once: true });
+  }
 </script>
