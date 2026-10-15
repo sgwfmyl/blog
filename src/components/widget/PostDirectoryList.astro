@@ -609,12 +609,29 @@ const { rows } = walk(root);
 		var PRIVATE_ARTICLE_SVG =
 			'<svg class="pd-icon pd-icon-article" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>';
 
+		/** 按 slug/title/date 计算私密文章指纹，用于判断数据是否变化（忽略顺序，便于去重） */
+		function postFingerprint(posts) {
+			return posts
+				.slice()
+				.sort(function (a, b) { return (a.slug || "").localeCompare(b.slug || ""); })
+				.map(function (p) { return (p.slug || "") + "|" + (p.title || "") + "|" + (p.date || ""); })
+				.join("\u0001");
+		}
+
 		/** 幂等注入：先移除旧注入再重建（登出/无私密文章时清空） */
 		function injectPrivatePosts() {
-			var store = window.__fireflyPrivateMetaStore;
-			var posts = store ? store.getStats().posts : [];
 			var lists = document.querySelectorAll(".post-directory-list");
 			if (!lists.length) return;
+
+			var store = window.__fireflyPrivateMetaStore;
+			var posts = store ? store.getStats().posts : [];
+			var fp = postFingerprint(posts);
+
+			// 已注入且私密数据未变化：跳过重建，避免手风琴展开状态被重置与 DOM 抖动（刷新卡顿来源）
+			if (window.__privatePdfp === fp && document.querySelector(".pd-private-root")) {
+				return;
+			}
+			window.__privatePdfp = fp;
 
 			document.querySelectorAll(".pd-private-root").forEach(function (el) {
 				el.remove();
