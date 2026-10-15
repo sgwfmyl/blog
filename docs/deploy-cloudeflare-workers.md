@@ -191,11 +191,37 @@ pnpm wrangler kv namespace create ADMIN_KV   # 输出 {"id": "..."}，填入 wra
 ```text
 private/
 ├── nav.json            # 隐藏导航条目（数组，字段对齐 daohang：name/url/icon/description/tags/category）
+├── meta.json            # 可选：登录后合并归档/统计视图的私密元数据
 ├── pages/index.json    # 私密文章索引 [{slug, title, date}]
 └── pages/<slug>.md     # 私密文章（frontmatter title/date/description + markdown 正文）
 ```
 
 Worker 用 `GH_PAT` 通过 GitHub Contents API 按需拉取；`/api/private/*` 未登录一律 401，前端游客态也不发请求——隐藏内容永远不出现在部署产物与抓包结果中。
+
+### 3.1 同路径私密镜像（推荐）
+
+若希望私密内容的 URL、目录与放在博客项目中的效果一致，不要再把正文放到 `private/pages/`；在私有仓库保留主仓库同样的 `src/content/` 目录，并额外维护仅含路由与展示元数据的 `private/routes.json`：
+
+```json
+{
+  "routes": [
+    {
+      "pathname": "/posts/私密/日记/",
+      "source": "src/content/posts/私密/日记.md",
+      "type": "post",
+      "title": "私密日记",
+      "date": "2026-10-15",
+      "category": "私密",
+      "tags": ["日记"]
+    }
+  ]
+}
+```
+
+- `pathname` 必须是最终公开访问路径，并以 `/` 开头；`source` 只允许指向私有仓库的 `src/content/` 或兼容的 `private/pages/` 下的 Markdown 文件。
+- Worker 在服务端查清单、命中后返回同一私密页面壳；壳只在管理员登录后调用 `/api/private/route?path=...` 拉取正文。游客看到登录门，响应不包含标题、URL 映射或 Markdown。
+- 清单与正文均使用 `ADMIN_KV` 缓存五分钟。正文可保留与公开 Content Collection 相同的 YAML frontmatter；动态渲染时会自动隐藏 frontmatter，并自动读取单行 `title`、`date`/`published`、`category`、`tags: [..]`。路由条目填写同名字段时优先，用于覆盖展示值。
+- 当前镜像复用公开文章的标题、正文、目录与主题排版。集合专属的构建期组件（例如相册墙、账单图表、笔记本卡片）仍需单独提供客户端数据适配，不能仅靠 Markdown 自动复刻。
 
 ### 4. 前端认证与私密页
 
@@ -219,7 +245,7 @@ wrangler 读取 `.dev.vars` 的 5 个 Secret，托管 `dist/` + 运行 worker，
 | 登录返回 401 | 密码错误，或 `ADMIN_PASSWORD` 未配置到 Worker secrets（本地看 `.dev.vars`，线上看 GitHub Secrets / Dashboard） |
 | 连续登录失败提示冷却 | 正常限流：连续 5 次失败冷却 30s（按 IP），等待后重试 |
 | 私密内容 502 `fetch_failed` | `GH_PAT / GH_OWNER / GH_REPO` 配置错误、PAT 权限不足（需 Contents 只读）或仓库路径不对 |
-| 游客访问 `/private/` 只见登录门 | 正常设计：未登录不发内容请求，登录后自动加载 |
+| 游客访问 `/private/` 或私密镜像 URL 只见登录门 | 正常设计：未登录不发内容请求，登录后自动加载 |
 | 登录态突然失效 | Cookie 7 天过期，或 `AUTH_SECRET` 被更换（换密钥会使全部会话失效） |
 | 登录后导航页无远端条目 | 确认私有仓库 `private/nav.json` 存在且 JSON 为数组；Worker 日志看是否 502 |
 

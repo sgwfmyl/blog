@@ -22,6 +22,9 @@
  * - private/pages/index.json 私密文章索引 [{slug,title,date}]（旧结构，兼容保留）
  * - private/pages/<slug>.md  私密文章 markdown（frontmatter title/date/description + 正文，
  *                            slug 支持子目录路径，如 private/pages/私密/xxx.md）
+ * - private/routes.json      私密内容路由清单。正文可按主仓库同一路径存放（例如
+ *                            src/content/posts/私密/日记.md），清单把公开 URL 映射到该文件。
+ *                            Worker 只在服务端读取清单，游客响应不包含路径或元数据。
  */
 
 /** 最小化 KV / ASSETS 类型，避免引入 @cloudflare/workers-types 依赖 */
@@ -55,6 +58,25 @@ const KV_CACHE_TTL = 300; // GitHub 内容缓存 5 分钟，规避 API 限流
 const RATE_MAX_FAILURES = 5;
 const RATE_COOLDOWN_SECONDS = 30;
 const SLUG_PATTERN = /^[\w\u4e00-\u9fa5\-/]+$/;
+const PRIVATE_SOURCE_PATTERN = /^(?:src\/content\/|private\/pages\/)[^\\]*\.(?:md|mdx)$/u;
+
+type PrivateRoute = {
+	/** 对外访问路径，必须以 / 开头，例如 /posts/private-note/ */
+	pathname: string;
+	/** 私有仓库中的 Markdown 路径，例如 src/content/posts/private-note.md */
+	source: string;
+	/** 用于选择公开页面同款文章壳；当前默认 post */
+	type?: "post" | "page";
+	title?: string;
+	date?: string;
+	category?: string;
+	tags?: string[];
+	description?: string;
+};
+
+type PrivateRouteManifest = {
+	routes?: PrivateRoute[];
+};
 
 /* ------------------------------------------------------------------ */
 /* 工具函数                                                             */
@@ -210,6 +232,96 @@ async function fetchGitHubFile(env: Env, path: string): Promise<string> {
 	return content;
 }
 
+function normalizePrivatePath(pathname: string): string | null {
+	try {
+		const decoded = decodeURIComponent(pathname);
+		if (!decoded.startsWith("/") || decoded.includes("\\") || decoded.includes("..")) {
+			return null;
+		}
+		return decoded === "/" ? "/" : `${decoded.replace(/\/+$/u, "")}/`;
+	} catch {
+		return null;
+	}
+}
+
+function isValidPrivateRoute(value: unknown): value is PrivateRoute {
+	if (!value || typeof value !== "object") return false;
+	const route = value as Partial<PrivateRoute>;
+	return (
+		typeof route.pathname === "string" &&
+		typeof route.source === "string" &&
+		(route.type === undefined || route.type === "post" || route.type === "page") &&
+		(route.title === undefined || typeof route.title === "string") &&
+		(route.date === undefined || typeof route.date === "string") &&
+		(route.category === undefined || typeof route.category === "string") &&
+		(route.description === undefined || typeof route.description === "string") &&
+		(route.tags === undefined ||
+			(Array.isArray(route.tags) && route.tags.every((tag) => typeof tag === "string"))) &&
+		normalizePrivatePath(route.pathname) !== null &&
+		PRIVATE_SOURCE_PATTERN.test(route.source) &&
+		!route.source.includes("..")
+	);
+}
+
+/**
+ * 读取私密路由清单。此数据只在 Worker 内部使用：
+ * - 请求普通路径时据它决定是否返回私密壳
+ * - API 在认证后才把对应条目返回浏览器
+ *
+ * 因此游客无法通过静态 HTML、sitemap 或 API 看到私密 URL/标题。
+ */
+async function getPrivateRoutes(env: Env): Promise<PrivateRoute[]> {
+	try {
+		const content = await fetchGitHubFile(env, "private/routes.json");
+		const manifest = JSON.parse(content) as PrivateRouteManifest;
+		return (manifest.routes ?? []).filter(isValidPrivateRoute);
+	} catch {
+		// 清单尚未创建或 GitHub 临时不可用时，公开站点仍按静态资产正常工作。
+		return [];
+	}
+}
+
+async function findPrivateRoute(
+	env: Env,
+	pathname: string,
+): Promise<PrivateRoute | null> {
+	const normalized = normalizePrivatePath(pathname);
+	if (!normalized) return null;
+	const routes = await getPrivateRoutes(env);
+	return (
+		routes.find(
+			(route) => normalizePrivatePath(route.pathname) === normalized,
+		) ?? null
+	);
+}
+
+/**
+ * 只提取私密 Markdown 页面壳需要的扁平 frontmatter 字段。完整 YAML 仍原样
+ * 留给 Markdown 正文渲染；路由清单同名字段优先，便于覆盖展示名称或路径分类。
+ */
+function getMarkdownRouteMeta(markdown: string): Partial<PrivateRoute> {
+	const match = markdown.match(/^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/u);
+	if (!match) return {};
+	const meta: Partial<PrivateRoute> = {};
+	for (const line of match[1].split(/\r?\n/u)) {
+		const item = line.match(/^(title|date|published|category|tags):\s*(.+)$/u);
+		if (!item) continue;
+		const key = item[1];
+		const value = item[2].trim().replace(/^['"]|['"]$/gu, "");
+		if (key === "title") meta.title = value;
+		if (key === "date" || key === "published") meta.date = value;
+		if (key === "category") meta.category = value;
+		if (key === "tags" && /^\[.*\]$/u.test(value)) {
+			meta.tags = value
+				.slice(1, -1)
+				.split(",")
+				.map((tag) => tag.trim().replace(/^['"]|['"]$/gu, ""))
+				.filter(Boolean);
+		}
+	}
+	return meta;
+}
+
 /* ------------------------------------------------------------------ */
 /* /api 路由                                                            */
 /* ------------------------------------------------------------------ */
@@ -276,6 +388,33 @@ async function handlePrivate(
 	const path = url.pathname;
 	let ghPath: string;
 
+	if (path === "/api/private/route") {
+		const requestedPath = url.searchParams.get("path");
+		if (!requestedPath) {
+			return json({ ok: false, error: "bad_path" }, { status: 400 });
+		}
+		const route = await findPrivateRoute(env, requestedPath);
+		if (!route) {
+			return json({ ok: false, error: "not_found" }, { status: 404 });
+		}
+		try {
+			const markdown = await fetchGitHubFile(env, route.source);
+			return json({
+				ok: true,
+				data: { route: { ...getMarkdownRouteMeta(markdown), ...route }, markdown },
+			});
+		} catch (error) {
+			return json(
+				{
+					ok: false,
+					error: "fetch_failed",
+					detail: String(error instanceof Error ? error.message : error),
+				},
+				{ status: 502 },
+			);
+		}
+	}
+
 	if (path === "/api/private/nav") {
 		ghPath = "private/nav.json";
 	} else if (path === "/api/private/meta") {
@@ -332,9 +471,9 @@ const worker: {
 			if (url.pathname === "/api/auth/me" && request.method === "GET") {
 				return handleMe(env, request);
 			}
-			if (
-				url.pathname.startsWith("/api/private/") &&
-				request.method === "GET"
+		if (
+			url.pathname.startsWith("/api/private/") &&
+			request.method === "GET"
 			) {
 				return handlePrivate(env, request, url);
 			}
@@ -347,6 +486,20 @@ const worker: {
 		if (url.pathname === "/private" || url.pathname.startsWith("/private/")) {
 			const shellUrl = new URL("/private/", url.origin);
 			return env.ASSETS.fetch(new Request(shellUrl, request));
+		}
+
+		// 私密镜像路由：私有仓库的 private/routes.json 指向与主仓库相同的
+		// src/content 路径。仅 HTML GET 才参与判断，避免把普通静态资源误改写。
+		// 游客也只会得到不含内容的静态壳，正文 API 仍会在认证前拒绝请求。
+		if (
+			request.method === "GET" &&
+			request.headers.get("accept")?.includes("text/html")
+		) {
+			const route = await findPrivateRoute(env, url.pathname);
+			if (route) {
+				const shellUrl = new URL("/private/", url.origin);
+				return env.ASSETS.fetch(new Request(shellUrl, request));
+			}
 		}
 
 		// 其余路径回退到静态资产（含 404-page 行为）
