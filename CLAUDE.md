@@ -89,9 +89,9 @@ src/
 │   ├── transitions/     # Swup 过渡动画
 │   └── vendor/          # 第三方覆盖
 ├── types/               # TypeScript 类型：config.ts, bangumi.ts, guestbook-chat.ts
-└── utils/               # 工具函数（41 个文件，含 changelog.ts / tag-graph 控制器 / tts-text 正文提取等）
+└── utils/               # 工具函数（42 个文件，含 changelog.ts / tag-graph 控制器 / tts-text 正文提取等）
     ├── 8 个控制器模块   # 见第 10 节
-    └── 33 个业务工具    # content-utils, category-tree（文件夹即分类，多级 `a/b` 推导 + CategoryNode 树）, date-utils, image-utils, url-utils, tts-text（朗读正文提取）...
+    └── 34 个业务工具    # post-source（文章统一取数入口）, content-utils, category-tree（文件夹即分类，多级 `a/b` 推导 + CategoryNode 树）, date-utils, image-utils, url-utils, tts-text（朗读正文提取）...
 
 # 根目录其他重要文件
 .pages.yml                # PagesCMS 后台配置（11 集合声明，见第 19 节）
@@ -830,6 +830,7 @@ return controller;
 | 依赖 | 版本 | 说明 |
 |------|------|------|
 | Astro | 7.1.x | **已升级 7.x**（勿按 6.x 文档操作）|
+| @astrojs/cloudflare | 14.1.7 | SSR 适配器（阶段2引入；`prerenderEnvironment: "node"` + `imageService: "custom"`，勿升 14.2+，见 §17） |
 | Svelte | 5.x | runes API（`$props`, `$state`, `$derived`, `$effect`） |
 | Tailwind CSS | 4.x | CSS-first 配置，无 `tailwind.config.js` |
 | Swup | @swup/astro | 不迁移到 View Transitions |
@@ -838,6 +839,7 @@ return controller;
 | Node.js | >= 22 | 运行时要求 |
 | Playwright | devDep（2026-08） | 友链截图脚本用（scripts/友链截图，chromium） |
 | github-slugger | devDep（2026-09） | 友链截图脚本生成与 Astro 一致的 entry id（scripts/友链截图） |
+| wrangler | ^4.151.0 | Workers CLI 与部署（devDep；4.151 满足 @cloudflare/vite-plugin peer 需求，阶段2升级） |
 | edge-tts | Python ≥3.12（服务端 Docker） | 博客朗读服务（scripts/TTS服务/），非 Node 依赖 |
 
 > ⚠️ `stylus` 依赖已于 2026-08 移除（实测 Astro 7 构建不依赖它）——**勿新建 Stylus 文件**，统一用纯 CSS。
@@ -863,6 +865,7 @@ return controller;
 | AGENTS.md | 已改为指向 CLAUDE.md 的入口（勿复制内容，避免双重维护） | — |
 | `satteri` / `@astrojs/markdown-satteri` 依赖 | 源码零引用（grep 仅命中 package.json），疑似实验残留 | 确认后移除 |
 | `.wrangler/` 误提交 | 已取消跟踪 + 加入 .gitignore | — |
+| @astrojs/cloudflare 自动注入 SESSION KV；Astro 7.1.6 无法用 `session: false` 禁用内置 session API（`session` 配置仅 7.2+ 支持） | 适配器默认向 wrangler 部署配置注入 `SESSION` KV namespace + 自动 provisioning（autoSession）；当前无 session 业务需求，属冗余绑定 | 保留默认即可（不阻塞）；后续用 D1/DO 做鉴权会话时，用适配器参数 `needsSessionKVBinding: false` 关闭 KV 注入（14.1.7 已支持，无需升 Astro） |
 
 ---
 

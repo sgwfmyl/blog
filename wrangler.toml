@@ -1,6 +1,10 @@
 name = "blog"
 compatibility_date = "2026-10-13"
 
+# @astrojs/cloudflare 适配器（v14，基于 @cloudflare/vite-plugin）会在构建时自动：
+#   - 设置 worker 入口 main（dist/server/entry.mjs）
+#   - 设置 assets.directory 指向 client 构建产物（dist/client），并补 binding = "ASSETS"
+# 因此这里不再写 directory / binding，仅保留会透传到部署配置的项。
+# 后续阶段新增 bindings（如 D1 / Durable Object / KV）时在此追加即可。
 [assets]
-directory = "./dist"
 not_found_handling = "404-page"

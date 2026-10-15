@@ -1,3 +1,4 @@
+import cloudflare from "@astrojs/cloudflare";
 import { unified } from "@astrojs/markdown-remark";
 import sitemap from "@astrojs/sitemap";
 import starlight from "@astrojs/starlight";
@@ -57,6 +58,20 @@ const starlightJsYaml = join(
 // https://astro.build/config
 export default defineConfig({
 	site: siteConfig.site_url,
+
+	// 输出保持 static：绝大多数页面构建期预渲染，仅个别页面（私密内容/局部聚合）
+	// 用 `export const prerender = false` 切到运行时 SSR（见 src/utils/post-source.ts 顶层说明）。
+	output: "static",
+	// prerenderEnvironment: "node" 让构建期预渲染（prerender=true 页面）在 Node 环境执行，
+	// 保留 sharp 等 Node 原生依赖（如 src/pages/og/[...slug].png.ts 的 OG 图生成依赖 sharp，
+	// workerd 运行时无法加载 sharp，会报 "No such module chunks/sharp"）。
+	// 运行时 SSR（prerender=false 页面）仍由 workerd 执行，不受影响。
+	// imageService: "custom" 保留 Astro 默认 sharp 做构建期图片优化（与切换适配器前一致），
+	// 避免默认 cloudflare-binding 导致图片静默退化为 passthrough（320kB→320kB 不压缩）。
+	adapter: cloudflare({
+		prerenderEnvironment: "node",
+		imageService: "custom",
+	}),
 
 	base: "/",
 	trailingSlash: "always",
