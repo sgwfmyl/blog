@@ -251,6 +251,7 @@ Layout.astro          ← HTML 骨架：<html>, <head>, <body>, 全局组件, �
 - **私密页**：`/private/` 与 `/private/<slug>`（`src/pages/private/[...slug].astro`），游客见登录门、**不发内容请求**；管理员动态拉取并用 `window.__fireflyPrivateRenderer`（`src/utils/private-renderer.ts`，marked + DOMParser 白名单 sanitize）渲染。head 带 `noindex`，sitemap 已排除 `/private`。
 - **导航页合并注入**：`projects.astro` 登录后 fetch `/api/private/nav` 注入 `.nav-card`（缓存 `window.__navPrivateData`，按 `.nav-main` 标记保证单次注入），注入后派发 `swup:content:replaced` 触发 reinit 重新筛选。未登录零请求。
 - **私密内容公开视图融合（2026-10-15）**：私密元数据 store（`src/utils/private-meta-store.ts`，pub-sub 单例，`window.__fireflyPrivateMetaStore` 门面）内部订阅登录态——登录拉取 `/api/private/meta`、退出清空。消费组件均为「构建期公开数据 props + 登录后 store 合并」：归档页 `ArchivePanel.svelte`（私密条目并入筛选/分组/排序，带「密」徽标）、最近更新 `RecentItemsList.svelte`、侧边栏分类 `CategoriesList.svelte` / 标签 `TagsList.svelte`、分类页文件夹树 `CategoryFoldersTree.svelte`。私密分类链接统一指向 `/archive/?category=xx` 与归档页联动。**私密条目 schema 定义在 Worker 端（meta.json 约定），禁止加入 `src/content.config.ts`（构建期泄密）**。
+- **私密融合性能（2026-10-15 v1.65.1）**：store 采用 localStorage stale-while-revalidate 缓存（键 `firefly:private-meta:v1`，TTL 60s）——**仅在 auth 确认为管理员时 seed/拉取**，游客绝不接触缓存与私密请求（避免残留标题泄露）；数据指纹（JSON）去重，未变化不 notify。统计/图表组件的内联合并脚本各自维护 `lastMergedJson/lastGraphJson` 指纹，数据未变跳过重绘（订阅与导航重执行都触发 applyMerge，靠指纹去重保证只重绘一次）。
 - **Secrets 与 KV 配置**：见 `docs/deploy-cloudeflare-workers.md` 第七节（5 个运行时 Secrets + `wrangler kv namespace create ADMIN_KV` 回填 wrangler.toml）；本地调试 `.dev.vars`，线上 GitHub Actions Secrets（deploy.yml 的 wrangler-action `secrets` 输入注入）。
 
 ---
