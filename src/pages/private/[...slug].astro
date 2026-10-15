@@ -20,21 +20,12 @@ export const getStaticPaths = () => [{ params: { slug: undefined } }];
   postSlug="private"
 >
 
-  <!-- 不让搜索引擎收录私密页面 -->
-  <script slot="head" is:inline>
-    (function () {
-      if (window.__privatePageNoindex) return;
-      window.__privatePageNoindex = true;
-      var meta = document.createElement("meta");
-      meta.name = "robots";
-      meta.content = "noindex, nofollow";
-      document.head.appendChild(meta);
-    })();
-  </script>
+  <!-- Worker 将私密镜像 URL 也回退到本壳，故必须由服务端直接输出防收录标记。 -->
+  <meta slot="head" name="robots" content="noindex, nofollow" />
 
   <!-- 页面交互脚本必须放在 Swup 容器内（MainGridLayout slot 里），
        Swup 换页进入时才会执行（CLAUDE.md §15） -->
-  <script slot="head" is:inline>
+  <script is:inline>
     (function () {
       /* 一次性绑定 document 级监听（head 脚本在 Swup 换页时可能被重新插入） */
       if (window.__privatePageBound) return;
@@ -50,6 +41,16 @@ export const getStaticPaths = () => [{ params: { slug: undefined } }];
         } catch (e) {
           return m[1];
         }
+      }
+
+      /**
+       * 私密镜像页保留原始公开路径，例如 /posts/私密日记/。
+       * Worker 已在服务端根据 private/routes.json 确认该路径存在并返回本壳；
+       * 前端仅在管理员身份确认后请求正文，游客不会请求任何私密 API。
+       */
+      function currentMappedPath() {
+        var pathname = window.location.pathname;
+        return /^\/private(?:\/|$)/.test(pathname) ? "" : pathname;
       }
 
       function escapeHtml(s) {
@@ -215,9 +216,51 @@ export const getStaticPaths = () => [{ params: { slug: undefined } }];
         });
       }
 
+      function loadMappedRoute(pathname) {
+        var contentEl = document.getElementById("private-content");
+        if (!contentEl) return;
+        contentEl.hidden = false;
+        contentEl.innerHTML = '<p class="private-loading">加载中…</p>';
+
+        fetch("/api/private/route?path=" + encodeURIComponent(pathname), {
+          credentials: "same-origin",
+        })
+          .then(function (r) {
+            return r.json();
+          })
+          .then(function (payload) {
+            if (!payload || payload.ok !== true || !payload.data) {
+              contentEl.innerHTML = '<p class="private-error">内容加载失败</p>';
+              return;
+            }
+
+            var route = payload.data.route || {};
+            renderDetail(route);
+            contentEl.innerHTML = "";
+            var renderer = window.__fireflyPrivateRenderer;
+            if (!renderer) {
+              contentEl.textContent = payload.data.markdown || "";
+              document.dispatchEvent(new CustomEvent("swup:content:replaced"));
+              return;
+            }
+            renderer
+              .renderMarkdown(payload.data.markdown || "", contentEl)
+              .then(function () {
+                document.dispatchEvent(new CustomEvent("swup:content:replaced"));
+              })
+              .catch(function () {
+                contentEl.innerHTML = '<p class="private-error">内容渲染失败</p>';
+              });
+          })
+          .catch(function () {
+            contentEl.innerHTML = '<p class="private-error">内容加载失败</p>';
+          });
+      }
+
       function refresh() {
         var slug = currentSlug();
-        var isDetail = slug !== "";
+        var mappedPath = currentMappedPath();
+        var isDetail = slug !== "" || mappedPath !== "";
         var contentEl = document.getElementById("private-content");
         var gateEl = document.getElementById("private-login-gate");
         var heroEl = document.getElementById("private-hero");
@@ -233,7 +276,9 @@ export const getStaticPaths = () => [{ params: { slug: undefined } }];
               gateEl.hidden = true;
               if (pageTitleEl) pageTitleEl.hidden = isDetail;
               if (heroEl) heroEl.hidden = !isDetail;
-              if (isDetail) {
+              if (mappedPath) {
+                loadMappedRoute(mappedPath);
+              } else if (isDetail) {
                 loadDetail(slug);
               } else {
                 loadList();

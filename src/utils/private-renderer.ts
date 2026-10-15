@@ -12,6 +12,15 @@ const SAFE_IMAGE_SOURCE =
 	/^(?:https?:\/\/|data:image\/(?:png|jpeg|gif|webp);base64,)/iu;
 const MAX_INLINE_IMAGE_SOURCE_LENGTH = 180_000;
 
+/**
+ * 私密内容沿用 Astro Content Collection 的 Markdown 书写方式，首段常带 YAML
+ * frontmatter。marked 不认识该语法，会把它当正文显示；动态渲染前先安全剥离，
+ * 展示所需标题、日期等则由受保护的 routes.json 路由条目提供。
+ */
+function stripFrontmatter(markdown: string): string {
+	return markdown.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n?/u, "");
+}
+
 const ALLOWED_TAGS = new Set([
 	"p",
 	"br",
@@ -130,7 +139,7 @@ export function installPrivateRenderer(windowRef?: Window): void {
 
 	const renderer: PrivateRenderer = {
 		async renderMarkdown(markdown, targetEl) {
-			const rendered = marked.parse(markdown, {
+			const rendered = marked.parse(stripFrontmatter(markdown), {
 				async: false,
 				gfm: true,
 				breaks: true,
