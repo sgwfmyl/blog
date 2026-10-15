@@ -131,6 +131,8 @@ const initialStatus =
 <script is:inline>
 (function () {
   var baselineGraph = null;
+  // 最近一次已合并图谱数据的 JSON 指纹：数据未变化时跳过重建（避免刷新/订阅触发重复渲染）
+  var lastGraphJson = null;
 
   function getBaseline() {
     if (baselineGraph) return baselineGraph;
@@ -219,7 +221,11 @@ const initialStatus =
     if (!container || !baseline) return;
     var priv = window.__fireflyPrivateMetaStore ? privateTagStats() : null;
     var graphData = priv ? buildMergedGraph(baseline, priv) : baseline;
-    container.setAttribute("data-graph", JSON.stringify(graphData));
+    var json = JSON.stringify(graphData);
+    // 数据未变化：跳过 data-graph 更新与图谱重建（重复订阅/刷新时的卡顿来源）
+    if (json === lastGraphJson) return;
+    lastGraphJson = json;
+    container.setAttribute("data-graph", json);
     if (window.__fireflyRerenderTagGraph) window.__fireflyRerenderTagGraph();
   }
 

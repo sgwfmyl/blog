@@ -43,6 +43,8 @@ const totalCount = categories.reduce((sum, c) => sum + c.count, 0);
   var currentChartData = null;
   var chartInstance = null;
   var baselineChartData = null;
+  // 最近一次已合并数据的 JSON 指纹：数据未变化时跳过重绘（避免刷新/订阅触发重复渲染）
+  var lastMergedJson = null;
 
   function escapeHtml(s) {
     return String(s).replace(/[&<>"']/g, function (c) {
@@ -106,7 +108,11 @@ const totalCount = categories.reduce((sum, c) => sum + c.count, 0);
       merged = baselineChartData;
     }
     currentChartData = merged;
-    container.setAttribute("data-chart-data", JSON.stringify(merged));
+    var json = JSON.stringify(merged);
+    // 数据未变化：跳过列表重建与图表 setOption（刷新/重复订阅时的卡顿来源）
+    if (json === lastMergedJson) return;
+    lastMergedJson = json;
+    container.setAttribute("data-chart-data", json);
     renderList(container, merged);
     if (chartInstance) {
       chartInstance.setOption({ series: [{ data: merged }] });
