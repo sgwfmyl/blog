@@ -6,6 +6,7 @@ import {
 	type CategoryNode,
 	getCategoryFromId,
 } from "@utils/category-tree";
+import { getPublicPosts } from "@utils/post-source";
 import { getCategoryUrl, getTagUrl } from "@utils/url-utils";
 
 type SortableEntry = {
@@ -64,9 +65,7 @@ export function comparePostsByOrderAndDate(
 
 // // Retrieve posts and sort them by publication date
 async function getRawSortedPosts() {
-	const allBlogPosts = await getCollection("posts", ({ data }) => {
-		return import.meta.env.PROD ? data.draft !== true : true;
-	});
+	const allBlogPosts = await getPublicPosts();
 
 	const sorted = allBlogPosts.sort(comparePostsByOrderAndDate);
 	return sorted;
@@ -121,9 +120,7 @@ const isIn = (entryId: string, folder: string) =>
 	entryId.replace(/\\/g, "/").startsWith(`${folder}/`);
 
 export async function getArchiveList(): Promise<ArchiveItem[]> {
-	const posts = await getCollection("posts", ({ data }) => {
-		return import.meta.env.PROD ? data.draft !== true : true;
-	});
+	const posts = await getPublicPosts();
 	const moments = await getCollection("moments");
 	const bangumi = await getCollection("bangumi");
 	const lifeEntries = await getCollection("life");
@@ -241,9 +238,7 @@ export type Tag = {
 };
 
 export async function getTagList(): Promise<Tag[]> {
-	const allBlogPosts = await getCollection<"posts">("posts", ({ data }) => {
-		return import.meta.env.PROD ? data.draft !== true : true;
-	});
+	const allBlogPosts = await getPublicPosts();
 
 	const allMoments = await getCollection("moments");
 
@@ -279,9 +274,7 @@ export type Category = {
 };
 
 export async function getCategoryList(): Promise<Category[]> {
-	const allBlogPosts = await getCollection<"posts">("posts", ({ data }) => {
-		return import.meta.env.PROD ? data.draft !== true : true;
-	});
+	const allBlogPosts = await getPublicPosts();
 	const count: { [key: string]: number } = {};
 	const uncategorized = i18n(I18nKey.uncategorized);
 	for (const post of allBlogPosts as unknown as { id: string }[]) {
@@ -315,9 +308,7 @@ export async function getCategoryList(): Promise<Category[]> {
 }
 
 export async function getCategoryTree(): Promise<CategoryNode[]> {
-	const allBlogPosts = await getCollection("posts", ({ data }) => {
-		return import.meta.env.PROD ? data.draft !== true : true;
-	});
+	const allBlogPosts = await getPublicPosts();
 	const postsForTree = (
 		allBlogPosts as unknown as { id: string; data: { tags: string[] } }[]
 	).map((p) => ({
@@ -338,9 +329,7 @@ export type CategoryTagGroup = Category & {
 };
 
 export async function getCategoryTagGroups(): Promise<CategoryTagGroup[]> {
-	const allBlogPosts = await getCollection<"posts">("posts", ({ data }) => {
-		return import.meta.env.PROD ? data.draft !== true : true;
-	});
+	const allBlogPosts = await getPublicPosts();
 	const groupMap = new Map<
 		string,
 		{ count: number; tagCounts: Map<string, number> }
