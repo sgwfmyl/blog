@@ -141,6 +141,8 @@ function putKV(key: string, value: string): void {
 	const wranglerCli = fileURLToPath(
 		new URL("../../node_modules/wrangler/bin/wrangler.js", import.meta.url),
 	);
+	// 项目根目录（scripts/私有预渲染/ 的上一级）——wrangler 需在此找到 wrangler.toml
+	const projectRoot = fileURLToPath(new URL("../..", import.meta.url));
 	const remoteFlag = process.env.KV_MODE === "local" ? [] : ["--remote"];
 	try {
 		execFileSync(
@@ -150,7 +152,7 @@ function putKV(key: string, value: string): void {
 				"kv", "key", "put",
 				"--binding=ADMIN_KV", ...remoteFlag, key, value,
 			],
-			{ stdio: "inherit" },
+			{ stdio: "inherit", cwd: projectRoot },
 		);
 	} catch (err) {
 		console.error(`写 KV 失败：${key}`, err);
