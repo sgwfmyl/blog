@@ -72,8 +72,8 @@ src/
 │   └── languages/       # en.ts, zh_CN.ts, zh_TW.ts, ja.ts, ru.ts
 ├── layouts/             # Layout.astro (591行), MainGridLayout.astro (305行)
 ├── notes/               # Obsidian 笔记（不发布）
-├── pages/               # 路由（38 个文件；admin 后台已删除，勿重建）
-│   ├── api/             # JSON API (2)：calendar.json.ts, home-stats.json.ts
+├── pages/               # 路由（43 个文件，含临时 ssr-verify.astro 单点验证页；admin 后台已删除，勿重建）
+│   ├── api/             # API：静态 JSON (2) calendar.json.ts / home-stats.json.ts + SSR 端点 (4) auth/login|logout|me、private/meta（阶段 3 登录会话 + 私密数据源基础设施）
 │   ├── album/ bangumi/ books/ categories/ life/ moments/ posts/ // moments/[slug] 已删除
 │   └── 404, about, archive, apps, changelog, circle, debug-urls, friends,
 │       guestbook, life/notebooks, movies-games/, music, projects, search,
@@ -89,14 +89,15 @@ src/
 │   ├── transitions/     # Swup 过渡动画
 │   └── vendor/          # 第三方覆盖
 ├── types/               # TypeScript 类型：config.ts, bangumi.ts, guestbook-chat.ts
-└── utils/               # 工具函数（42 个文件，含 changelog.ts / tag-graph 控制器 / tts-text 正文提取等）
+└── utils/               # 工具函数（45 个文件，含 changelog.ts / tag-graph 控制器 / tts-text 正文提取等）
     ├── 8 个控制器模块   # 见第 10 节
-    └── 34 个业务工具    # post-source（文章统一取数入口）, content-utils, category-tree（文件夹即分类，多级 `a/b` 推导 + CategoryNode 树）, date-utils, image-utils, url-utils, tts-text（朗读正文提取）...
+    └── 37 个业务工具    # post-source（文章统一取数入口+私密合并 getMergedPosts）, auth-session（D1 会话鉴权，cloudflare:workers）, private-source（私有数据源 GitHub Contents+KV 缓存）, api-response, content-utils, category-tree（文件夹即分类，多级 `a/b` 推导 + CategoryNode 树）, date-utils, image-utils, url-utils, tts-text（朗读正文提取）...
 
 # 根目录其他重要文件
 .pages.yml                # PagesCMS 后台配置（11 集合声明，见第 19 节）
 .claude/settings.json     # 命令白名单（分类器不可用时不卡 Bash）
 pagefind.yml              # Pagefind 索引排除配置（katex、搜索面板等）
+migrations/               # D1 数据库迁移（0001_sessions.sql：sessions 会话表 + rate_limits 登录限流表，阶段 3 引入）
 scripts/                  # 开发脚本：9 个中文命名脚本目录（生成图标/新建文章/生成摘要/转WebP/添加导航/下载影视/友链截图/友链状态检测/TTS服务）+ cli.js、vision.mjs（图片识别）、compress-images.mjs、rename-images.mjs、import-wallpapers.mjs、check-svelte-warnings.mjs（脚本清单见第 0 节；TTS服务 为 edge-tts 朗读服务，部署产物，教程见 docs/deploy-edge-tts.md）
 docs/                     # 部署文档（deploy-pagescms-vercel.md 等）+ superpowers/{specs,plans}（改版设计稿与实现计划，2026-09-30 起）
 ```
