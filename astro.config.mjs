@@ -10,31 +10,16 @@ import tailwindcss from "@tailwindcss/vite";
 import { defineConfig } from "astro/config";
 import expressiveCode from "astro-expressive-code";
 import icon from "astro-icon";
-import katex from "katex";
-import rehypeAutolinkHeadings from "rehype-autolink-headings";
-import rehypeComponents from "rehype-components"; /* Render the custom directive content */
-import rehypeKatex from "rehype-katex";
-import "katex/dist/contrib/mhchem.mjs"; // 加载 mhchem 扩展
+import "katex/dist/contrib/mhchem.mjs"; // 加载 mhchem 扩展（全局副作用，必须保留）
 import mdx from "@astrojs/mdx";
 import { pluginCollapsible } from "expressive-code-collapsible"; /* Collapsible */
 import { pluginLanguageBadge } from "expressive-code-language-badge"; /* Language Badge */
-import rehypeCallouts from "rehype-callouts";
-import rehypeSlug from "rehype-slug";
-import remarkDirective from "remark-directive"; /* Handle directives */
-import remarkMath from "remark-math";
-import remarkSectionize from "remark-sectionize";
 import { expressiveCodeConfig, siteConfig } from "./src/config";
+import { rehypePlugins, remarkPlugins } from "./src/config/markdown";
+import { rehypeMermaid } from "./src/plugins/rehype-mermaid.mjs";
+import { remarkMermaid } from "./src/plugins/remark-mermaid.js";
 import I18nKey from "./src/i18n/i18nKey";
 import { i18n } from "./src/i18n/translation";
-import { GithubCardComponent } from "./src/plugins/rehype-component-github-card.mjs";
-import rehypeEmailProtection from "./src/plugins/rehype-email-protection.mjs";
-import rehypeExternalLinks from "./src/plugins/rehype-external-links.mjs";
-import rehypeFigure from "./src/plugins/rehype-figure.mjs";
-import { rehypeMermaid } from "./src/plugins/rehype-mermaid.mjs";
-import { parseDirectiveNode } from "./src/plugins/remark-directive-rehype.js";
-import { remarkExcerpt } from "./src/plugins/remark-excerpt.js";
-import { remarkMermaid } from "./src/plugins/remark-mermaid.js";
-import { remarkReadingTime } from "./src/plugins/remark-reading-time.mjs";
 
 import { createRequire } from "node:module";
 import { dirname, join } from "node:path";
@@ -247,54 +232,11 @@ export default defineConfig({
 			processor: unified({
 				gfm: true,
 				smartypants: true,
-				remarkPlugins: [
-					remarkMath,
-					remarkReadingTime,
-					remarkExcerpt,
-					remarkDirective,
-					remarkSectionize,
-					parseDirectiveNode,
-					remarkMermaid,
-				],
+				remarkPlugins: [...remarkPlugins, remarkMermaid],
 				rehypePlugins: [
-					[rehypeKatex, { katex }],
-					[rehypeCallouts, { theme: siteConfig.rehypeCallouts.theme }],
-					rehypeSlug,
+					...rehypePlugins.slice(0, 3), // rehypeKatex, rehypeCallouts, rehypeSlug
 					rehypeMermaid,
-					rehypeFigure,
-					[rehypeExternalLinks, { siteUrl: siteConfig.site_url }],
-					[rehypeEmailProtection, { method: "base64" }],
-					[
-						rehypeComponents,
-						{
-							components: {
-								github: GithubCardComponent,
-							},
-						},
-					],
-					[
-						rehypeAutolinkHeadings,
-						{
-							behavior: "append",
-							properties: {
-								className: ["anchor"],
-							},
-							content: {
-								type: "element",
-								tagName: "span",
-								properties: {
-									className: ["anchor-icon"],
-									"data-pagefind-ignore": true,
-								},
-								children: [
-									{
-										type: "text",
-										value: "#",
-									},
-								],
-							},
-						},
-					],
+					...rehypePlugins.slice(3),
 				],
 			}),
 		}),
@@ -303,54 +245,11 @@ export default defineConfig({
 		processor: unified({
 			gfm: true,
 			smartypants: true,
-			remarkPlugins: [
-				remarkMath,
-				remarkReadingTime,
-				remarkExcerpt,
-				remarkDirective,
-				remarkSectionize,
-				parseDirectiveNode,
-				remarkMermaid,
-			],
+			remarkPlugins: [...remarkPlugins, remarkMermaid],
 			rehypePlugins: [
-				[rehypeKatex, { katex }],
-				[rehypeCallouts, { theme: siteConfig.rehypeCallouts.theme }],
-				rehypeSlug,
+				...rehypePlugins.slice(0, 3), // rehypeKatex, rehypeCallouts, rehypeSlug
 				rehypeMermaid,
-				rehypeFigure,
-				[rehypeExternalLinks, { siteUrl: siteConfig.site_url }],
-				[rehypeEmailProtection, { method: "base64" }], // 邮箱保护插件，支持 'base64' 或 'rot13'
-				[
-					rehypeComponents,
-					{
-						components: {
-							github: GithubCardComponent,
-						},
-					},
-				],
-				[
-					rehypeAutolinkHeadings,
-					{
-						behavior: "append",
-						properties: {
-							className: ["anchor"],
-						},
-						content: {
-							type: "element",
-							tagName: "span",
-							properties: {
-								className: ["anchor-icon"],
-								"data-pagefind-ignore": true,
-							},
-							children: [
-								{
-									type: "text",
-									value: "#",
-								},
-							],
-						},
-					},
-				],
+				...rehypePlugins.slice(3),
 			],
 		}),
 	},

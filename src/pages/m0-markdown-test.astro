@@ -1,0 +1,86 @@
+---
+import { createMarkdownProcessor } from "@astrojs/markdown-remark";
+import { unified } from "@astrojs/markdown-remark";
+import katex from "katex";
+import rehypeKatex from "rehype-katex";
+import rehypeCallouts from "rehype-callouts";
+import rehypeSlug from "rehype-slug";
+import remarkMath from "remark-math";
+import "katex/dist/contrib/mhchem.mjs";
+import { siteConfig } from "@/config";
+
+// M0 前置验证页：验证 markdown 管线（shiki / katex / callouts）能否在 workerd 运行时跑通。
+// 渲染一段固定 markdown，含代码块、行内公式、块级公式、callout。
+// 验证后删除（阶段 4 M4.17 一并清理）。
+export const prerender = false;
+
+const sampleMarkdown = `# M0 管线验证
+
+这是一段含**代码块**、公式和 callout 的测试正文。
+
+\`\`\`typescript
+const greeting: string = "hello workerd";
+console.log(greeting);
+\`\`\`
+
+行内公式：$E = mc^2$
+
+块级公式：
+
+$$
+\\int_{-\\infty}^{\\infty} e^{-x^2} dx = \\sqrt{\\pi}
+$$
+
+> [!NOTE]
+> 这是一个 callout，用于验证 rehype-callouts 在运行时是否正常。
+
+## 二级标题（验证 headings 提取）
+`;
+
+// 与 astro.config.mjs 的 markdown.processor 保持一致的插件链（不含 mermaid / rehypeComponents，
+// 这两项为阶段 4 明确已知差异）。
+// 注意：shiki 主题名在 workerd 运行时只 bundle 内置默认主题，这里先用默认（github-dark），
+// 主题对齐留到 M1 正式实现（expressive-code 主题需额外处理）。
+// M0 验证：先关 shiki（syntaxHighlight:false），验证 katex + callouts 插件能否在 workerd 独立跑通。
+// shiki 主题问题（需显式 import @shikijs/themes，非直接依赖）已确认，留待 M1 决策「shiki vs marked 回退」。
+const processor = await createMarkdownProcessor({
+	syntaxHighlight: false,
+	remarkPlugins: [remarkMath],
+	rehypePlugins: [
+		[rehypeKatex, { katex }],
+		[rehypeCallouts, { theme: siteConfig.rehypeCallouts.theme }],
+		rehypeSlug,
+	],
+});
+
+const { code, metadata } = await processor.render(sampleMarkdown, {
+	frontmatter: {},
+});
+
+const { headings } = metadata;
+---
+
+<html lang="zh-CN">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<title>M0 管线验证</title>
+		<style>
+			body { font-family: ui-sans-serif, system-ui; padding: 2rem; max-width: 720px; margin: 0 auto; }
+			code { background: #f1efE8; padding: 0.1em 0.3em; border-radius: 4px; }
+			pre { background: #f6f8fa; padding: 1rem; border-radius: 8px; overflow-x: auto; }
+			pre code { background: transparent; padding: 0; }
+		</style>
+	</head>
+	<body>
+		<h1 style="font-size:1.2rem; margin-bottom:1rem;">M0 管线验证结果</h1>
+		<p><b>headings 数量：</b>{headings.length}</p>
+		<ul>
+			{headings.map((h) => (
+				<li>{h.depth} — {h.text}</li>
+			))}
+		</ul>
+		<hr />
+		<div set:html={code} />
+	</body>
+</html>

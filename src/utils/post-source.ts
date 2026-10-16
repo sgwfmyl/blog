@@ -1,5 +1,5 @@
 import { type CollectionEntry, getCollection } from "astro:content";
-import type { PrivateMetaItem } from "@utils/private-source";
+import type { PrivateMetaItem } from "@utils/private-contract";
 
 export type PostEntry = CollectionEntry<"posts">;
 
@@ -61,6 +61,6 @@ export async function getMergedPosts(
 	const publicPosts = await getPublicPosts();
 	const meta =
 		privateMeta ??
-		(await (await import("@utils/private-source")).getPrivateMeta());
+		(await (await import("@utils/private-source")).getPrivateMetaFromKV());
 	return [...publicPosts, ...privateMetaToPosts(meta)];
 }
