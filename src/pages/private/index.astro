@@ -1,0 +1,102 @@
+---
+import MainGridLayout from "@layouts/MainGridLayout.astro";
+import PrivateGate from "@components/security/PrivateGate.astro";
+import PageTitle from "@/components/common/PageTitle.astro";
+import { AUTH_COOKIE_NAME, verifySession } from "@utils/auth-session";
+import { getPrivateMetaFromKV } from "@utils/private-source";
+
+// /private/ 管理入口（阶段 4 SSG 方案）。
+// - 未登录：显示登录门（不拉任何私有数据）
+// - 已登录：显示私有条目列表（链接用 route，缺省 /private/<slug>/）
+// 响应头 no-store + noindex（见下方 setHeaders，由 .astro 组件内联设置）。
+export const prerender = false;
+
+const token = Astro.cookies.get(AUTH_COOKIE_NAME)?.value;
+const isAdmin = await verifySession(token);
+
+// 未登录不拉任何私有数据
+const items = isAdmin ? await getPrivateMetaFromKV() : [];
+
+// 设置响应头（防缓存 + 防收录）
+Astro.response.headers.set("Cache-Control", "private, no-store");
+Astro.response.headers.set("Vary", "Cookie");
+Astro.response.headers.set("X-Robots-Tag", "noindex, nofollow");
+---
+
+<MainGridLayout title="私密空间" description="管理员私密空间">
+	<meta slot="head" name="robots" content="noindex, nofollow" />
+
+	<div class="mb-8">
+		<PageTitle title="私密空间" eyebrow="Private" description="仅管理员可见的内容" />
+	</div>
+
+	{isAdmin ? (
+		<div class="flex w-full rounded-(--radius-large) overflow-hidden relative mb-4">
+			<div id="post-container" class="card-base z-10 px-3 md:px-6 lg:px-10 pb-4 pt-4 relative w-full">
+				{items.length === 0 ? (
+					<p class="private-empty">暂无私密内容</p>
+				) : (
+					<ul class="private-list">
+						{items.map((item) => (
+							<li class="private-list__item">
+								<a
+									class="private-list__link"
+									href={item.route ?? "/private/" + item.slug + "/"}
+								>
+									{item.title || item.slug}
+								</a>
+								<span class="private-list__date">{String(item.date).slice(0, 10)}</span>
+							</li>
+						))}
+					</ul>
+				)}
+			</div>
+		</div>
+	) : (
+		<PrivateGate />
+	)}
+</MainGridLayout>
+
+<style>
+	.private-empty {
+		color: var(--content-meta, #888);
+		text-align: center;
+		padding: 2rem 0;
+	}
+
+	.private-list {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: flex;
+		flex-direction: column;
+	}
+
+	.private-list__item {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		padding: 0.75rem 0;
+		border-bottom: 1px solid var(--color-border-tertiary, rgba(0, 0, 0, 0.08));
+	}
+
+	.private-list__item:last-child {
+		border-bottom: none;
+	}
+
+	.private-list__link {
+		color: var(--deep-text, #333);
+		text-decoration: none;
+		font-weight: 500;
+		transition: color 0.15s ease;
+	}
+
+	.private-list__link:hover {
+		color: var(--primary, #3b82f6);
+	}
+
+	.private-list__date {
+		color: var(--content-meta, #888);
+		font-size: 0.8125rem;
+	}
+</style>

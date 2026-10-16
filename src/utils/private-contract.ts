@@ -49,3 +49,59 @@ export function isValidPrivateMetaItem(value: unknown): value is PrivateMetaItem
 		(item.route === undefined || typeof item.route === "string")
 	);
 }
+
+/** 私有内容访问路由的白名单前缀（每个前缀一个 SSR rest 路由文件）。 */
+export const PRIVATE_ROUTE_PREFIXES = ["diary"];
+
+/**
+ * 规范化访问路由（映射兜底路由用）。
+ * 流程：百分号解码 → 拒绝查询串/`..`/`//`/空段/控制字符 → 统一尾部斜杠。
+ * 返回规范化后的路由（如 "/diary/hello/"），非法则返回 null。
+ */
+export function normalizeRoute(rawPath: string): string | null {
+	let path = rawPath;
+	// 去掉查询串
+	const qIdx = path.indexOf("?");
+	if (qIdx !== -1) path = path.slice(0, qIdx);
+
+	// 百分号解码（一次）；解码后再校验，防编码绕过
+	try {
+		path = decodeURIComponent(path);
+	} catch {
+		return null;
+	}
+
+	// 拒绝控制字符
+	// eslint-disable-next-line no-control-regex
+	if (/[\u0000-\u001f\u007f]/.test(path)) return null;
+	// 拒绝路径穿越与空段
+	if (path.includes("..") || path.includes("//")) return null;
+	// 必须以 / 开头
+	if (!path.startsWith("/")) return null;
+
+	// 统一尾部斜杠
+	if (!path.endsWith("/")) path += "/";
+
+	return path;
+}
+
+/** 校验私有 slug（拒绝空段、首尾斜杠、..、控制字符）。 */
+export function isValidPrivateSlug(slug: string): boolean {
+	if (!slug || slug.length === 0) return false;
+	if (slug.startsWith("/") || slug.endsWith("/")) return false;
+	if (slug.includes("..") || slug.includes("//")) return false;
+	// eslint-disable-next-line no-control-regex
+	if (/[\u0000-\u001f\u007f]/.test(slug)) return false;
+	return true;
+}
+
+/** 从元数据按规范化 route 查找条目（映射兜底路由用）。 */
+export function getPrivateEntryByRoute(
+	meta: PrivateMetaItem[],
+	normalizedRoute: string,
+): PrivateMetaItem | undefined {
+	return meta.find((item) => {
+		const route = item.route ?? `/private/${item.slug}/`;
+		return normalizeRoute(route) === normalizedRoute;
+	});
+}

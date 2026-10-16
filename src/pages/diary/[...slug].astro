@@ -1,0 +1,55 @@
+---
+import PrivatePostView from "@components/security/PrivatePostView.astro";
+import { AUTH_COOKIE_NAME, verifySession } from "@utils/auth-session";
+import {
+	getPrivateEntryByRoute,
+	normalizeRoute,
+} from "@utils/private-contract";
+import {
+	getPrivateHtmlFromKV,
+	getPrivateMetaFromKV,
+} from "@utils/private-source";
+
+// 映射兜底路由（阶段 4 SSG 方案，前缀 /diary/）。
+// 服务端：normalizeRoute → 鉴权 → 按 route 查条目 → 读 KV 预渲染正文 → PrivatePostView。
+// 未找到 / 未登录 / KV 未命中 → 404（响应形态一致，不泄露路由存在，不显示登录门）。
+export const prerender = false;
+
+// 未登录直接 404（映射路由本身是私有的，不显示登录门）
+const token = Astro.cookies.get(AUTH_COOKIE_NAME)?.value;
+const isAdmin = await verifySession(token);
+
+if (!isAdmin) {
+	return Astro.redirect("/404");
+}
+
+// 规范化当前路径
+const path = Astro.url.pathname;
+const normalized = normalizeRoute(path);
+
+if (!normalized) {
+	return Astro.redirect("/404");
+}
+
+// 按 route 查条目（从 KV 读元数据）
+const meta = await getPrivateMetaFromKV();
+const item = getPrivateEntryByRoute(meta, normalized);
+
+if (!item) {
+	return Astro.redirect("/404");
+}
+
+// 读 KV 预渲染正文
+const payload = await getPrivateHtmlFromKV(item.slug);
+
+if (!payload) {
+	return Astro.redirect("/404");
+}
+
+// 响应头
+Astro.response.headers.set("Cache-Control", "private, no-store");
+Astro.response.headers.set("Vary", "Cookie");
+Astro.response.headers.set("X-Robots-Tag", "noindex, nofollow");
+---
+
+<PrivatePostView item={item} payload={payload} />

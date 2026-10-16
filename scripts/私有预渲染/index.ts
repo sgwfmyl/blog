@@ -134,20 +134,21 @@ async function renderPrivateMarkdown(markdown: string): Promise<{
 	};
 }
 
-/** 通过 wrangler CLI 写线上 KV（--remote 必须，否则写本地模拟）。 */
+/** 通过 wrangler CLI 写 KV。默认 --remote（线上）；设 KV_MODE=local 则写本地模拟（本地 dev 验证用）。 */
 function putKV(key: string, value: string): void {
 	// Windows 下 pnpm 是 .cmd 脚本，spawnSync 直接调 pnpm 会 ENOENT；
 	// 改用 node 直接调 wrangler 的 js 入口（跨平台可靠），路径用 fileURLToPath 转换。
 	const wranglerCli = fileURLToPath(
 		new URL("../../node_modules/wrangler/bin/wrangler.js", import.meta.url),
 	);
+	const remoteFlag = process.env.KV_MODE === "local" ? [] : ["--remote"];
 	try {
 		execFileSync(
 			process.execPath, // 当前 node 可执行文件
 			[
 				wranglerCli,
 				"kv", "key", "put",
-				"--binding=ADMIN_KV", "--remote", key, value,
+				"--binding=ADMIN_KV", ...remoteFlag, key, value,
 			],
 			{ stdio: "inherit" },
 		);

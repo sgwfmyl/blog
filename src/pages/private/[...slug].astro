@@ -1,0 +1,51 @@
+---
+import PrivatePostView from "@components/security/PrivatePostView.astro";
+import { AUTH_COOKIE_NAME, verifySession } from "@utils/auth-session";
+import {
+	getPrivateHtmlFromKV,
+	getPrivateMetaFromKV,
+} from "@utils/private-source";
+
+// /private/<slug>/ 过渡详情路由（阶段 4 SSG 方案，兼容旧书签）。
+// 服务端：slug 校验 → 鉴权 → 查 meta 条目 → 读 KV 预渲染正文 → PrivatePostView。
+// 错误码：slug 非法 / 未登录 / meta 无匹配 / KV 未命中 → 404（响应形态一致，不泄露）。
+export const prerender = false;
+
+const token = Astro.cookies.get(AUTH_COOKIE_NAME)?.value;
+const isAdmin = await verifySession(token);
+
+if (!isAdmin) {
+	return Astro.redirect("/404");
+}
+
+// slug 校验：拒绝空段、首尾斜杠、..、控制字符
+const rawSlug = Astro.params.slug ?? "";
+const slug = rawSlug.replace(/\/+$/, ""); // 统一去尾部斜杠
+const validSlug = slug.length > 0 && !slug.includes("..") && !slug.includes("//");
+
+if (!validSlug) {
+	return Astro.redirect("/404");
+}
+
+// 查 meta 条目（从 KV 读元数据）
+const meta = await getPrivateMetaFromKV();
+const item = meta.find((m) => m.slug === slug);
+
+if (!item) {
+	return Astro.redirect("/404");
+}
+
+// 读 KV 预渲染正文
+const payload = await getPrivateHtmlFromKV(slug);
+
+if (!payload) {
+	return Astro.redirect("/404");
+}
+
+// 响应头
+Astro.response.headers.set("Cache-Control", "private, no-store");
+Astro.response.headers.set("Vary", "Cookie");
+Astro.response.headers.set("X-Robots-Tag", "noindex, nofollow");
+---
+
+<PrivatePostView item={item} payload={payload} />
