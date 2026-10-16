@@ -16,6 +16,8 @@ pnpm-debug.log*
 # environment variables
 .env
 .env.production
+# wrangler 本地 secrets（wrangler dev 阶段 3 本地验证用，含 ADMIN_PASSWORD/GH_PAT 等，勿提交）
+.dev.vars
 
 # macOS-specific files
 .DS_Store
