@@ -215,6 +215,15 @@ export default defineConfig({
 					return false;
 				}
 
+				// 私密空间与映射路由不收录（纵深防御：这些路由 prerender=false 本就不进
+				// 静态产物，此处显式过滤防止未来误改 prerender 后被 sitemap 收录）
+				if (pathname === "/private" || pathname.startsWith("/private/")) {
+					return false;
+				}
+				if (pathname === "/diary" || pathname.startsWith("/diary/")) {
+					return false;
+				}
+
 				if (pathname === "/sponsor/" && !siteConfig.pages.sponsor) {
 					return false;
 				}
