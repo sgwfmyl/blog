@@ -12,6 +12,8 @@ interface Post {
 		tags: string[];
 		category?: string | null;
 		published: Date;
+		link?: string;
+		isPrivate?: boolean;
 	};
 }
 interface MonthGroup {
@@ -228,6 +230,10 @@ function groupByYearMonth(ps: Post[]): YearGroup[] {
 }
 
 function getItemUrl(post: Post): string {
+	// 私有条目（登录态合并）：直接跳 link（route），不走公开 /posts/ 或 /moments/
+	if (post.data?.isPrivate) {
+		return post.data.link || `/private/${post.id}/`;
+	}
 	// 动态没有独立详情页，统一指向动态列表（普通说说直接跳 /moments/）
 	if (post.type === "moment") {
 		return "/moments/";

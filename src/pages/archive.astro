@@ -6,20 +6,37 @@ import { i18n } from "@i18n/translation";
 import MainGridLayout from "@layouts/MainGridLayout.astro";
 import { Icon } from "astro-icon/components";
 import PageTitle from "@/components/common/PageTitle.astro";
+import { AUTH_COOKIE_NAME, verifySession } from "@utils/auth-session";
 import { getArchiveList, getSortedPostsList } from "@/utils/content-utils";
+import { getPrivateMetaFromKV } from "@utils/private-source";
 
-const archiveList = await getArchiveList();
+// 阶段 5：归档页合并私有（SSG 方案）——prerender=false，登录后合并私有条目，
+// 未登录只公开。响应头 no-store + noindex（登录态页面不缓存、不收录）。
+export const prerender = false;
+
+const token = Astro.cookies.get(AUTH_COOKIE_NAME)?.value;
+const isAdmin = await verifySession(token);
+const privateMeta = isAdmin ? await getPrivateMetaFromKV() : [];
+
+const archiveList = await getArchiveList(privateMeta);
 const sortedPostsList = await getSortedPostsList();
 const title = i18n(I18nKey.archive);
 
-// 年份列表（与 ArchiveHeatmap 同源计算，用于标题行年份切换）
+// 年份列表：用合并后的 archiveList（含私有），保证私有条目能通过年份筛选看到；
+// 热力图仍用公开 sortedPostsList（写作频率统计不混入私有）。
 const yearsSet = new Set<number>();
-for (const p of sortedPostsList) yearsSet.add(p.data.published.getFullYear());
+for (const p of archiveList) yearsSet.add(p.data.published.getFullYear());
 const availableYears = Array.from(yearsSet).sort((a, b) => b - a);
 const defaultYear = availableYears[0] ?? new Date().getFullYear();
+
+// 响应头（登录态页面不缓存、不收录）
+Astro.response.headers.set("Cache-Control", "private, no-store");
+Astro.response.headers.set("Vary", "Cookie");
+Astro.response.headers.set("X-Robots-Tag", "noindex, nofollow");
 ---
 
 <MainGridLayout title={title}>
+  <meta slot="head" name="robots" content="noindex, nofollow" />
   <div class="flex w-full overflow-hidden relative min-h-32">
     <div class="card-base z-10 px-4 py-6 md:px-9 relative w-full">
       <!-- 页面标题（PageTitle：英文小字 + 签写动画 + 描述） -->
