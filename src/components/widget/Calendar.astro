@@ -111,59 +111,7 @@ const postUrlPrefix = url("/posts/");
   let currentView = 'day'; // 'day' | 'month' | 'year'
   let postDateMap = {};
   let allPostsData = [];
-  let publicPostsData = [];
-  let privatePostsData = [];
   let availableYears = [];
-
-  function rebuildMaps() {
-    postDateMap = {};
-    const yearsSet = new Set();
-    allPostsData.forEach(post => {
-      const date = new Date(post.published);
-      const dateKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
-      if (!postDateMap[dateKey]) {
-        postDateMap[dateKey] = [];
-      }
-      postDateMap[dateKey].push({ id: post.id, title: post.title, published: post.published, url: post.url });
-      yearsSet.add(date.getFullYear());
-    });
-
-    availableYears = Array.from(yearsSet).sort((a, b) => b - a);
-  }
-
-  /** 合并私密文章：allPostsData = 公开 + 私密，重建映射后重绘 */
-  function applyPrivateMerge() {
-    var store = window.__fireflyPrivateMetaStore;
-    var items = store ? store.getStats().posts : [];
-    privatePostsData = items.map(function (p) {
-      return {
-        id: p.slug,
-        title: p.title || p.slug,
-        published: p.date,
-        url: "/private/" + encodeURIComponent(p.slug) + "/",
-      };
-    });
-    allPostsData = publicPostsData.concat(privatePostsData);
-    rebuildMaps();
-    renderCalendar();
-  }
-
-  function bootPrivateMerge() {
-    var store = window.__fireflyPrivateMetaStore;
-    if (!store) return;
-    store.subscribePrivateMeta(applyPrivateMerge);
-    applyPrivateMerge();
-  }
-
-  // 订阅只注册一次（日历在侧栏，脚本不随导航重执行）
-  if (!window.__privateCalendarBound) {
-    window.__privateCalendarBound = true;
-    if (window.__fireflyPrivateMetaStore) {
-      bootPrivateMerge();
-    } else {
-      window.addEventListener("firefly:private-meta-store-ready", bootPrivateMerge, { once: true });
-    }
-  }
 
   async function fetchData() {
     try {
@@ -175,10 +123,23 @@ const postUrlPrefix = url("/posts/");
         allPostsData = await response.json();
         window.__calendarCache = allPostsData;
       }
-      publicPostsData = allPostsData;
-
-      rebuildMaps();
-      applyPrivateMerge();
+      
+      // Reconstruct postDateMap and availableYears
+      postDateMap = {};
+      const yearsSet = new Set();
+      allPostsData.forEach(post => {
+        const date = new Date(post.published);
+        const dateKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+        if (!postDateMap[dateKey]) {
+          postDateMap[dateKey] = [];
+        }
+        postDateMap[dateKey].push({ id: post.id, title: post.title, published: post.published });
+        yearsSet.add(date.getFullYear());
+      });
+      
+      availableYears = Array.from(yearsSet).sort((a, b) => b - a);
+      
+      renderCalendar();
     } catch (error) {
       console.error("Failed to fetch calendar data", error);
     }
@@ -395,9 +356,8 @@ const postUrlPrefix = url("/posts/");
       postsList.innerHTML = currentMonthPosts.map(post => {
         const date = new Date(post.published);
         const dateStr = `${date.getMonth() + 1}-${date.getDate()}`;
-        const href = post.url || `${postUrlPrefix}${post.id}/`;
         return `
-        <a href="${href}" class="flex justify-between items-center text-sm text-neutral-700 dark:text-neutral-300 hover:text-(--primary) dark:hover:text-(--primary) transition-colors px-2 py-1 rounded hover:bg-(--btn-plain-bg-hover)">
+        <a href="${postUrlPrefix}${post.id}/" class="flex justify-between items-center text-sm text-neutral-700 dark:text-neutral-300 hover:text-(--primary) dark:hover:text-(--primary) transition-colors px-2 py-1 rounded hover:bg-(--btn-plain-bg-hover)">
           <span class="truncate">${post.title}</span>
           <span class="text-xs text-neutral-500 dark:text-neutral-400 ml-2 whitespace-nowrap">${dateStr}</span>
         </a>
@@ -451,9 +411,8 @@ const postUrlPrefix = url("/posts/");
           postsList.innerHTML = posts.map(post => {
             const date = new Date(post.published);
             const dateStr = `${date.getMonth() + 1}-${date.getDate()}`;
-            const href = post.url || `${postUrlPrefix}${post.id}/`;
             return `
-            <a href="${href}" class="flex justify-between items-center text-sm text-neutral-700 dark:text-neutral-300 hover:text-(--primary) dark:hover:text-(--primary) transition-colors px-2 py-1 rounded hover:bg-(--btn-plain-bg-hover)">
+            <a href="${postUrlPrefix}${post.id}/" class="flex justify-between items-center text-sm text-neutral-700 dark:text-neutral-300 hover:text-(--primary) dark:hover:text-(--primary) transition-colors px-2 py-1 rounded hover:bg-(--btn-plain-bg-hover)">
               <span class="truncate">${post.title}</span>
               <span class="text-xs text-neutral-500 dark:text-neutral-400 ml-2 whitespace-nowrap">${dateStr}</span>
             </a>

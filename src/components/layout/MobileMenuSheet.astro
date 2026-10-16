@@ -170,7 +170,7 @@ const groups = [
         </details>
       )
     ))}
-    <button type="button" class="menu-sheet__row" id="menu-sheet-auth-btn">
+    <button class="menu-sheet__row" id="menu-sheet-auth-btn" type="button" data-auth-open>
       <span class="menu-sheet__row-icon"><Icon name="material-symbols:lock-outline-rounded" /></span>
       <span class="menu-sheet__row-label">管理</span>
     </button>
@@ -196,13 +196,6 @@ const groups = [
 
 <script is:inline>
 (function() {
-  // 管理入口：dispatch 全局事件，由 Swup 容器外的 AuthModal 监听打开
-  document.addEventListener('click', function(e) {
-    var btn = e.target.closest('#menu-sheet-auth-btn');
-    if (!btn) return;
-    document.dispatchEvent(new CustomEvent('firefly:auth-modal-open'));
-  });
-
   function closeAllDetails() {
     document.querySelectorAll('#menu-sheet details[open]').forEach(function(d) { d.removeAttribute('open'); });
   }

@@ -4,6 +4,10 @@
  * 镜像 search-modal-controller.ts 的跨导航单例模式：
  * - 弹窗组件挂载时 bindAuthModalController 注册自身
  * - 其它按钮 / 脚本通过 requestAuthModalOpen 请求打开（未挂载时缓存 pending 请求）
+ *
+ * 阶段 4 说明：`bindAuthModalController` 内置 pending 排队——控制器未就绪时
+ * `requestAuthModalOpen` 会置 pending，`bindAuthModalController` 就绪后执行，
+ * 解决 client:idle 水合前点击丢失。
  */
 
 export type AuthModalController = {

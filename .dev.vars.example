@@ -4,8 +4,7 @@
 
 # 管理员登录密码（与线上 Worker Secret ADMIN_PASSWORD 一致）
 ADMIN_PASSWORD=
-# Cookie HMAC 签名密钥（随机 ≥32 字节；生成一次永久保存，丢失则全部会话失效）
-AUTH_SECRET=
+
 # GitHub 私有仓库只读 PAT（fine-grained token，仅授予内容仓库读取权限）
 GH_PAT=
 # 私有仓库归属，如 sgwfmyl

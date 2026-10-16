@@ -1,0 +1,73 @@
+---
+import MainGridLayout from "@layouts/MainGridLayout.astro";
+import { getCategoryUrl, getTagUrl } from "@utils/url-utils";
+import { formatDateI18n } from "@utils/date-utils";
+import type { PrivateMetaItem, PrivateHtmlPayload } from "@utils/private-contract";
+import KatexManager from "@components/features/KatexManager.astro";
+
+// 共用私有文章渲染骨架（阶段 4 SSG 方案）。
+// 服务端渲染：post-hero（标题/日期/分类/标签）+ #post-container 正文卡 +
+// .markdown-content prose 容器（内联预渲染 HTML）+ TOC 浮层。
+// /private/<slug>/（过渡）与映射路由共用。
+interface Props {
+	item: PrivateMetaItem;
+	payload: PrivateHtmlPayload;
+}
+
+const { item, payload } = Astro.props;
+const headings = payload.headings ?? [];
+---
+
+<MainGridLayout
+	title={item.title}
+	description="私密内容"
+	postSlug="private"
+	setOGTypeArticle={true}
+	headings={headings}
+>
+	<!-- 防收录双保险：响应头 + meta 标签 -->
+	<meta slot="head" name="robots" content="noindex, nofollow" />
+	<KatexManager slot="head" />
+
+	<!-- Layer 1: Hero — 复用公开文章页骨架 -->
+	<div class="post-hero rounded-(--radius-large) mb-2 onload-animation">
+		<div class="post-hero__content">
+			<h1 class="post-hero__title">{item.title}</h1>
+
+			<div class="post-hero__meta-row">
+				<span class="post-hero__meta-item">{formatDateI18n(new Date(item.date))}</span>
+				{item.category && (
+					<>
+						<span class="post-hero__meta-dot">·</span>
+						<a href={getCategoryUrl(item.category)} class="post-hero__meta-link">
+							{item.category}
+						</a>
+					</>
+				)}
+				{item.tags.length > 0 && (
+					<span class="post-hero__meta-tag">
+						{item.tags.map((tag, i) => (
+							<>
+								{i > 0 && <span class="post-hero__meta-sep">/</span>}
+								<a href={getTagUrl(tag)} class="post-hero__meta-link">{tag.trim()}</a>
+							</>
+						))}
+					</span>
+				)}
+			</div>
+		</div>
+	</div>
+
+	<!-- 正文卡片：复用公开文章正文卡结构，保证 TOC 选择器一致 -->
+	<div class="flex w-full rounded-(--radius-large) overflow-hidden relative mb-4">
+		<div
+			id="post-container"
+			class="card-base z-10 px-3 md:px-6 lg:px-10 pb-4 pt-0 relative w-full"
+		>
+			<div
+				class="markdown-content prose dark:prose-invert max-w-none! custom-md mb-6"
+				set:html={payload.html}
+			/>
+		</div>
+	</div>
+</MainGridLayout>

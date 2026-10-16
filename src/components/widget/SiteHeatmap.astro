@@ -57,15 +57,15 @@ const label = i18n(I18nKey.siteHeatmap);
 <WidgetLayout name={label} id="site-heatmap" class={className} style={style}>
 	<div class="heatmap">
 		<div class="heatmap-header">
-				<span class="heatmap-stats">
-					<span class="stat-item">
-						<strong data-heatmap-stat="updates">{totalUpdates}</strong> 篇更新
-					</span>
-					<span class="stat-item">
-						<strong data-heatmap-stat="days">{activeDays}</strong> 天活跃
-					</span>
+			<span class="heatmap-stats">
+				<span class="stat-item">
+					<strong>{totalUpdates}</strong> 篇更新
 				</span>
-			</div>
+				<span class="stat-item">
+					<strong>{activeDays}</strong> 天活跃
+				</span>
+			</span>
+		</div>
 		<div class="heatmap-container">
 			<div class="day-labels">
 				{dayLabels.map((d) => (
@@ -95,72 +95,9 @@ const label = i18n(I18nKey.siteHeatmap);
 			<span class="legend-text">多</span>
 		</div>
 	</div>
-	</WidgetLayout>
+</WidgetLayout>
 
-	<script is:inline>
-		(function () {
-			if (window.__privateHeatmapBound) return;
-			window.__privateHeatmapBound = true;
-
-			/** 私密文章按日期计数的映射（type=post 才计入热力图，与公开口径一致） */
-			function privateDateCounts() {
-				var store = window.__fireflyPrivateMetaStore;
-				if (!store) return {};
-				var map = {};
-				store.getPrivateMeta().items.forEach(function (it) {
-					if (it.type !== "post" || !it.date) return;
-					var d = String(it.date).slice(0, 10);
-					map[d] = (map[d] || 0) + 1;
-				});
-				return map;
-			}
-
-			/** 幂等合并：始终以 data-count（公开基线，不回写）为底数叠加私密增量 */
-			function applyMerge() {
-				var cells = document.querySelectorAll(".heatmap-grid .heat-cell");
-				if (!cells.length) return;
-				var priv = privateDateCounts();
-				var totalUpdates = 0;
-				var activeDays = 0;
-				cells.forEach(function (el) {
-					var date = el.getAttribute("data-date");
-					var base = parseInt(el.getAttribute("data-count") || "0", 10);
-					var count = base + (priv[date] || 0);
-					var level = count > 0 ? Math.min(4, count) : 0;
-					el.classList.remove("level-0", "level-1", "level-2", "level-3", "level-4");
-					el.classList.add("level-" + level);
-					el.setAttribute("title", date + ": " + (count > 0 ? "有更新" : "无更新"));
-					totalUpdates += count;
-					if (count > 0) activeDays++;
-				});
-				var strongs = document.querySelectorAll("[data-heatmap-stat]");
-				strongs.forEach(function (s) {
-					if (s.getAttribute("data-heatmap-stat") === "updates") {
-						s.textContent = totalUpdates.toLocaleString();
-					} else if (s.getAttribute("data-heatmap-stat") === "days") {
-						s.textContent = activeDays.toLocaleString();
-					}
-				});
-			}
-
-			function boot() {
-				var store = window.__fireflyPrivateMetaStore;
-				if (!store) return;
-				store.subscribePrivateMeta(applyMerge);
-				applyMerge();
-			}
-
-			// 侧栏在 Swup 容器外不随导航重渲染，首次加载 + 登录态变化即可；再兜底一次防竞态
-			applyMerge();
-			if (window.__fireflyPrivateMetaStore) {
-				boot();
-			} else {
-				window.addEventListener("firefly:private-meta-store-ready", boot, { once: true });
-			}
-		})();
-	</script>
-
-	<style>
+<style>
 	.heatmap {
 		padding: 0;
 	}

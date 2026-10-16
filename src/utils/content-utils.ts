@@ -6,6 +6,8 @@ import {
 	type CategoryNode,
 	getCategoryFromId,
 } from "@utils/category-tree";
+import { getPublicPosts } from "@utils/post-source";
+import type { PrivateMetaItem } from "@utils/private-contract";
 import { getCategoryUrl, getTagUrl } from "@utils/url-utils";
 
 type SortableEntry = {
@@ -64,9 +66,7 @@ export function comparePostsByOrderAndDate(
 
 // // Retrieve posts and sort them by publication date
 async function getRawSortedPosts() {
-	const allBlogPosts = await getCollection("posts", ({ data }) => {
-		return import.meta.env.PROD ? data.draft !== true : true;
-	});
+	const allBlogPosts = await getPublicPosts();
 
 	const sorted = allBlogPosts.sort(comparePostsByOrderAndDate);
 	return sorted;
@@ -113,6 +113,8 @@ export type ArchiveItem = {
 		image?: string;
 		link?: string;
 		order?: number | undefined;
+		/** 私有条目标记（登录态合并私有内容用；跳转走 link 而非 /posts/） */
+		isPrivate?: boolean;
 	};
 };
 
@@ -120,10 +122,10 @@ export type ArchiveItem = {
 const isIn = (entryId: string, folder: string) =>
 	entryId.replace(/\\/g, "/").startsWith(`${folder}/`);
 
-export async function getArchiveList(): Promise<ArchiveItem[]> {
-	const posts = await getCollection("posts", ({ data }) => {
-		return import.meta.env.PROD ? data.draft !== true : true;
-	});
+export async function getArchiveList(
+	privateMeta: PrivateMetaItem[] = [],
+): Promise<ArchiveItem[]> {
+	const posts = await getPublicPosts();
 	const moments = await getCollection("moments");
 	const bangumi = await getCollection("bangumi");
 	const lifeEntries = await getCollection("life");
@@ -222,18 +224,36 @@ export async function getArchiveList(): Promise<ArchiveItem[]> {
 			});
 		});
 
-	return [...postItems, ...momentItems, ...bangumiItems, ...lifeItems].sort(
-		(a, b) => {
-			const timeA = a.data.published.getTime();
-			const timeB = b.data.published.getTime();
-			if (timeA !== timeB) return timeB - timeA;
-			// 同一天发布的文章沿用统一排序（按目录分组、组内 order 降序）
-			return compareInSameDate(
-				{ id: a.id, order: a.data.order },
-				{ id: b.id, order: b.data.order },
-			);
+	// 私有条目（登录态合并）：type 用私有 meta 的 type，link 指向 route（缺省 /private/<slug>/）
+	const privateItems: ArchiveItem[] = privateMeta.map((item) => ({
+		id: item.slug,
+		type: item.type,
+		data: {
+			title: item.title,
+			published: new Date(item.date),
+			tags: item.tags,
+			category: item.category ?? null,
+			link: item.route ?? `/private/${item.slug}/`,
+			isPrivate: true,
 		},
-	);
+	}));
+
+	return [
+		...postItems,
+		...momentItems,
+		...bangumiItems,
+		...lifeItems,
+		...privateItems,
+	].sort((a, b) => {
+		const timeA = a.data.published.getTime();
+		const timeB = b.data.published.getTime();
+		if (timeA !== timeB) return timeB - timeA;
+		// 同一天发布的文章沿用统一排序（按目录分组、组内 order 降序）
+		return compareInSameDate(
+			{ id: a.id, order: a.data.order },
+			{ id: b.id, order: b.data.order },
+		);
+	});
 }
 export type Tag = {
 	name: string;
@@ -241,9 +261,7 @@ export type Tag = {
 };
 
 export async function getTagList(): Promise<Tag[]> {
-	const allBlogPosts = await getCollection<"posts">("posts", ({ data }) => {
-		return import.meta.env.PROD ? data.draft !== true : true;
-	});
+	const allBlogPosts = await getPublicPosts();
 
 	const allMoments = await getCollection("moments");
 
@@ -279,9 +297,7 @@ export type Category = {
 };
 
 export async function getCategoryList(): Promise<Category[]> {
-	const allBlogPosts = await getCollection<"posts">("posts", ({ data }) => {
-		return import.meta.env.PROD ? data.draft !== true : true;
-	});
+	const allBlogPosts = await getPublicPosts();
 	const count: { [key: string]: number } = {};
 	const uncategorized = i18n(I18nKey.uncategorized);
 	for (const post of allBlogPosts as unknown as { id: string }[]) {
@@ -315,9 +331,7 @@ export async function getCategoryList(): Promise<Category[]> {
 }
 
 export async function getCategoryTree(): Promise<CategoryNode[]> {
-	const allBlogPosts = await getCollection("posts", ({ data }) => {
-		return import.meta.env.PROD ? data.draft !== true : true;
-	});
+	const allBlogPosts = await getPublicPosts();
 	const postsForTree = (
 		allBlogPosts as unknown as { id: string; data: { tags: string[] } }[]
 	).map((p) => ({
@@ -338,9 +352,7 @@ export type CategoryTagGroup = Category & {
 };
 
 export async function getCategoryTagGroups(): Promise<CategoryTagGroup[]> {
-	const allBlogPosts = await getCollection<"posts">("posts", ({ data }) => {
-		return import.meta.env.PROD ? data.draft !== true : true;
-	});
+	const allBlogPosts = await getPublicPosts();
 	const groupMap = new Map<
 		string,
 		{ count: number; tagCounts: Map<string, number> }

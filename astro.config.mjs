@@ -1,3 +1,4 @@
+import cloudflare from "@astrojs/cloudflare";
 import { unified } from "@astrojs/markdown-remark";
 import sitemap from "@astrojs/sitemap";
 import starlight from "@astrojs/starlight";
@@ -9,31 +10,16 @@ import tailwindcss from "@tailwindcss/vite";
 import { defineConfig } from "astro/config";
 import expressiveCode from "astro-expressive-code";
 import icon from "astro-icon";
-import katex from "katex";
-import rehypeAutolinkHeadings from "rehype-autolink-headings";
-import rehypeComponents from "rehype-components"; /* Render the custom directive content */
-import rehypeKatex from "rehype-katex";
-import "katex/dist/contrib/mhchem.mjs"; // 加载 mhchem 扩展
+import "katex/dist/contrib/mhchem.mjs"; // 加载 mhchem 扩展（全局副作用，必须保留）
 import mdx from "@astrojs/mdx";
 import { pluginCollapsible } from "expressive-code-collapsible"; /* Collapsible */
 import { pluginLanguageBadge } from "expressive-code-language-badge"; /* Language Badge */
-import rehypeCallouts from "rehype-callouts";
-import rehypeSlug from "rehype-slug";
-import remarkDirective from "remark-directive"; /* Handle directives */
-import remarkMath from "remark-math";
-import remarkSectionize from "remark-sectionize";
 import { expressiveCodeConfig, siteConfig } from "./src/config";
+import { rehypePlugins, remarkPlugins } from "./src/config/markdown";
+import { rehypeMermaid } from "./src/plugins/rehype-mermaid.mjs";
+import { remarkMermaid } from "./src/plugins/remark-mermaid.js";
 import I18nKey from "./src/i18n/i18nKey";
 import { i18n } from "./src/i18n/translation";
-import { GithubCardComponent } from "./src/plugins/rehype-component-github-card.mjs";
-import rehypeEmailProtection from "./src/plugins/rehype-email-protection.mjs";
-import rehypeExternalLinks from "./src/plugins/rehype-external-links.mjs";
-import rehypeFigure from "./src/plugins/rehype-figure.mjs";
-import { rehypeMermaid } from "./src/plugins/rehype-mermaid.mjs";
-import { parseDirectiveNode } from "./src/plugins/remark-directive-rehype.js";
-import { remarkExcerpt } from "./src/plugins/remark-excerpt.js";
-import { remarkMermaid } from "./src/plugins/remark-mermaid.js";
-import { remarkReadingTime } from "./src/plugins/remark-reading-time.mjs";
 
 import { createRequire } from "node:module";
 import { dirname, join } from "node:path";
@@ -57,6 +43,20 @@ const starlightJsYaml = join(
 // https://astro.build/config
 export default defineConfig({
 	site: siteConfig.site_url,
+
+	// 输出保持 static：绝大多数页面构建期预渲染，仅个别页面（私密内容/局部聚合）
+	// 用 `export const prerender = false` 切到运行时 SSR（见 src/utils/post-source.ts 顶层说明）。
+	output: "static",
+	// prerenderEnvironment: "node" 让构建期预渲染（prerender=true 页面）在 Node 环境执行，
+	// 保留 sharp 等 Node 原生依赖（如 src/pages/og/[...slug].png.ts 的 OG 图生成依赖 sharp，
+	// workerd 运行时无法加载 sharp，会报 "No such module chunks/sharp"）。
+	// 运行时 SSR（prerender=false 页面）仍由 workerd 执行，不受影响。
+	// imageService: "custom" 保留 Astro 默认 sharp 做构建期图片优化（与切换适配器前一致），
+	// 避免默认 cloudflare-binding 导致图片静默退化为 passthrough（320kB→320kB 不压缩）。
+	adapter: cloudflare({
+		prerenderEnvironment: "node",
+		imageService: "custom",
+	}),
 
 	base: "/",
 	trailingSlash: "always",
@@ -215,8 +215,12 @@ export default defineConfig({
 					return false;
 				}
 
-				// 私密空间不收录（需要登录的动态内容）
+				// 私密空间与映射路由不收录（纵深防御：这些路由 prerender=false 本就不进
+				// 静态产物，此处显式过滤防止未来误改 prerender 后被 sitemap 收录）
 				if (pathname === "/private" || pathname.startsWith("/private/")) {
+					return false;
+				}
+				if (pathname === "/diary" || pathname.startsWith("/diary/")) {
 					return false;
 				}
 
@@ -237,54 +241,11 @@ export default defineConfig({
 			processor: unified({
 				gfm: true,
 				smartypants: true,
-				remarkPlugins: [
-					remarkMath,
-					remarkReadingTime,
-					remarkExcerpt,
-					remarkDirective,
-					remarkSectionize,
-					parseDirectiveNode,
-					remarkMermaid,
-				],
+				remarkPlugins: [...remarkPlugins, remarkMermaid],
 				rehypePlugins: [
-					[rehypeKatex, { katex }],
-					[rehypeCallouts, { theme: siteConfig.rehypeCallouts.theme }],
-					rehypeSlug,
+					...rehypePlugins.slice(0, 3), // rehypeKatex, rehypeCallouts, rehypeSlug
 					rehypeMermaid,
-					rehypeFigure,
-					[rehypeExternalLinks, { siteUrl: siteConfig.site_url }],
-					[rehypeEmailProtection, { method: "base64" }],
-					[
-						rehypeComponents,
-						{
-							components: {
-								github: GithubCardComponent,
-							},
-						},
-					],
-					[
-						rehypeAutolinkHeadings,
-						{
-							behavior: "append",
-							properties: {
-								className: ["anchor"],
-							},
-							content: {
-								type: "element",
-								tagName: "span",
-								properties: {
-									className: ["anchor-icon"],
-									"data-pagefind-ignore": true,
-								},
-								children: [
-									{
-										type: "text",
-										value: "#",
-									},
-								],
-							},
-						},
-					],
+					...rehypePlugins.slice(3),
 				],
 			}),
 		}),
@@ -293,54 +254,11 @@ export default defineConfig({
 		processor: unified({
 			gfm: true,
 			smartypants: true,
-			remarkPlugins: [
-				remarkMath,
-				remarkReadingTime,
-				remarkExcerpt,
-				remarkDirective,
-				remarkSectionize,
-				parseDirectiveNode,
-				remarkMermaid,
-			],
+			remarkPlugins: [...remarkPlugins, remarkMermaid],
 			rehypePlugins: [
-				[rehypeKatex, { katex }],
-				[rehypeCallouts, { theme: siteConfig.rehypeCallouts.theme }],
-				rehypeSlug,
+				...rehypePlugins.slice(0, 3), // rehypeKatex, rehypeCallouts, rehypeSlug
 				rehypeMermaid,
-				rehypeFigure,
-				[rehypeExternalLinks, { siteUrl: siteConfig.site_url }],
-				[rehypeEmailProtection, { method: "base64" }], // 邮箱保护插件，支持 'base64' 或 'rot13'
-				[
-					rehypeComponents,
-					{
-						components: {
-							github: GithubCardComponent,
-						},
-					},
-				],
-				[
-					rehypeAutolinkHeadings,
-					{
-						behavior: "append",
-						properties: {
-							className: ["anchor"],
-						},
-						content: {
-							type: "element",
-							tagName: "span",
-							properties: {
-								className: ["anchor-icon"],
-								"data-pagefind-ignore": true,
-							},
-							children: [
-								{
-									type: "text",
-									value: "#",
-								},
-							],
-						},
-					},
-				],
+				...rehypePlugins.slice(3),
 			],
 		}),
 	},

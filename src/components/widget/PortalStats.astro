@@ -39,10 +39,6 @@ const categoryCount = categories.length;
 const tagCount = tags.length;
 const wordCountFormatted = totalWords.toLocaleString();
 
-// 私密合并基准：公开分类/标签名集合（供脚本计算私密独有增量）
-const publicCategoryNames = categories.map((c) => c.name);
-const publicTagNames = tags.map((t) => t.name);
-
 const walineServerURL = commentConfig.waline?.serverURL || "";
 
 const textLine1 = `${i18n(I18nKey.siteStatsVisitorPrefix)}${i18n(I18nKey.siteStatsLoading)}${i18n(I18nKey.siteStatsVisitorSuffix)}`;
@@ -81,14 +77,14 @@ const textLine2 = `${i18n(I18nKey.siteStatsPageViewPrefix)}${i18n(I18nKey.siteSt
 				<div class="absolute inset-0 flex flex-col items-center justify-center bg-(--page-bg)">
 					<div class="flex items-center gap-2 text-xl sm:text-2xl font-bold text-neutral-800 dark:text-neutral-100 leading-relaxed" id="reveal-line-1">
 						<Icon name="material-symbols:article-outline" class="text-xl sm:text-2xl" />
-						<span data-reveal-stat="post" data-label={i18n(I18nKey.siteStatsPostCount)}>{i18n(I18nKey.siteStatsPostCount)} {postCount}</span>
+						<span>{i18n(I18nKey.siteStatsPostCount)} {postCount}</span>
 					</div>
 					<div class="flex items-center gap-3 text-base sm:text-lg font-bold text-neutral-600 dark:text-neutral-300 mt-2 leading-relaxed flex-wrap justify-center" id="reveal-line-2">
-						<span class="inline-flex items-center gap-1" data-reveal-stat="category" data-label={i18n(I18nKey.siteStatsCategoryCount)}><Icon name="material-symbols:folder-outline" class="text-base sm:text-lg" />{i18n(I18nKey.siteStatsCategoryCount)} {categoryCount}</span>
+						<span class="inline-flex items-center gap-1"><Icon name="material-symbols:folder-outline" class="text-base sm:text-lg" />{i18n(I18nKey.siteStatsCategoryCount)} {categoryCount}</span>
 						<span class="text-neutral-400 dark:text-neutral-500">·</span>
-						<span class="inline-flex items-center gap-1" data-reveal-stat="tag" data-label={i18n(I18nKey.siteStatsTagCount)}><Icon name="material-symbols:label-outline" class="text-base sm:text-lg" />{i18n(I18nKey.siteStatsTagCount)} {tagCount}</span>
+						<span class="inline-flex items-center gap-1"><Icon name="material-symbols:label-outline" class="text-base sm:text-lg" />{i18n(I18nKey.siteStatsTagCount)} {tagCount}</span>
 						<span class="text-neutral-400 dark:text-neutral-500">·</span>
-						<span class="inline-flex items-center gap-1" data-reveal-stat="words"><Icon name="material-symbols:description-rounded" class="text-base sm:text-lg" />{i18n(I18nKey.siteStatsTotalWords)} {wordCountFormatted}</span>
+						<span class="inline-flex items-center gap-1"><Icon name="material-symbols:description-rounded" class="text-base sm:text-lg" />{i18n(I18nKey.siteStatsTotalWords)} {wordCountFormatted}</span>
 					</div>
 				</div>
 			</div>
@@ -116,58 +112,9 @@ const textLine2 = `${i18n(I18nKey.siteStatsPageViewPrefix)}${i18n(I18nKey.siteSt
 	}
 </style>
 
-<script is:inline define:vars={{ publicCategoryNames, publicTagNames, postCount, categoryCount, tagCount }}>
+<script is:inline>
 (function() {
 	var isMobile = window.innerWidth < 1024;
-
-	/** 合并私密条目增量：文章/分类/标签（私密字数无正文口径，不计入） */
-	function mergePrivateStats() {
-		var store = window.__fireflyPrivateMetaStore;
-		if (!store) return;
-		var stats = store.getStats();
-		if (!stats) return;
-		var card = document.getElementById('text-reveal-container');
-		if (!card) return;
-
-		var newPost = postCount + stats.posts.length;
-		var extraCats = stats.categories.filter(function (c) { return publicCategoryNames.indexOf(c) === -1; }).length;
-		var newCat = categoryCount + extraCats;
-		var extraTags = stats.tags.filter(function (t) { return publicTagNames.indexOf(t) === -1; }).length;
-		var newTag = tagCount + extraTags;
-
-		card.dataset.posts = String(newPost);
-		card.dataset.categories = String(newCat);
-		card.dataset.tags = String(newTag);
-
-		function updateStat(stat, value) {
-			var el = document.querySelector('[data-reveal-stat="' + stat + '"]');
-			if (!el) return;
-			var icon = el.querySelector('svg');
-			el.textContent = '';
-			if (icon) el.appendChild(icon);
-			el.appendChild(document.createTextNode(' ' + (el.dataset.label || '') + ' ' + Number(value).toLocaleString()));
-		}
-		updateStat('post', newPost);
-		updateStat('category', newCat);
-		updateStat('tag', newTag);
-	}
-
-	function bootPrivateMerge() {
-		var store = window.__fireflyPrivateMetaStore;
-		if (!store) return;
-		store.subscribePrivateMeta(function () { mergePrivateStats(); });
-		mergePrivateStats();
-	}
-
-	function initPrivateMerge() {
-		if (window.__privatePortalStatsBound) return;
-		window.__privatePortalStatsBound = true;
-		if (window.__fireflyPrivateMetaStore) {
-			bootPrivateMerge();
-		} else {
-			window.addEventListener('firefly:private-meta-store-ready', bootPrivateMerge, { once: true });
-		}
-	}
 
 	function initStars() {
 		if (isMobile) return;
@@ -334,7 +281,6 @@ const textLine2 = `${i18n(I18nKey.siteStatsPageViewPrefix)}${i18n(I18nKey.siteSt
 	animateStars();
 	initTextReveal();
 	fetchStats();
-	initPrivateMerge();
 
 	document.addEventListener('astro:page-load', function() {
 		initStars();

@@ -2,22 +2,18 @@
 import { onMount, tick } from "svelte";
 import I18nKey from "@/i18n/i18nKey";
 import { i18n } from "@/i18n/translation";
-import {
-	type PrivateMetaItem,
-	subscribePrivateMeta,
-} from "@/utils/private-meta-store";
 import { getPostUrlBySlug } from "@/utils/url-utils";
 
 interface Post {
 	id: string;
 	type?: string;
-	/** 是否为私密内容（登录后由 private-meta-store 注入） */
-	private?: boolean;
 	data: {
 		title: string;
 		tags: string[];
 		category?: string | null;
 		published: Date;
+		link?: string;
+		isPrivate?: boolean;
 	};
 }
 interface MonthGroup {
@@ -76,17 +72,16 @@ let hoveredPostId = $state<string | null>(null);
 let highlightedYear = $state<number | null>(null);
 let highlightedMonth = $state<string | null>(null);
 
-// 各类型条目计数（Tab 徽章）：公开数据 + 登录后的私密数据
-let mergedPosts = $state<Post[]>([...sortedPosts]);
+// 各类型条目计数（Tab 徽章）
 let typeCounts = $derived.by(() => {
 	const c: Record<TypeFilter, number> = {
-		all: mergedPosts.length,
+		all: sortedPosts.length,
 		post: 0,
 		moment: 0,
 		bangumi: 0,
 		life: 0,
 	};
-	for (const p of mergedPosts) {
+	for (const p of sortedPosts) {
 		if (
 			p.type === "post" ||
 			p.type === "moment" ||
@@ -98,21 +93,6 @@ let typeCounts = $derived.by(() => {
 	}
 	return c;
 });
-
-/** 私密元数据 → ArchivePanel 条目（id 用 slug 保证唯一；private 标记用于 UI 区分） */
-function toArchivePost(it: PrivateMetaItem): Post {
-	return {
-		id: it.slug,
-		type: it.type,
-		private: true,
-		data: {
-			title: it.title,
-			tags: Array.isArray(it.tags) ? it.tags : [],
-			category: it.category || null,
-			published: new Date(it.date),
-		},
-	};
-}
 
 interface HighlightSeg {
 	x: number;
@@ -250,9 +230,9 @@ function groupByYearMonth(ps: Post[]): YearGroup[] {
 }
 
 function getItemUrl(post: Post): string {
-	// 私密条目指向私密空间详情页
-	if (post.private) {
-		return `/private/${post.id}/`;
+	// 私有条目（登录态合并）：直接跳 link（route），不走公开 /posts/ 或 /moments/
+	if (post.data?.isPrivate) {
+		return post.data.link || `/private/${post.id}/`;
 	}
 	// 动态没有独立详情页，统一指向动态列表（普通说说直接跳 /moments/）
 	if (post.type === "moment") {
@@ -278,7 +258,7 @@ function resolvePrimary(f: ActiveFilter[]): ActiveFilter | null {
 function switchType(t: TypeFilter) {
 	if (t === activeType) return;
 	activeType = t;
-	applyFilters(mergedPosts);
+	applyFilters(sortedPosts);
 	const url = new URL(window.location.href);
 	if (t === "all") url.searchParams.delete("type");
 	else url.searchParams.set("type", t);
@@ -441,33 +421,24 @@ onMount(() => {
 	) {
 		activeType = typeParam;
 	}
-	// 登录后合并私密内容：公开数据（props）与私密元数据（store）统一走同一套筛选/分组逻辑
-	const unsubscribeMeta = subscribePrivateMeta((meta) => {
-		mergedPosts = [...sortedPosts, ...meta.items.map(toArchivePost)].sort(
-			(a, b) => b.data.published.getTime() - a.data.published.getTime(),
-		);
-		applyFilters(mergedPosts);
-		void tick().then(updateTabIndicator);
-	});
 	// 年份由 archive.astro 的全局 is:inline 脚本通过 archive-year-change 事件驱动（避免与 document 点击双重处理冲突）
 	const onYearChange = (e: Event) => {
 		const y = (e as CustomEvent).detail?.year;
 		if (typeof y === "number" && !Number.isNaN(y)) {
 			selectedYearState = y;
-			applyFilters(mergedPosts);
+			applyFilters([...sortedPosts]);
 			void tick().then(updateTabIndicator);
 		}
 	};
 	window.addEventListener("archive-year-change", onYearChange as EventListener);
 
-	applyFilters(mergedPosts);
+	applyFilters([...sortedPosts]);
 
 	// 初始化滑动指示条（等 Svelte 完成 DOM 更新后再测量偏移）
 	const initIndicator = () => tick().then(updateTabIndicator);
 	initIndicator();
 	window.addEventListener("resize", updateTabIndicator);
 	return () => {
-		unsubscribeMeta();
 		window.removeEventListener("resize", updateTabIndicator);
 		window.removeEventListener(
 			"archive-year-change",
@@ -527,9 +498,6 @@ onMount(() => {
               <span class="ap-row-top">
                 <span class="ap-date">{formatDate(post.data.published)}</span>
                 <span class="ap-title group-hover:text-(--primary)">{post.data.title.length > 20 ? post.data.title.slice(0, 20) + "…" : post.data.title}</span>
-                {#if post.private}
-                  <span class="ap-private-badge" title="私密内容">密</span>
-                {/if}
               </span>
               <span class="ap-right-meta">
                 {#if post.data.category}
@@ -596,7 +564,6 @@ onMount(() => {
   .ap-tag { font-weight: 700; color: var(--deep-text); }
   .ap-tag-sep { color: var(--content-meta); opacity: 0.5; font-weight: 700; }
   .ap-more { color: var(--content-meta); font-weight: 700; }
-  .ap-private-badge { flex-shrink: 0; margin-left: 0.125rem; padding: 0 0.375rem; border-radius: 0.375rem; border: 1px solid var(--primary); color: var(--primary); font-size: 0.65rem; font-weight: 700; line-height: 1.15rem; }
   :global(.dark) .archive-panel { --lh: oklch(0.9 0 0); --nh: oklch(0.9 0 0); }
   @media (max-width: 768px) {
     .ap-date { width: 2.4rem; font-size: 0.8rem; }

@@ -39,102 +39,6 @@ const totalCount = categories.reduce((sum, c) => sum + c.count, 0);
 
 <script is:inline>
 (function() {
-  // 当前图表数据与图表实例（私密合并时更新）；baseline 为公开基线（脚本随导航重新执行时重新捕获）
-  var currentChartData = null;
-  var chartInstance = null;
-  var baselineChartData = null;
-  // 最近一次已合并数据的 JSON 指纹：数据未变化时跳过重绘（避免刷新/订阅触发重复渲染）
-  var lastMergedJson = null;
-
-  function escapeHtml(s) {
-    return String(s).replace(/[&<>"']/g, function (c) {
-      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
-    });
-  }
-
-  function renderList(container, data) {
-    var list = container.querySelector(".category-rose__list");
-    if (!list) return;
-    var total = 0;
-    var html = data.map(function (c) {
-      total += c.value;
-      return '<a href="' + (c.url || "#") + '" class="category-rose__list-item">' +
-        '<span class="category-rose__list-name">' + escapeHtml(c.name) + '</span>' +
-        '<span class="category-rose__list-count">' + c.value + ' 篇</span></a>';
-    }).join("");
-    html += '<div class="category-rose__list-total">共 ' + total + ' 篇文章</div>';
-    list.innerHTML = html;
-  }
-
-  /** 私密文章按分类计数（type=post） */
-  function privateCategoryCounts() {
-    var store = window.__fireflyPrivateMetaStore;
-    if (!store) return null;
-    var posts = store.getStats().posts;
-    if (!posts || !posts.length) return null;
-    var counts = {};
-    posts.forEach(function (p) {
-      if (p.category) counts[p.category] = (counts[p.category] || 0) + 1;
-    });
-    return counts;
-  }
-
-  function applyMerge() {
-    var container = document.getElementById("category-rose-container");
-    if (!container) return;
-    if (!baselineChartData) {
-      try {
-        baselineChartData = JSON.parse(container.getAttribute("data-chart-data") || "[]");
-      } catch (e) {
-        baselineChartData = [];
-      }
-    }
-    var priv = window.__fireflyPrivateMetaStore ? privateCategoryCounts() : null;
-    var merged;
-    if (priv) {
-      var map = {};
-      baselineChartData.forEach(function (c) {
-        map[c.name] = { name: c.name, value: c.value, url: c.url };
-      });
-      Object.keys(priv).forEach(function (name) {
-        if (map[name]) {
-          map[name].value += priv[name];
-        } else {
-          map[name] = { name: name, value: priv[name], url: "" };
-        }
-      });
-      merged = Object.keys(map).map(function (k) { return map[k]; });
-    } else {
-      merged = baselineChartData;
-    }
-    currentChartData = merged;
-    var json = JSON.stringify(merged);
-    // 数据未变化：跳过列表重建与图表 setOption（刷新/重复订阅时的卡顿来源）
-    if (json === lastMergedJson) return;
-    lastMergedJson = json;
-    container.setAttribute("data-chart-data", json);
-    renderList(container, merged);
-    if (chartInstance) {
-      chartInstance.setOption({ series: [{ data: merged }] });
-    }
-  }
-
-  function boot() {
-    var store = window.__fireflyPrivateMetaStore;
-    if (!store) return;
-    store.subscribePrivateMeta(applyMerge);
-    applyMerge();
-  }
-
-  if (!window.__privateCategoryRoseBound) {
-    window.__privateCategoryRoseBound = true;
-    if (window.__fireflyPrivateMetaStore) {
-      boot();
-    } else {
-      window.addEventListener("firefly:private-meta-store-ready", boot, { once: true });
-    }
-  }
-
   function initCategoryRose() {
     var container = document.getElementById("category-rose-container");
     if (!container) return;
@@ -150,7 +54,6 @@ const totalCount = categories.reduce((sum, c) => sum + c.count, 0);
 
     var chartData = JSON.parse(rawData);
     if (!chartData.length) return;
-    currentChartData = chartData;
 
     function loadECharts(callback) {
       if (window.echarts) {
@@ -183,7 +86,6 @@ const totalCount = categories.reduce((sum, c) => sum + c.count, 0);
 
       var colors = getThemeColors();
       var chart = echarts.init(chartDom);
-      chartInstance = chart;
 
       chart.setOption({
         tooltip: {
@@ -218,18 +120,18 @@ const totalCount = categories.reduce((sum, c) => sum + c.count, 0);
           animationEasing: "cubicOut",
           animationDuration: 1000,
           animationDelay: function(idx) { return idx * 100; },
-          data: currentChartData,
+          data: chartData,
           color: colorPalette,
         }],
       });
 
       chart.on("click", function(params) {
-        for (var i = 0; i < currentChartData.length; i++) {
-          if (currentChartData[i].name === params.name && currentChartData[i].url) {
+        for (var i = 0; i < chartData.length; i++) {
+          if (chartData[i].name === params.name && chartData[i].url) {
             if (window.navigateToPage) {
-              window.navigateToPage(currentChartData[i].url);
+              window.navigateToPage(chartData[i].url);
             } else {
-              window.location.href = currentChartData[i].url;
+              window.location.href = chartData[i].url;
             }
             break;
           }
@@ -252,7 +154,6 @@ const totalCount = categories.reduce((sum, c) => sum + c.count, 0);
         window.removeEventListener("resize", resizeHandler);
         observer.disconnect();
         chart.dispose();
-        chartInstance = null;
         chartDom.removeAttribute("data-echarts-initialized");
       }, { once: true });
     });
@@ -279,8 +180,5 @@ const totalCount = categories.reduce((sum, c) => sum + c.count, 0);
   lazyInit();
   document.addEventListener("astro:page-load", lazyInit);
   document.addEventListener("swup:content:replaced", lazyInit);
-
-  // 每次进入本页都对当前 DOM 重新应用合并（未登录时回退为公开基线，无副作用）
-  applyMerge();
 })();
 </script>

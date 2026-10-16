@@ -9,7 +9,8 @@
 GitHub Actions（.github/workflows/deploy.yml，push 分支自动触发）：
     1. 读取仓库 Actions Secrets（构建期 PUBLIC_* 变量，见第三节）
     2. pnpm build → dist/（生成图标 → astro build → pagefind）
-    3. wrangler deploy（用 CLOUDFLARE_API_TOKEN 上传 dist/ 为 Workers 静态资源）
+    3. pnpm prerender:private（拉私有仓库 markdown → 渲染 → 写 KV，见「私有内容预渲染」节）
+    4. wrangler deploy（用 CLOUDFLARE_API_TOKEN 上传 dist/ 为 Workers 静态资源）
         ↓
 Cloudflare Workers Static Assets（wrangler.toml 的 assets.directory 指向 dist/）
     ↓ 自定义域名绑定（blog.5484826.xyz）
@@ -18,6 +19,7 @@ Cloudflare Workers Static Assets（wrangler.toml 的 assets.directory 指向 dis
 
 - **自动部署**：push 到 `lh` 分支自动触发构建+上线，无需手动 `wrangler deploy`（流程见 `.github/workflows/deploy.yml`）
 - **构建与托管分离**：Astro 是构建期静态生成（`import.meta.env.PUBLIC_*` 在构建时注入），所以必须先构建再上传；Workers 运行时只是把 `dist/` 作为静态资源分发，不参与渲染
+- **私有内容 SSG 预渲染**：私有文章在构建期渲染成 HTML 写入 KV（`private:html:<slug>` + `private:meta`），运行时（SSR 路由）只做 D1 鉴权 + 读 KV，见「私有内容预渲染」节
 - 边缘分发：Workers 本身即全球边缘网络，无需额外 CDN 层
 - GitHub Actions 的 `build.yml` 仍保留作 CI 质量门（`astro check` + `pnpm build`，与线上构建一致）；`biome.yml` 作代码质量门
 - 手动回滚/临时部署仍可用本地 `wrangler deploy` 或 `wrangler rollback`（见第四节）
@@ -65,8 +67,11 @@ not_found_handling = "404-page"     # 使用 Astro 自研的 dist/404.html（wra
 
   | Secret 名 | 用途 |
   |---|---|
-  | `CLOUDFLARE_API_TOKEN` | Cloudflare（Dashboard → My Profile → API Tokens，`Edit Cloudflare Workers` 权限），`wrangler deploy` 认证 |
+  | `CLOUDFLARE_API_TOKEN` | Cloudflare（Dashboard → My Profile → API Tokens），`wrangler deploy` 与 `wrangler kv key put --remote` 认证。**权限须含 `Workers KV Storage: Edit`**（私有内容预渲染写 KV 需要），仅有 `Workers Scripts: Edit` 会在预渲染步骤报 403 |
   | `CLOUDFLARE_ACCOUNT_ID` | Cloudflare Workers & Pages 页面右侧的 Account ID |
+  | `GH_PAT` | 访问私有内容仓库的 GitHub Personal Access Token（`repo` 权限），私有内容预渲染拉取 markdown 用 |
+  | `GH_OWNER` | 私有内容仓库 owner（本仓库为 `sgwfmyl`） |
+  | `GH_REPO` | 私有内容仓库名（本仓库为 `blog-private`） |
 
   > 修改变量值时，`.env` 与 GitHub Secrets **需两处同步改**，否则线上仍用旧值（CI 是独立于本地的数据源）。
 
@@ -98,13 +103,27 @@ not_found_handling = "404-page"     # 使用 Astro 自研的 dist/404.html（wra
 pnpm build        # 内部 = node scripts/生成图标/index.js → astro build → pagefind --site dist
 ```
 
-### 2. 本地预览产物（可选）
+### 2. 私有内容预渲染（SSG 方案）
+
+私有文章在**构建期**渲染成 HTML 写入 KV，运行时（`/private/`、映射路由）只做 D1 鉴权 + 读 KV。这一步由 `deploy.yml` 在 `pnpm build` 之后、`wrangler deploy` 之前自动执行：
+
+```bash
+pnpm prerender:private    # tsx scripts/私有预渲染/index.ts
+```
+
+脚本职责：拉私有仓库 `private/meta.json` + 各 `private/pages/<slug>.md` → 完整管线渲染（shiki 高亮 + katex + callouts）→ sanitize-html 白名单清洗 → 写 KV（`private:html:<slug>` + `private:meta`）。
+
+- **依赖环境变量**：`GH_PAT`/`GH_OWNER`/`GH_REPO`（拉私有仓库）+ `CLOUDFLARE_API_TOKEN`/`CLOUDFLARE_ACCOUNT_ID`（写 KV）
+- **fail-fast**：写 KV 失败会 `exit 1` 阻止部署，避免「meta 已删除但 KV 未同步」导致已删私有内容仍可访问
+- **本地验证**：设 `KV_MODE=local` 写本地模拟 KV（配合 `wrangler dev` 本地验证），默认 `--remote` 写线上
+
+### 3. 本地预览产物（可选）
 
 ```bash
 pnpm preview      # astro preview，验证 dist/ 行为（尾斜杠路由、404、pagefind 搜索）
 ```
 
-### 3. 部署
+### 4. 部署
 
 **方式一：自动部署（日常，推荐）**
 

@@ -422,8 +422,7 @@ export const ja: Translation = {
 		"読み上げサービスが利用できないため、システム音声に切り替えました",
 	[Key.ttsNoServer]: "読み上げサービス未設定、システム音声を使用します",
 	[Key.ttsTruncated]: "記事が長いため、一部を省略して読み上げます",
-
-	// 管理者ログインモジュール
+	// 管理员登录模块
 	[Key.admin]: "管理",
 	[Key.adminPasswordPlaceholder]: "管理者パスワードを入力",
 	[Key.adminLogin]: "ログイン",

@@ -422,8 +422,7 @@ export const en: Translation = {
 	[Key.ttsFallback]: "Reading service unavailable, switched to system voice",
 	[Key.ttsNoServer]: "Reading service not configured, using system voice",
 	[Key.ttsTruncated]: "Article is long; reading was truncated",
-
-	// Admin login module
+	// 管理员登录模块
 	[Key.admin]: "Admin",
 	[Key.adminPasswordPlaceholder]: "Enter admin password",
 	[Key.adminLogin]: "Sign in",

@@ -1,13 +1,58 @@
 ---
+import { Icon } from "astro-icon/components";
 import type { CategoryNode } from "@/utils/category-tree";
-import CategoryFoldersTree from "./CategoryFoldersTree.svelte";
 
 interface Props {
 	tree: CategoryNode[];
+	depth?: number;
 }
 
-const { tree } = Astro.props;
+const { tree, depth = 0 } = Astro.props;
 ---
 
-<!-- 文件夹分类树由 CategoryFoldersTree 客户端渲染：公开分类树 + 登录后合并私密分类树 -->
-<CategoryFoldersTree tree={tree} client:load />
+<div class:list={["category-folders", depth > 0 && "category-folders--nested"]}>
+	{tree.map((node) => {
+		const hasChildren = node.children.length > 0;
+		const meta = hasChildren
+			? `${node.count} 篇 · ${node.children.length} 个子目录`
+			: `${node.count} 篇`;
+		if (hasChildren) {
+			const panelId = `category-folder-panel-${node.fullPath.replace(/[^a-zA-Z0-9]/g, "-")}`;
+			return (
+				<details class="category-folder" data-depth={depth}>
+					<summary class="category-folder__summary" aria-controls={panelId}>
+						<span class="category-folder__icon" aria-hidden="true">
+							<Icon name="material-symbols:folder-rounded" class="category-folder__icon-closed" />
+							<Icon name="material-symbols:folder-open-rounded" class="category-folder__icon-open" />
+						</span>
+						<span class="category-folder__heading">
+							<strong class="category-folder__name">{node.name}</strong>
+							<span class="category-folder__meta">{meta}</span>
+						</span>
+						<Icon name="material-symbols:keyboard-arrow-down-rounded" class="category-folder__chevron" aria-hidden="true" />
+					</summary>
+					<div id={panelId} class="category-folder__content category-folder__content--tree">
+						<a href={node.url} class="category-folder__view-all" aria-label={`查看${node.fullPath}分类的所有文章`}>
+							<Icon name="material-symbols:article-outline" is:inline />
+							查看 {node.name} 全部 {node.count} 篇
+						</a>
+						<Astro.self tree={node.children} depth={depth + 1} />
+					</div>
+				</details>
+			);
+		}
+		return (
+			<a href={node.url} class="category-folder category-folder--leaf" aria-label={`查看${node.fullPath}分类`}>
+				<span class="category-folder__summary category-folder__summary--leaf">
+					<span class="category-folder__icon" aria-hidden="true">
+						<Icon name="material-symbols:folder-rounded" class="category-folder__icon-closed" />
+					</span>
+					<span class="category-folder__heading">
+						<strong class="category-folder__name">{node.name}</strong>
+						<span class="category-folder__meta">{meta}</span>
+					</span>
+				</span>
+			</a>
+		);
+	})}
+</div>

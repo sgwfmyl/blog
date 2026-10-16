@@ -6,6 +6,10 @@
  * - 模块常驻天然跨 Svelte 组件与页面内联脚本共享
  * - window.__fireflyAuthStore 门面供非组件脚本（如 projects.astro 内联 JS）读取登录态
  * - 后端由 Cloudflare Worker 提供：/api/auth/login、/api/auth/logout、/api/auth/me
+ *
+ * 阶段 4 增补（安全约束，不可推后）：
+ * - login 成功 / logout 后清空 Swup 缓存（window.swup.cache.clear()），防止登录前缓存的
+ *   登录门或登出后预载/后退看到私密 HTML 残留。
  */
 
 export type AuthState = {
@@ -35,6 +39,10 @@ type AuthStoreWindow = Window & {
 	__fireflyAuthStore?: AuthStoreFacade;
 };
 
+type SwupWindow = Window & {
+	swup?: { cache?: { clear?: () => void } };
+};
+
 const state: AuthState = {
 	isAdmin: false,
 	initialized: false,
@@ -42,6 +50,17 @@ const state: AuthState = {
 
 const listeners = new Set<AuthListener>();
 let initPromise: Promise<void> | null = null;
+
+/** 清空 Swup 缓存（安全约束：登录/登出后必须清，防私密 HTML 残留）。 */
+function clearSwupCache(): void {
+	if (typeof window === "undefined") return;
+	const swup = (window as SwupWindow).swup;
+	try {
+		swup?.cache?.clear?.();
+	} catch {
+		// Swup 未就绪或缓存接口变化时静默忽略，不影响主流程
+	}
+}
 
 function notify(): void {
 	const snapshot: AuthState = {
@@ -117,6 +136,7 @@ export async function login(password: string): Promise<AuthResult> {
 		if (response.status === 200) {
 			state.isAdmin = true;
 			state.initialized = true;
+			clearSwupCache(); // 登录成功清缓存，避免登录前缓存的登录门残留
 			notify();
 			return { ok: true };
 		}
@@ -138,6 +158,7 @@ export async function logout(): Promise<void> {
 	}
 	state.isAdmin = false;
 	state.initialized = true;
+	clearSwupCache(); // 登出清缓存，避免后退/预载看到私密 HTML 残留
 	notify();
 }
 

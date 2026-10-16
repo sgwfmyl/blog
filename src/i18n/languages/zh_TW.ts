@@ -414,8 +414,7 @@ export const zh_TW: Translation = {
 	[Key.ttsFallback]: "朗讀服務無法使用，已切換系統語音",
 	[Key.ttsNoServer]: "未設定朗讀服務，使用系統語音",
 	[Key.ttsTruncated]: "文章較長，已截斷部分內容朗讀",
-
-	// 管理員登入模組
+	// 管理员登录模块
 	[Key.admin]: "管理",
 	[Key.adminPasswordPlaceholder]: "請輸入管理員密碼",
 	[Key.adminLogin]: "登入",

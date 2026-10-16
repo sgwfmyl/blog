@@ -1,0 +1,54 @@
+---
+import { Icon } from "astro-icon/components";
+
+// 登录门（/private/ 未登录时显示）：lock 图标 + 提示 + 「打开登录」按钮。
+// 纯静态组件，无脚本；按钮带 data-auth-open 属性，由 AuthManager 的统一事件委托打开登录弹窗。
+---
+
+<div class="private-gate">
+	<Icon name="material-symbols:lock-outline-rounded" is:inline class="private-gate__icon" />
+	<p class="private-gate__text">私密空间需要管理员身份</p>
+	<button type="button" class="private-gate__btn" data-auth-open>
+		打开登录
+	</button>
+</div>
+
+<style>
+	.private-gate {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 1rem;
+		padding: 3rem 1.5rem;
+		text-align: center;
+	}
+
+	.private-gate__icon {
+		width: 2.5rem;
+		height: 2.5rem;
+		color: var(--content-meta, #888);
+	}
+
+	.private-gate__text {
+		font-size: 0.9375rem;
+		color: var(--content-meta, #888);
+		margin: 0;
+	}
+
+	.private-gate__btn {
+		height: 2.5rem;
+		padding: 0 1.5rem;
+		border: none;
+		border-radius: 0.75rem;
+		background: var(--deep-text, #333);
+		color: var(--page-bg, #fff);
+		font-size: 0.9375rem;
+		font-weight: 600;
+		cursor: pointer;
+		transition: opacity 0.15s ease;
+	}
+
+	.private-gate__btn:hover {
+		opacity: 0.85;
+	}
+</style>
