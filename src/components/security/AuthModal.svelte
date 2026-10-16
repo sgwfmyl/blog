@@ -93,6 +93,7 @@ async function handleSubmit(e: SubmitEvent) {
 async function handleLogout() {
 	await logout();
 	close();
+	document.dispatchEvent(new CustomEvent("firefly:auth-logged-out"));
 }
 
 // --- 初始化 ---
