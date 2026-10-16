@@ -10,15 +10,13 @@ compatibility_date = "2026-10-13"
 not_found_handling = "404-page"
 
 # D1：管理员会话强一致存储（阶段 3 引入，替代旧 HMAC 无状态 Cookie 方案）
-# database_id 为本地占位；真实部署（阶段 8）前用 `wrangler d1 create blog` 生成后替换。
 [[d1_databases]]
 binding = "DB"
 database_name = "blog"
-database_id = "00000000-0000-0000-0000-000000000000"
+database_id = "65326a47-7bca-417f-9e0b-a6010b23e99d"
 migrations_dir = "migrations"
 
 # KV：GitHub 私有内容缓存（沿用旧方案的 ADMIN_KV 用途）
-# id 为本地占位；真实部署前用 `wrangler kv namespace create ADMIN_KV` 生成后替换。
 [[kv_namespaces]]
 binding = "ADMIN_KV"
-id = "00000000000000000000000000000000"
+id = "915eb0640df644678621ea2b77177061"
