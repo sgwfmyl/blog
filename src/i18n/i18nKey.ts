@@ -406,6 +406,17 @@ enum I18nKey {
 	ttsFallback = "ttsFallback",
 	ttsNoServer = "ttsNoServer",
 	ttsTruncated = "ttsTruncated",
+
+	// 管理员登录模块
+	admin = "admin",
+	adminPasswordPlaceholder = "adminPasswordPlaceholder",
+	adminLogin = "adminLogin",
+	adminLogout = "adminLogout",
+	adminWrongPassword = "adminWrongPassword",
+	adminCooldown = "adminCooldown",
+	adminPrivateSpace = "adminPrivateSpace",
+	adminLoginHint = "adminLoginHint",
+	adminLoginFailed = "adminLoginFailed",
 }
 
 export default I18nKey;

@@ -422,4 +422,14 @@ export const en: Translation = {
 	[Key.ttsFallback]: "Reading service unavailable, switched to system voice",
 	[Key.ttsNoServer]: "Reading service not configured, using system voice",
 	[Key.ttsTruncated]: "Article is long; reading was truncated",
+	// 管理员登录模块
+	[Key.admin]: "Admin",
+	[Key.adminPasswordPlaceholder]: "Enter admin password",
+	[Key.adminLogin]: "Sign in",
+	[Key.adminLogout]: "Sign out",
+	[Key.adminWrongPassword]: "Wrong password, try again",
+	[Key.adminCooldown]: "Too many attempts, retry in {seconds}s",
+	[Key.adminPrivateSpace]: "Private space",
+	[Key.adminLoginHint]: "Admin mode enabled — private content is accessible",
+	[Key.adminLoginFailed]: "Login failed, please retry later",
 };

@@ -62,7 +62,7 @@ const autolinkHeadingsConfig = {
 } as const;
 
 // 公开侧完整 remark 插件链（**不含 remarkMermaid**，由 astro.config.mjs 追加）
-export const remarkPlugins = [
+export const remarkPlugins: any[] = [
 	remarkMath,
 	remarkReadingTime,
 	remarkExcerpt,
@@ -72,7 +72,8 @@ export const remarkPlugins = [
 ];
 
 // 公开侧完整 rehype 插件链（**不含 rehypeMermaid**，由 astro.config.mjs 追加）
-export const rehypePlugins = [
+// 显式 any[]：避免 rehype-components 的 Options 内部类型被导出（isolatedDeclarations 下 ts(4023)）
+export const rehypePlugins: any[] = [
 	[rehypeKatex, { katex }],
 	[rehypeCallouts, { theme: CALLOUTS_THEME }],
 	rehypeSlug,
@@ -84,10 +85,10 @@ export const rehypePlugins = [
 ];
 
 // 私有侧精简 remark 插件链（不引入 readingTime/excerpt/directive/sectionize）
-export const privateRemarkPlugins = [remarkMath];
+export const privateRemarkPlugins: any[] = [remarkMath];
 
 // 私有侧精简 rehype 插件链（不引入 rehypeComponents，其余与公开一致）
-export const privateRehypePlugins = [
+export const privateRehypePlugins: any[] = [
 	[rehypeKatex, { katex }],
 	[rehypeCallouts, { theme: CALLOUTS_THEME }],
 	rehypeSlug,
