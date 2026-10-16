@@ -21,3 +21,8 @@ migrations_dir = "migrations"
 [[kv_namespaces]]
 binding = "ADMIN_KV"
 id = "915eb0640df644678621ea2b77177061"
+
+# KV：Astro sessions 自动启用所需的 SESSION binding（我们鉴权走 D1，此绑定仅占位，不落数据）
+[[kv_namespaces]]
+binding = "SESSION"
+id = "e6f10d30a57d46ff815fe1c33c806e30"
