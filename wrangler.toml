@@ -1,5 +1,9 @@
 name = "blog"
 compatibility_date = "2026-10-13"
+# 禁用「导航请求优先资产服务」：否则 SSR 页面（/archive/、/private/、/diary/ 等 prerender=false）
+# 的浏览器导航请求（Sec-Fetch-Mode: navigate，即 F5 刷新/点击链接）会因静态资产未命中而
+# 直接 404，不进入 Worker SSR 路由。加上此 flag 后导航请求在静态资产未命中时会回落到 Worker。
+compatibility_flags = ["assets_navigation_has_no_effect"]
 
 # @astrojs/cloudflare 适配器（v14，基于 @cloudflare/vite-plugin）会在构建时自动：
 #   - 设置 worker 入口 main（dist/server/entry.mjs）
