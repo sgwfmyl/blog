@@ -20,12 +20,14 @@
 
 import { execFileSync } from "node:child_process";
 import * as fs from "node:fs";
+import * as os from "node:os";
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
 import matter from "gray-matter";
 
 const projectRoot = fileURLToPath(new URL("../..", import.meta.url));
-const sourceDir = path.resolve(
+// 数据源目录：本地（MY_SOURCE_DIR / private-content/my）；CI 模式下由 main 从 GitHub API 拉到临时目录后覆盖
+let sourceDir = path.resolve(
 	projectRoot,
 	process.env.MY_SOURCE_DIR || "private-content/my",
 );
@@ -33,6 +35,66 @@ const outFile = path.join(
 	fileURLToPath(new URL(".", import.meta.url)),
 	"my-sections.sql",
 );
+
+// ---------- GitHub API 拉取（CI 模式，本地无 private-content/） ----------
+
+const GH_OWNER = process.env.GH_OWNER;
+const GH_REPO = process.env.GH_REPO;
+const GH_PAT = process.env.GH_PAT;
+
+function ghHeaders(): Record<string, string> {
+	return {
+		Authorization: `Bearer ${GH_PAT}`,
+		Accept: "application/vnd.github+json",
+		"X-GitHub-Api-Version": "2022-11-28",
+		"User-Agent": "blog-my-sync",
+	};
+}
+
+async function fetchGitHubFile(relPath: string): Promise<string> {
+	const url = `https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/contents/${relPath}`;
+	const response = await fetch(url, { headers: ghHeaders() });
+	if (!response.ok) {
+		throw new Error(`GitHub API ${response.status} for ${relPath}`);
+	}
+	const payload = (await response.json()) as {
+		type?: string;
+		content?: string;
+	};
+	if (payload.type !== "file" || typeof payload.content !== "string") {
+		throw new Error(`GitHub 返回的不是文件：${relPath}`);
+	}
+	const binary = atob(payload.content.replace(/\s+/g, ""));
+	const bytes = Uint8Array.from(binary, (c) => c.charCodeAt(0));
+	return new TextDecoder().decode(bytes);
+}
+
+/** 递归下载 GitHub 仓库目录到本地（GitHub Contents API 目录返回数组）。 */
+async function downloadDirFromGitHub(
+	relPath: string,
+	localDir: string,
+): Promise<void> {
+	const url = `https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/contents/${relPath}`;
+	const response = await fetch(url, { headers: ghHeaders() });
+	if (!response.ok) {
+		throw new Error(`GitHub API ${response.status} for ${relPath}`);
+	}
+	const payload = (await response.json()) as unknown;
+	if (!Array.isArray(payload)) {
+		throw new Error(`GitHub 返回的不是目录：${relPath}`);
+	}
+	for (const item of payload as { type: string; path: string; name: string }[]) {
+		const local = path.join(localDir, item.name);
+		if (item.type === "dir") {
+			fs.mkdirSync(local, { recursive: true });
+			await downloadDirFromGitHub(item.path, local);
+		} else if (item.type === "file") {
+			const content = await fetchGitHubFile(item.path);
+			fs.mkdirSync(path.dirname(local), { recursive: true });
+			fs.writeFileSync(local, content, "utf8");
+		}
+	}
+}
 
 // ---------- 工具 ----------
 
@@ -232,6 +294,18 @@ function runD1(sqlFile: string): void {
 }
 
 async function main(): Promise<void> {
+	// 数据源：默认读本地 private-content/my（或 MY_SOURCE_DIR 指定目录）；
+	// 设置 GH_PAT/GH_OWNER/GH_REPO 且未指定 MY_SOURCE_DIR 时，从私有仓库 GitHub API 拉 my/ 到临时目录（CI 用）
+	let tmpDir: string | null = null;
+	const useGitHub =
+		!!GH_PAT && !!GH_OWNER && !!GH_REPO && !process.env.MY_SOURCE_DIR;
+	if (useGitHub) {
+		tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "my-sync-"));
+		sourceDir = tmpDir;
+		console.log(`从私有仓库 GitHub API 拉取 my/ → 临时目录`);
+		await downloadDirFromGitHub("my", sourceDir);
+	}
+
 	console.log(`开始同步「我的」分组数据 → D1（源目录：${sourceDir}）`);
 	if (!fs.existsSync(sourceDir)) {
 		console.error(`源目录不存在：${sourceDir}`);
@@ -269,6 +343,9 @@ async function main(): Promise<void> {
 	} catch (err) {
 		console.error("写 D1 失败", err);
 		process.exit(1);
+	}
+	if (tmpDir) {
+		fs.rmSync(tmpDir, { recursive: true, force: true });
 	}
 	console.log("「我的」分组数据同步完成。");
 }

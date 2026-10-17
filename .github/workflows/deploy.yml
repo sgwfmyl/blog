@@ -73,6 +73,25 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: pnpm prerender:private
 
+      # 「我的」分组私有化（阶段 7）：应用 D1 迁移（bills/schedules/apps/notebooks 表结构），
+      # 需在 deploy 前完成，保证 SSR 页面运行时能读到表。
+      - name: Apply D1 migrations
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: pnpm exec wrangler d1 migrations apply blog --remote
+
+      # 同步「我的」分组数据到 D1：脚本从私有仓库 GitHub API 拉 my/（GH_* 变量）
+      # → 生成全量替换 SQL → 写线上 D1（CLOUDFLARE_* 变量经 wrangler）。
+      - name: Sync my sections to D1
+        env:
+          GH_PAT: ${{ secrets.GH_PAT }}
+          GH_OWNER: ${{ secrets.GH_OWNER }}
+          GH_REPO: ${{ secrets.GH_REPO }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: pnpm sync:my
+
       - name: Deploy to Cloudflare Workers
         uses: cloudflare/wrangler-action@v3
         with:
