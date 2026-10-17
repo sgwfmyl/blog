@@ -64,17 +64,13 @@ const getDynamicNavBarConfig = (): NavBarConfig => {
 				url: "/guestbook/",
 				icon: "material-symbols:edit-outline",
 			},
-			{
-				name: "笔记本",
-				url: "/life/notebooks/",
-				icon: "material-symbols:menu-book-outline",
-			},
+			// 笔记本已移入「我的」分组，此处不再重复
 			// 朋友圈
 			/*LinkPreset.Circle*/
 		],
 	});
 
-	// 记录入口 - 书架、影视与游戏、音乐、规划、足迹
+	// 记录入口 - 书架、影视与游戏、规划、足迹
 	const recordChildren: (NavBarLink | LinkPreset)[] = [];
 	if (siteConfig.pages.books) {
 		recordChildren.push(LinkPreset.Books);
@@ -82,7 +78,7 @@ const getDynamicNavBarConfig = (): NavBarConfig => {
 	if (siteConfig.pages.moviesGames) {
 		recordChildren.push(LinkPreset.MoviesGames);
 	}
-	// 音乐已移入「我的」分组，此处不再重复
+	// 音乐已移入「关于」分组，此处不再重复
 	if (siteConfig.pages.changelog) {
 		recordChildren.push(LinkPreset.Changelog);
 	}
@@ -97,7 +93,9 @@ const getDynamicNavBarConfig = (): NavBarConfig => {
 			? "/books/"
 			: siteConfig.pages.moviesGames
 				? "/movies-games/"
-				: "/music/";
+				: siteConfig.pages.changelog
+					? "/changelog/"
+					: "/life/places/";
 
 		links.push({
 			name: "记录",
@@ -107,7 +105,7 @@ const getDynamicNavBarConfig = (): NavBarConfig => {
 		});
 	}
 
-	// 我的 - 日历、账单、应用展示、音乐
+	// 我的 - 日历、账单、应用展示、笔记本
 	links.push({
 		name: "我的",
 		url: "/schedules/",
@@ -128,16 +126,11 @@ const getDynamicNavBarConfig = (): NavBarConfig => {
 				url: "/apps/",
 				icon: "material-symbols:apps",
 			},
-			...(siteConfig.pages.musicPage
-				? [
-						{
-							name: "音乐",
-							url: "/music/",
-							icon: "material-symbols:music-note",
-							external: true,
-						} as NavBarLink,
-					]
-				: []),
+			{
+				name: "笔记本",
+				url: "/life/notebooks/",
+				icon: "material-symbols:menu-book-outline",
+			},
 		],
 	});
 
@@ -155,6 +148,18 @@ const getDynamicNavBarConfig = (): NavBarConfig => {
 
 			// 赞助（已隐藏入口，直接访问 /sponsor/ 仍可打开页面）
 			//...(siteConfig.pages.sponsor ? [LinkPreset.Sponsor] : []),
+
+			// 音乐（受 musicPage 开关控制）
+			...(siteConfig.pages.musicPage
+				? [
+						{
+							name: "音乐",
+							url: "/music/",
+							icon: "material-symbols:music-note",
+							external: true,
+						} as NavBarLink,
+					]
+				: []),
 		],
 	});
 

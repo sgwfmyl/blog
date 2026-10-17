@@ -59,11 +59,7 @@ const groups = [
 				url: "/album/",
 			},
 			{ icon: "material-symbols:chat", label: "留言板", url: "/guestbook/" },
-			{
-				icon: "material-symbols:menu-book-outline",
-				label: "笔记本",
-				url: "/life/notebooks/",
-			},
+			/* 笔记本已移入「我的」分组 */
 			/*{ icon: "material-symbols:public", label: "朋友圈", url: "/circle/" },*/
 		],
 	},
@@ -83,10 +79,9 @@ const groups = [
 			},
 			{ icon: "material-symbols:apps", label: "应用展示", url: "/apps/" },
 			{
-				icon: "material-symbols:music-note",
-				label: "音乐",
-				url: "/music/",
-				external: true,
+				icon: "material-symbols:menu-book-outline",
+				label: "笔记本",
+				url: "/life/notebooks/",
 			},
 		],
 	},
@@ -115,10 +110,11 @@ const groups = [
 			{ icon: "material-symbols:person", label: "关于", url: "/about/" },
 			{ icon: "material-symbols:group", label: "友链", url: "/friends/" },
 			/*{ icon: "material-symbols:favorite", label: "赞助", url: "/sponsor/" },*/
+			/* QQ群入口已移除 */
 			{
-				icon: "simple-icons:tencentqq",
-				label: "QQ群",
-				url: "https://qm.qq.com/q/FjkXxV9Hmo",
+				icon: "material-symbols:music-note",
+				label: "音乐",
+				url: "/music/",
 				external: true,
 			},
 		],
