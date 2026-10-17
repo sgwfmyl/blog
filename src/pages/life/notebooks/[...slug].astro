@@ -1,73 +1,59 @@
 ---
-import type { CollectionEntry } from "astro:content";
-import { getCollection } from "astro:content";
 import { Icon } from "astro-icon/components";
 import NotebookCommentModal from "@/components/comment/NotebookCommentModal.svelte";
 import ArchiveHeatmap from "@/components/widget/ArchiveHeatmap.astro";
 import { profileConfig } from "@/config";
 import MainGridLayout from "@/layouts/MainGridLayout.astro";
+import { AUTH_COOKIE_NAME, verifySession } from "@/utils/auth-session";
+import { getNotebooksFromD1 } from "@/utils/my-source";
 
-export async function getStaticPaths() {
-	const allEntries = await getCollection("notebooks");
-	const paths: {
-		params: { slug: string };
-		props: {
-			entry: CollectionEntry<"notebooks">;
-			sortedEntries: CollectionEntry<"notebooks">[];
-		};
-	}[] = [];
+// 「我的」分组私有化：SSR + 登录鉴权，未登录 404（不暴露路由存在）。
+// 原 getStaticPaths 构建期逐本生成改为运行时按 slug 解析（SSR 下 getStaticPaths 不生效）。
+export const prerender = false;
 
-	for (const entry of allEntries) {
-		const normalizedId = entry.id.replace(/\\/g, "/");
-		if (normalizedId === "readme" || normalizedId === "readme.md") continue;
-		const isIndexFile =
-			/\/(_index|_index\.md|_index\.json)?$/.test(normalizedId) &&
-			(normalizedId.endsWith("_index") || normalizedId.includes("/_index."));
-		const isNotebookRoot =
-			normalizedId.match(/^([^/]+)\/(_index|_index\.md|_index\.json)$/) ||
-			normalizedId.match(/^([^/]+)\/_index$/);
-		if (!isIndexFile || !isNotebookRoot) continue;
+const token = Astro.cookies.get(AUTH_COOKIE_NAME)?.value;
+if (!(await verifySession(token))) {
+	return Astro.redirect("/404");
+}
+Astro.response.headers.set("Cache-Control", "private, no-store");
+Astro.response.headers.set("Vary", "Cookie");
+Astro.response.headers.set("X-Robots-Tag", "noindex, nofollow");
 
-		const folderName = isNotebookRoot[1];
-		const folderEntries = allEntries.filter((item) => {
-			const itemId = item.id.replace(/\\/g, "/");
-			return (
-				itemId.startsWith(`${folderName}/`) &&
-				!/^([^/]+)\/(_index|_index\.md|_index\.json)$/.test(itemId) &&
-				itemId !== `${folderName}/_index` &&
-				itemId !== `${folderName}/_index.md` &&
-				itemId !== `${folderName}/_index.json`
-			);
-		});
-		const sortedEntries = [...folderEntries].sort((a, b) => {
-			const aT = a.data.date instanceof Date ? a.data.date.getTime() : 0;
-			const bT = b.data.date instanceof Date ? b.data.date.getTime() : 0;
-			return bT - aT;
-		});
+const slugParam = (Astro.params.slug || "").replace(/\/+$/, "");
+const allEntries = await getNotebooksFromD1();
 
-		paths.push({
-			params: { slug: folderName },
-			props: { entry, sortedEntries },
-		});
-	}
-	return paths;
+const entry = allEntries.find((e) => {
+	const id = e.id.replace(/\\/g, "/");
+	const m =
+		id.match(/^([^/]+)\/(_index|_index\.md|_index\.json)$/) ||
+		id.match(/^([^/]+)\/_index$/);
+	return m?.[1] === slugParam;
+});
+
+if (!entry) {
+	return Astro.redirect("/404");
 }
 
-const { entry, sortedEntries } = Astro.props as {
-	entry: CollectionEntry<"notebooks">;
-	sortedEntries: CollectionEntry<"notebooks">[];
-};
-
-const normalizedEntryId = entry.id.replace(/\\/g, "/");
-const isNotebookRootMatch =
-	normalizedEntryId.match(/^([^/]+)\/(_index|_index\.md|_index\.json)$/) ||
-	normalizedEntryId.match(/^([^/]+)\/_index$/);
-const folderName = isNotebookRootMatch
-	? isNotebookRootMatch[1]
-	: normalizedEntryId.split("/")[0];
+const folderName = slugParam;
+const sortedEntries = allEntries
+	.filter((item) => {
+		const itemId = item.id.replace(/\\/g, "/");
+		return (
+			itemId.startsWith(`${folderName}/`) &&
+			!/^([^/]+)\/(_index|_index\.md|_index\.json)$/.test(itemId) &&
+			itemId !== `${folderName}/_index` &&
+			itemId !== `${folderName}/_index.md` &&
+			itemId !== `${folderName}/_index.json`
+		);
+	})
+	.sort((a, b) => {
+		const aT = a.data.date instanceof Date ? a.data.date.getTime() : 0;
+		const bT = b.data.date instanceof Date ? b.data.date.getTime() : 0;
+		return bT - aT;
+	});
 
 // 所有笔记本列表（面包屑下拉）
-const allNotebooks = await getCollection("notebooks");
+const allNotebooks = allEntries;
 const notebookList = allNotebooks
 	.filter((e) => {
 		const id = e.id.replace(/\\/g, "/");

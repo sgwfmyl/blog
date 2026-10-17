@@ -1,11 +1,23 @@
 ---
-import { getCollection } from "astro:content";
 import { Lunar } from "lunar-javascript";
 import PageTitle from "@/components/common/PageTitle.astro";
 import SchedulesView from "@/components/schedules/SchedulesView.svelte";
 import MainGridLayout from "@/layouts/MainGridLayout.astro";
+import { AUTH_COOKIE_NAME, verifySession } from "@/utils/auth-session";
+import { getSchedulesFromD1 } from "@/utils/my-source";
 
-const raw = await getCollection("schedules");
+// 「我的」分组私有化：SSR + 登录鉴权，未登录 404（不暴露路由存在）
+export const prerender = false;
+
+const token = Astro.cookies.get(AUTH_COOKIE_NAME)?.value;
+if (!(await verifySession(token))) {
+	return Astro.redirect("/404");
+}
+Astro.response.headers.set("Cache-Control", "private, no-store");
+Astro.response.headers.set("Vary", "Cookie");
+Astro.response.headers.set("X-Robots-Tag", "noindex, nofollow");
+
+const raw = await getSchedulesFromD1();
 // 服务端预换算农历→当年阳历，消首屏闪烁：isLunar 无 date 的生日在此算好 solar
 const now = new Date();
 const curYear = now.getFullYear();

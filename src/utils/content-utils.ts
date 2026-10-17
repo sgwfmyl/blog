@@ -129,7 +129,7 @@ export async function getArchiveList(
 	const moments = await getCollection("moments");
 	const bangumi = await getCollection("bangumi");
 	const lifeEntries = await getCollection("life");
-	const notebooksEntries = await getCollection("notebooks");
+	// 阶段 7：notebooks 集合已迁 D1 私有化，不再并入归档（私密条目走 privateMeta 通道）
 	const postItems: ArchiveItem[] = posts.map((post) => ({
 		id: post.id,
 		type: "post",
@@ -208,21 +208,7 @@ export async function getArchiveList(
 			});
 		});
 
-	// 笔记本记录（排除 _index 元数据条目）
-	notebooksEntries
-		.filter((n) => !n.id.includes("_index"))
-		.forEach((n) => {
-			lifeItems.push({
-				id: n.id,
-				type: "life",
-				data: {
-					title: n.data.name || "笔记本",
-					published: n.data.date || new Date(),
-					tags: ["笔记本"],
-					link: "/life/notebooks/",
-				},
-			});
-		});
+	// 笔记本记录已迁 D1 私有化（阶段 7），此处不再合并
 
 	// 私有条目（登录态合并）：type 用私有 meta 的 type，link 指向 route（缺省 /private/<slug>/）
 	const privateItems: ArchiveItem[] = privateMeta.map((item) => ({

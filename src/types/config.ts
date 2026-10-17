@@ -225,6 +225,7 @@ export type NavBarLink = {
 	external?: boolean;
 	icon?: string; // 菜单项图标
 	children?: (NavBarLink | LinkPreset)[]; // 支持子菜单，可以是NavBarLink或LinkPreset
+	authRequired?: boolean; // 登录后才显示（软隐藏：构建期渲染但 hidden，客户端按 /api/auth/me 状态切换）
 };
 
 export enum NavBarSearchMethod {

@@ -1,5 +1,4 @@
 <script lang="ts">
-import type { CollectionEntry } from "astro:content";
 import {
 	Cake,
 	Calendar,
@@ -10,8 +9,10 @@ import {
 import { Lunar } from "lunar-javascript";
 import { onMount } from "svelte";
 import { lunarLabel } from "@/utils/lunar";
+// 阶段 7：日程数据迁 D1，条目类型来自 my-source（import type 仅类型引用，不进客户端产物）
+import type { ScheduleRecord } from "@/utils/my-source";
 
-type ScheduleEntry = CollectionEntry<"schedules">;
+type ScheduleEntry = ScheduleRecord;
 
 interface Props {
 	schedules: ScheduleEntry[];

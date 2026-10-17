@@ -1,12 +1,24 @@
 ---
-import { getCollection } from "astro:content";
 import AppCard from "@components/features/AppCard.astro";
 import MainGridLayout from "@layouts/MainGridLayout.astro";
 import { Icon } from "astro-icon/components";
 import PageTitle from "@/components/common/PageTitle.astro";
+import { AUTH_COOKIE_NAME, verifySession } from "@/utils/auth-session";
+import { getAppsFromD1 } from "@/utils/my-source";
 
-// 从 content/apps 目录读取应用数据，按权重排序
-const appsEntries = await getCollection("apps");
+// 「我的」分组私有化：SSR + 登录鉴权，未登录 404（不暴露路由存在）
+export const prerender = false;
+
+const token = Astro.cookies.get(AUTH_COOKIE_NAME)?.value;
+if (!(await verifySession(token))) {
+	return Astro.redirect("/404");
+}
+Astro.response.headers.set("Cache-Control", "private, no-store");
+Astro.response.headers.set("Vary", "Cookie");
+Astro.response.headers.set("X-Robots-Tag", "noindex, nofollow");
+
+// 应用数据来自 D1（阶段 7 私有化迁移），按权重排序
+const appsEntries = await getAppsFromD1();
 const items = appsEntries
 	.filter((item) => item.data.enabled !== false)
 	.sort((a, b) => (b.data.weight || 0) - (a.data.weight || 0));

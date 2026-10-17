@@ -1,5 +1,4 @@
 ---
-import { getCollection } from "astro:content";
 import { Solar } from "lunar-javascript";
 import BalanceCard from "@/components/bills/BalanceCard.astro";
 import BillCalendarCard from "@/components/bills/BillCalendarCard.astro";
@@ -11,6 +10,7 @@ import MonthlySummaryCard from "@/components/bills/MonthlySummaryCard.astro";
 import YearlyFlowCard from "@/components/bills/YearlyFlowCard.astro";
 import PageTitle from "@/components/common/PageTitle.astro";
 import MainGridLayout from "@/layouts/MainGridLayout.astro";
+import { AUTH_COOKIE_NAME, verifySession } from "@/utils/auth-session";
 import {
 	categoryExpenseRank,
 	categoryIncomeList,
@@ -20,8 +20,20 @@ import {
 	yearlyMonthlyFlow,
 } from "@/utils/bill-adapter";
 import { lunarLabel } from "@/utils/lunar";
+import { getBillsFromD1 } from "@/utils/my-source";
 
-const bills = await getCollection("bills");
+// 「我的」分组私有化：SSR + 登录鉴权，未登录 404（不暴露路由存在，对齐私有系统惯例）
+export const prerender = false;
+
+const token = Astro.cookies.get(AUTH_COOKIE_NAME)?.value;
+if (!(await verifySession(token))) {
+	return Astro.redirect("/404");
+}
+Astro.response.headers.set("Cache-Control", "private, no-store");
+Astro.response.headers.set("Vary", "Cookie");
+Astro.response.headers.set("X-Robots-Tag", "noindex, nofollow");
+
+const bills = await getBillsFromD1();
 const sorted = [...bills].sort(
 	(a, b) => b.data.date.getTime() - a.data.date.getTime(),
 );

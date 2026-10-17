@@ -1,6 +1,7 @@
-import type { CollectionEntry } from "astro:content";
+import type { ScheduleRecord } from "./my-source";
 
-export type ScheduleEntry = CollectionEntry<"schedules">;
+// 阶段 7：日程数据迁 D1，条目形态由 my-source 定义（对齐旧 schedules 集合条目）
+export type ScheduleEntry = ScheduleRecord;
 
 function toDateKey(d: Date): string {
 	return d.toISOString().slice(0, 10);

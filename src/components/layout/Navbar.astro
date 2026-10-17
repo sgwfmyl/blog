@@ -338,6 +338,32 @@ if (isLocalSrcLogo) {
 		initSearchShortcut();
 	});
 
+	// 登录态导航显示：authRequired 分组（「我的」）构建期渲染但 hidden，
+	// 客户端读取 window.__fireflyAuthStore（AuthManager 挂载，client:idle），登录后取消隐藏。
+	// Navbar/NavMenuPanel/MobileMenuSheet 均在 Swup 容器外常驻，订阅一次即可。
+	if (!window.__navbarAuthNavBound) {
+		window.__navbarAuthNavBound = true;
+		var applyAuthNav = function(state) {
+			var show = !!(state && state.isAdmin);
+			document.querySelectorAll('[data-auth-nav]').forEach(function(el) {
+				el.hidden = !show;
+			});
+		};
+		var bindAuthNav = function() {
+			var store = window.__fireflyAuthStore;
+			if (!store) return false;
+			applyAuthNav(store.getAuthState());
+			store.subscribeAuth(applyAuthNav);
+			return true;
+		};
+		if (!bindAuthNav()) {
+			var authNavTimer = setInterval(function() {
+				if (bindAuthNav()) clearInterval(authNavTimer);
+			}, 300);
+			setTimeout(function() { clearInterval(authNavTimer); }, 15000);
+		}
+	}
+
 	// Search button click — 使用事件委托在 document 上，避免 Swup 重复绑定
 	if (!window.__navbarSearchBound) {
 		window.__navbarSearchBound = true;

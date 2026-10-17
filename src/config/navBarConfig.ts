@@ -105,11 +105,12 @@ const getDynamicNavBarConfig = (): NavBarConfig => {
 		});
 	}
 
-	// 我的 - 日历、账单、应用展示、笔记本
+	// 我的 - 日历、账单、应用展示、笔记本（登录后才显示，页面本身 SSR 404 拦截）
 	links.push({
 		name: "我的",
 		url: "/schedules/",
 		icon: "material-symbols:person",
+		authRequired: true,
 		children: [
 			{
 				name: "日历",

@@ -220,9 +220,19 @@ export default defineConfig({
 				if (pathname === "/private" || pathname.startsWith("/private/")) {
 					return false;
 				}
-				if (pathname === "/diary" || pathname.startsWith("/diary/")) {
-					return false;
-				}
+			if (pathname === "/diary" || pathname.startsWith("/diary/")) {
+				return false;
+			}
+
+			// 「我的」分组已私有化（阶段 7：SSR + 未登录 404），纵深防御不进 sitemap
+			if (
+				pathname === "/bills" || pathname.startsWith("/bills/") ||
+				pathname === "/schedules" || pathname.startsWith("/schedules/") ||
+				pathname === "/apps" || pathname.startsWith("/apps/") ||
+				pathname === "/life/notebooks" || pathname.startsWith("/life/notebooks/")
+			) {
+				return false;
+			}
 
 				if (pathname === "/sponsor/" && !siteConfig.pages.sponsor) {
 					return false;

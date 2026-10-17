@@ -27,8 +27,7 @@ const categories = await getCategoryList();
 const tags = await getTagList();
 const moments = await getCollection("moments");
 const bangumi = await getCollection("bangumi");
-const notebooks = await getCollection("notebooks");
-const bills = await getCollection("bills");
+// 阶段 7：notebooks/bills 已迁 D1 私有化，侧栏为构建期组件读不到 D1，不再计入统计
 
 // 统计生活记录子分类
 const animeCount = bangumi.filter(
@@ -52,8 +51,7 @@ const placesCount = lifeEntries.filter((entry) =>
 
 // 记录次数 = 影视 + 书籍 + 游戏 + 足迹
 // （笔记本相关数量按加密口径不计入，与 LifeStats 一致）
-const recordCount =
-	animeCount + bookCount + gameCount + placesCount;
+const recordCount = animeCount + bookCount + gameCount + placesCount;
 
 // 计算总字数（中文字符 + 英文字母，去掉代码块/内联代码/空白）
 function countWords(text: string | undefined): number {
@@ -76,12 +74,7 @@ for (const post of posts) {
 for (const moment of moments) {
 	totalWords += countWords(moment.body);
 }
-// 笔记本正文字数（排除 _index 元数据条目）
-for (const note of notebooks) {
-	if (/\/(_index|_index\.md|_index\.json)$/.test(note.id.replace(/\\/g, "/")))
-		continue;
-	totalWords += countWords(note.body);
-}
+// 笔记本正文字数已迁 D1 私有化（阶段 7），不再计入
 // 足迹等 life 记录字数（排除 notebooks/ 前缀，避免与 notebooks 集合重复计数）
 for (const lifeEntry of lifeEntries) {
 	if (lifeEntry.id.replace(/\\/g, "/").startsWith("notebooks/")) continue;
@@ -93,14 +86,13 @@ function formatNumber(num: number): string {
 	return num.toLocaleString();
 }
 
-// 最近活动日期：取全部内容集合（文章/动态/书影音/足迹/笔记/账单）的最大日期，日程（未来事项）不计
+// 最近活动日期：取全部公开内容集合（文章/动态/书影音/足迹）的最大日期；
+// 笔记/账单已迁 D1 私有化（阶段 7）不计，日程（未来事项）不计
 const latestActivity = [
 	...posts.map((p) => p.data.published),
 	...moments.map((m) => m.data.published),
 	...bangumi.map((b) => b.data.published),
 	...lifeEntries.map((l) => l.data.date),
-	...notebooks.map((n) => n.data.date),
-	...bills.map((b) => b.data.date),
 ]
 	.filter((d): d is Date => d instanceof Date)
 	.reduce<Date | null>(

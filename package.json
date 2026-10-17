@@ -8,6 +8,7 @@
     "check": "astro check",
     "build": "node scripts/生成图标/index.js && astro build && pagefind --site dist/client",
     "prerender:private": "tsx scripts/私有预渲染/index.ts",
+    "sync:my": "tsx scripts/我的数据同步/index.ts",
     "preview": "astro preview",
     "astro": "astro",
     "type-check": "tsc --noEmit --isolatedDeclarations",

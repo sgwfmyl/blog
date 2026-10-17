@@ -38,7 +38,7 @@ const processedLink = {
 const hasChildren = processedLink.children && processedLink.children.length > 0;
 ---
 
-<div class:list={["dropdown-container", className]} data-dropdown>
+<div class:list={["dropdown-container", className]} data-dropdown data-auth-nav={link.authRequired ? "" : undefined} hidden={link.authRequired || undefined}>
 	{hasChildren ? (
 		<>
 			{/* 主按钮 - 点击展开下拉菜单，不跳转 */}

@@ -108,7 +108,7 @@ if (isLocalSrcLogo) {
 							</div>
 						)}
 						{groups.map((link) => (
-							<div class="nav-grid-group">
+							<div class="nav-grid-group" data-auth-nav={link.authRequired ? "" : undefined} hidden={link.authRequired || undefined}>
 								<div class="nav-grid-group-title">
 									{link.icon && <Icon name={link.icon} is:inline class="nav-grid-group-icon" />}
 									<span>{link.name}</span>
@@ -134,7 +134,7 @@ if (isLocalSrcLogo) {
 		<!-- 列表导航（桌面端，≥769px 由 CSS 控制显示） -->
 		<div class="nav-drawer-list">
 			{processedLinks.map((link, index) => (
-				<div class="nav-drawer-item" style={`--item-index: ${index}`}>
+				<div class="nav-drawer-item" style={`--item-index: ${index}`} data-auth-nav={link.authRequired ? "" : undefined} hidden={link.authRequired || undefined}>
 					{link.children && link.children.length > 0 ? (
 						<div class="mobile-dropdown">
 							<div class="nav-drawer-link group nav-drawer-section-title">

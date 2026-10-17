@@ -66,6 +66,7 @@ const groups = [
 	{
 		icon: "material-symbols:person",
 		label: "我的",
+		authRequired: true,
 		children: [
 			{
 				icon: "material-symbols:calendar-today-outline",
@@ -148,7 +149,7 @@ const groups = [
           {(group as any).external && <span class="menu-sheet__row-external"><Icon name="material-symbols:open-in-new-rounded" /></span>}
         </a>
       ) : (
-        <details class="menu-sheet__group">
+        <details class="menu-sheet__group" data-auth-nav={(group as any).authRequired ? "" : undefined} hidden={(group as any).authRequired || undefined}>
           <summary class="menu-sheet__group-header">
             <span class="menu-sheet__row-icon"><Icon name={group.icon} /></span>
             <span class="menu-sheet__row-label">{group.label}</span>

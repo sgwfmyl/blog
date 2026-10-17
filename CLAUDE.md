@@ -58,16 +58,16 @@ src/
 │   ├── layout/          # 布局组件：Navbar, Footer, SideBar, HomeHero... (19)
 │   ├── misc/            # License, RelatedPosts, SharePoster (3)
 │   ├── moments/         # 动态卡片与评论弹窗
-│   ├── bills/         # 账单/资金（7：Balance 年度结余横幅卡 + MonthlyFlow 月度流水（按日分组/月份筛选/分页）+ BillCalendar 账单日历（农历+每日收支）+ DailyTrend/ExpenseRank/IncomeCategory/MonthlySummary/YearlyFlow，按图两栏等比缩小）
-│   ├── schedules/     # 日程（3：ScheduleCalendar/ScheduleList/SchedulesView 周视图默认 + 提醒 + 分页等高）
+│   ├── bills/         # 账单/资金（7：Balance 年度结余横幅卡 + MonthlyFlow 月度流水 + BillCalendar 账单日历 + DailyTrend/ExpenseRank/IncomeCategory/MonthlySummary/YearlyFlow；数据已迁 D1，SSR 运行时读取）
+│   ├── schedules/     # 日程（3：ScheduleCalendar/ScheduleList/SchedulesView 周视图默认 + 提醒 + 分页等高；数据已迁 D1）
 │   ├── pages/           # 页面级组件：bangumi, books（Bookshelf/BookCard：3D 书本卡片 + 影视页同款胶囊筛选（分类+读过/在读/想读）+ ClientPagination 分页 8/6 本每页，SSR 隐藏非首页防闪烁）, movies-games, music (10)
 │   └── widget/          # 侧栏 Widget (27)
 ├── config/              # 站点配置（27 个 .ts，index.ts barrel export）
 ├── constants/           # 常量：页面尺寸、主题模式、图标、链接预设
-├── content/             # Astro Content Collections（16 个集合：posts/spec/moments/bangumi/music/life/notebooks/album/daohang/ziyuan/friends/apps/tombstones/changelog/bills/schedules）
-│   ├── album/ apps/ bangumi/ changelog/ daohang/
+├── content/             # Astro Content Collections（13 个集合：posts/spec/moments/bangumi/music/life/album/daohang/ziyuan/friends/tombstones/changelog/docs；原 notebooks/apps/bills/schedules 已迁 D1 私有化，见 §3.6）
+│   ├── album/ bangumi/ changelog/ daohang/
 │   ├── friends/ life/ moments/ music/ posts/ spec/ ziyuan/  # music/ 为 JSON 歌单（2026-10-08 起替代 bangumi/music md，见 src/content/music/playlist.json）；spec/about.mdx 为组件化 Q&A；更新日志图谱组件（ChangelogGraph）用于 /changelog/ 页（2026-08-30 起不再嵌入关于页）
-│   └── life/notebooks/  # notebooks 集合物理位置（life 的子目录，2026-09-27 起归档改 card 流，支持 images 多图 12字展开 + 年份下拉联动热力图与列表）
+│   └── life/            # 仅 places/ 足迹；原 life/notebooks/ 已迁 D1（阶段 7）
 ├── i18n/                # 国际化（5 种语言，330 个翻译键）
 │   └── languages/       # en.ts, zh_CN.ts, zh_TW.ts, ja.ts, ru.ts
 ├── layouts/             # Layout.astro (591行), MainGridLayout.astro (305行)
@@ -166,9 +166,11 @@ Layout.astro          ← HTML 骨架：<html>, <head>, <body>, 全局组件, �
 
 `/bills/`、`/life/notebooks/`（列表+详情）、`/schedules/` 曾在构建时用 PBKDF2(250k)+AES-256-GCM 把敏感 HTML 加密成密文内联（EncryptGate / PasswordGate 毛玻璃密码门，密钥来自 `GATE_PASSWORD`）。**该功能已按站长要求彻底移除**：三个页面恢复明文直出，sitemap、pagefind 站内搜索、归档时间线（`content-utils.ts#getArchiveList`）与侧栏（`widget/RecentItems.astro`、`widget/LifeStats.astro`）重新收录/展示笔记本。如需恢复，见 git 历史中的 `src/components/security/`、`src/utils/encrypt-gate.ts`、`src/config/securityConfig.ts`、`src/styles/pages/encrypt-gate.css`，以及 changelog `2026-08-30-encrypt-gate.md`。
 
+> 2026-10-17 阶段 7 起，这三类页面（连同 `/apps/`）改为**整体私有化**（SSR + 登录鉴权 + 未登录 404 + 数据迁 D1），不再走明文直出，见 §3.6。
+
 ### 3.5 Content Collections
 
-13 个集合定义在 `src/content.config.ts`，使用 Zod schema 校验（另有 bills/schedules/music 与辅助集合 docs，实际注册 17 个）：
+13 个集合定义在 `src/content.config.ts`，使用 Zod schema 校验：
 
 | 集合 | 用途 |
 |------|------|
@@ -177,17 +179,27 @@ Layout.astro          ← HTML 骨架：<html>, <head>, <body>, 全局组件, �
 | moments | 说说/动态 |
 | bangumi | 番组/书籍/游戏追踪 |
 | music | 音乐歌单（JSON，2026-10-08 起替代 bangumi/music md；播放时经 Meting API 懒解析，见 src/utils/music-playlist.ts） |
-| life | 生活记录 |
-| notebooks | 笔记本（life 的子集） |
+| life | 生活记录（仅 places/ 足迹；原 notebooks/ 子目录已迁 D1） |
 | album | 相册（2026-08 全量图床化：统一 `imgbedFolder: "blog/album/<相册名>"` 动态加载，photos 静态列表已废弃） |
 | daohang | 导航链接 |
 | ziyuan | 资源/公告 |
 | friends | 友链（added 添加日期 + group 分组 friend\|other，2026-08 区块化改版：新朋友/我的朋友们/更多伙伴） |
 | tombstones | 友链墓碑（title/avatar/note，2026-08 新增，纪念下线友链） |
-| apps | 应用 |
 | changelog | 更新日志 |
-| bills | 账单 |
-| schedules | 日程 |
+| docs | 开发文档（Starlight） |
+
+> 原 `notebooks` / `apps` / `bills` / `schedules` 四个集合已迁 D1 私有化（阶段 7，见 §3.6），定义与物理目录均已删除。
+
+### 3.6 「我的」分组私有化（阶段 7，2026-10-17）
+
+导航「我的」分组（日历 `/schedules/`、账单 `/bills/`、应用展示 `/apps/`、笔记本 `/life/notebooks/`）整体私有化：
+
+- **导航隐藏**：`navBarConfig.ts` 给「我的」分组加 `authRequired: true`，桌面 `DropdownMenu.astro`、移动 `NavMenuPanel.astro` / `MobileMenuSheet.astro` 据此加 `data-auth-nav` + `hidden`（软隐藏）；`Navbar.astro` 内联脚本订阅 `window.__fireflyAuthStore`，登录后取消隐藏。
+- **页面 SSR + 未登录 404**：4 条路由 `prerender=false` + `verifySession`，未登录 `Astro.redirect("/404")`（不暴露路由存在），响应头 `private, no-store` + `Vary: Cookie` + `X-Robots-Tag: noindex, nofollow`。
+- **数据迁 D1**：表结构 `migrations/0002_my_sections.sql`（bills/schedules/apps/notebooks/notebook_entries）；运行时读取 `src/utils/my-source.ts`（返回形态对齐旧集合条目，下游 bill-adapter/schedule-adapter 零改动）；同步脚本 `scripts/我的数据同步/index.ts`（`pnpm sync:my`，从私有仓库 `private-content/my/` 全量灌 D1）。笔记本正文页面只展示原始文本，故存 D1 而非走 KV markdown 渲染管线（不撑大 worker）。
+- **录入方式**：源数据 md/json 放私有仓库 `private-content/my/`，改完跑 `pnpm sync:my`；公开仓库 `src/content/{bills,schedules,apps,life/notebooks}` 已删除。
+- **侧栏/归档**：`SiteStats`/`LifeStats`/`RecentItems` 为构建期组件读不到 D1，不再统计笔记本/账单；`content-utils.ts#getArchiveList` 不再合并 notebooks。
+
 
 > **友链页设计**（页面结构 / 卡片形态 / 悬浮站点预览 / 状态检测与截图支撑系统 / 朋友圈数据链路等）已整理为开发文档 → [友链页设计说明](/docs/友链/)（源文件 `src/content/docs/docs/友链.md`）；友链内容字段与录入规范见 [内容 / 友链](/docs/内容/友链/)。
 >

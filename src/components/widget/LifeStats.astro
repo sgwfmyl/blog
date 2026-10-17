@@ -12,7 +12,7 @@ const { class: className, style } = Astro.props;
 
 // 获取生活相关 collection
 const lifeEntries = await getCollection("life");
-const notebookEntries = await getCollection("notebooks");
+// 阶段 7：notebooks 已迁 D1 私有化，笔记本数不再计入（构建期组件读不到 D1）
 // 辅助函数
 const isIn = (entryId: string, folder: string) =>
 	entryId.replace(/\\/g, "/").startsWith(`${folder}/`);
@@ -24,18 +24,6 @@ const places = lifeEntries
 const placesCount = places.length;
 const visitedCities = new Set(places.map((p) => p.city).filter(Boolean)).size;
 
-// 统计笔记本（排除 _index 文件）
-const notebookFolders = new Set(
-	notebookEntries
-		.map((e) => {
-			const id = e.id.replace(/\\/g, "/");
-			const match = id.match(/^([^/]+)\//);
-			return match ? match[1] : null;
-		})
-		.filter(Boolean),
-);
-const notebooksCount = notebookFolders.size;
-
 // 构建统计数据
 const stats: { icon: string; label: string; value: number; suffix?: string }[] =
 	[
@@ -43,11 +31,6 @@ const stats: { icon: string; label: string; value: number; suffix?: string }[] =
 			icon: "material-symbols:apartment",
 			label: "去过城市",
 			value: visitedCities,
-		},
-		{
-			icon: "material-symbols:book-outline",
-			label: "笔记本数",
-			value: notebooksCount,
 		},
 		{
 			icon: "material-symbols:location-on-outline",

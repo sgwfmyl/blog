@@ -1,6 +1,7 @@
-import type { CollectionEntry } from "astro:content";
+import type { BillRecord } from "./my-source";
 
-export type BillEntry = CollectionEntry<"bills">;
+// 阶段 7：账单数据迁 D1，条目形态由 my-source 定义（对齐旧 bills 集合条目）
+export type BillEntry = BillRecord;
 
 function toDateKey(d: Date): string {
 	return d.toISOString().slice(0, 10);
