@@ -244,7 +244,8 @@ async function main(): Promise<void> {
 	const notebooks = collectNotebooks();
 
 	const sql = [
-		"BEGIN TRANSACTION;",
+		// 注：D1 远程执行不支持显式 BEGIN TRANSACTION/COMMIT（报错提示用 storage.transaction API），
+		// 故这里不做事务包裹。全量替换 + 幂等，失败重跑一次即可。
 		"DELETE FROM bills;",
 		"DELETE FROM schedules;",
 		"DELETE FROM apps;",
@@ -255,7 +256,6 @@ async function main(): Promise<void> {
 		...apps,
 		...notebooks.roots,
 		...notebooks.entries,
-		"COMMIT;",
 	].join("\n");
 	fs.writeFileSync(outFile, sql, "utf8");
 
