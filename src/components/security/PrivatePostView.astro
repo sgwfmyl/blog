@@ -2,7 +2,10 @@
 import MainGridLayout from "@layouts/MainGridLayout.astro";
 import { getCategoryUrl, getTagUrl } from "@utils/url-utils";
 import { formatDateI18n } from "@utils/date-utils";
-import type { PrivateMetaItem, PrivateHtmlPayload } from "@utils/private-contract";
+import type {
+	PrivateMetaItem,
+	PrivateHtmlPayload,
+} from "@utils/private-contract";
 import KatexManager from "@components/features/KatexManager.astro";
 
 // 共用私有文章渲染骨架（阶段 4 SSG 方案）。

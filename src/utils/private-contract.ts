@@ -30,7 +30,9 @@ export type PrivateHtmlPayload = {
 	headings: { depth: number; text: string; slug: string }[];
 };
 
-export function isValidPrivateMetaItem(value: unknown): value is PrivateMetaItem {
+export function isValidPrivateMetaItem(
+	value: unknown,
+): value is PrivateMetaItem {
 	if (!value || typeof value !== "object") return false;
 	const item = value as Partial<PrivateMetaItem>;
 	return (

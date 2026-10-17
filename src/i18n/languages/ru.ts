@@ -432,6 +432,7 @@ export const ru: Translation = {
 	[Key.adminWrongPassword]: "Неверный пароль",
 	[Key.adminCooldown]: "Слишком много попыток, повторите через {seconds} сек.",
 	[Key.adminPrivateSpace]: "Приватное пространство",
-	[Key.adminLoginHint]: "Режим администратора включён — доступен приватный контент",
+	[Key.adminLoginHint]:
+		"Режим администратора включён — доступен приватный контент",
 	[Key.adminLoginFailed]: "Не удалось войти, попробуйте позже",
 };

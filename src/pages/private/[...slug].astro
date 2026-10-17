@@ -21,7 +21,8 @@ if (!isAdmin) {
 // slug 校验：拒绝空段、首尾斜杠、..、控制字符
 const rawSlug = Astro.params.slug ?? "";
 const slug = rawSlug.replace(/\/+$/, ""); // 统一去尾部斜杠
-const validSlug = slug.length > 0 && !slug.includes("..") && !slug.includes("//");
+const validSlug =
+	slug.length > 0 && !slug.includes("..") && !slug.includes("//");
 
 if (!validSlug) {
 	return Astro.redirect("/404");

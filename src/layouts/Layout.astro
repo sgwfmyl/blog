@@ -3,13 +3,13 @@ import GoogleAnalytics from "@components/analytics/GoogleAnalytics.astro";
 import MicrosoftClarity from "@components/analytics/MicrosoftClarity.astro";
 import UmamiAnalytics from "@components/analytics/UmamiAnalytics.astro";
 import SearchModal from "@components/controls/SearchModal.svelte";
-import AuthManager from "@components/security/AuthManager.svelte";
 import FancyboxManager from "@components/features/FancyboxManager.astro";
 import FontManager from "@components/features/FontManager.astro";
 import MusicManager from "@components/features/MusicManager.astro";
 import PageLoader from "@components/features/PageLoader.astro";
 import SakuraEffect from "@components/features/SakuraEffect.astro";
 import ConfigCarrier from "@components/layout/ConfigCarrier.astro";
+import AuthManager from "@components/security/AuthManager.svelte";
 
 import {
 	backgroundWallpaper,
@@ -187,12 +187,10 @@ const siteLang = lang.replace("_", "-");
     <meta name="generator" content={Astro.generator} />
 
     <!-- 搜索引擎验证标签 -->
-    <!-- 百度搜索资源平台验证 -->
-    <meta name="baidu-site-verification" content="codeva-lX6hLCrOOy" />
     <!-- 必应搜索验证 -->
-    <meta name="msvalidate.01" content="63A6A0006140D3F4ABB55B84399CF4D9" />
+    <meta name="msvalidate.01" content="b5ef4db58d658969110b8d615e2e1fa3" />
     <!-- Google Search Console 验证 -->
-    <meta name="google-site-verification" content="tvwv6vQVhWKlXottwniAcT3JKdgiBN7xLRWoh7zewyY" />
+    <meta name="google-site-verification" content="1mkFAWZP93JxYImUbHhDnCZgooTz1S3Kg8YQkipGA68" />
     {
       favicons.map((favicon) => (
         <link

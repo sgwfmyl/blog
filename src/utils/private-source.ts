@@ -1,9 +1,9 @@
 import { env } from "cloudflare:workers";
 
 import {
+	isValidPrivateMetaItem,
 	type PrivateHtmlPayload,
 	type PrivateMetaItem,
-	isValidPrivateMetaItem,
 } from "./private-contract";
 
 /**
@@ -19,7 +19,7 @@ import {
  * 构建期拉取 GitHub 的逻辑见 scripts/私有预渲染/index.mjs（Node 环境，用 process.env）。
  */
 
-export type { PrivateMetaItem, PrivateHtmlPayload };
+export type { PrivateHtmlPayload, PrivateMetaItem };
 
 export { isValidPrivateMetaItem };
 

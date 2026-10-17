@@ -16,14 +16,10 @@ export const siteConfig: SiteConfig = {
 	site_url: "https://blog.5484826.xyz",
 
 	// 站点描述
-	description:
-		"个人生活留存博客",
+	description: "个人生活留存博客",
 
 	// 站点关键词
-	keywords: [
-		"sgwfmyl",
-		"LH的博客",
-	],
+	keywords: ["sgwfmyl", "LH的博客"],
 
 	// 主题色
 	themeColor: {
@@ -51,7 +47,7 @@ export const siteConfig: SiteConfig = {
 		{
 			// 图标文件路径
 			src: "assets/images/logo01light.svg",
-		}
+		},
 	],
 
 	// 导航栏配置

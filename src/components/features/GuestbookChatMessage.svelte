@@ -72,9 +72,7 @@ function formatMomentQuoteDate(value: string): string {
 
 const quotePreview = $derived(
 	referencedMessage
-		? htmlToPlainText(referencedMessage.body)
-				.replace(/\s+/gu, " ")
-				.slice(0, 72)
+		? htmlToPlainText(referencedMessage.body).replace(/\s+/gu, " ").slice(0, 72)
 		: "原消息暂未加载",
 );
 const renderedBody = $derived(renderGuestbookMessage(message.body));

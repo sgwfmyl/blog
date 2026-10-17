@@ -12,6 +12,10 @@ declare global {
 		spineModelInitialized?: boolean;
 		floatingTOCListenersInitialized?: boolean;
 		__navMenuListenersReady?: boolean;
+		// 公告栏关闭函数（Announcement.astro 内联脚本挂载，供全局调用）
+		closeAnnouncement?: () => void;
+		// 文章目录内部导航标记（article-toc.ts 写入，供 Swup 导航判定）
+		tocInternalNavigation?: boolean;
 		// biome-ignore lint/suspicious/noExplicitAny: External library
 		spinePlayerInstance?: any;
 		pagefind: {

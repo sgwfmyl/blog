@@ -27,9 +27,9 @@ export async function isAdminRequest(request: Request): Promise<boolean> {
  * 从 Astro 的 cookies 对象判断是否为管理员（供 .astro 页面组件用）。
  * 优先用框架的 Astro.cookies.get 读取，避免手写解析。
  */
-export async function isAdminAstro(
-	cookies: { get(name: string): { value?: string } | undefined },
-): Promise<boolean> {
+export async function isAdminAstro(cookies: {
+	get(name: string): { value?: string } | undefined;
+}): Promise<boolean> {
 	const token = cookies.get(AUTH_COOKIE_NAME)?.value;
 	return verifySession(token);
 }

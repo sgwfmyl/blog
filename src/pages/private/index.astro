@@ -1,9 +1,9 @@
 ---
-import MainGridLayout from "@layouts/MainGridLayout.astro";
 import PrivateGate from "@components/security/PrivateGate.astro";
-import PageTitle from "@/components/common/PageTitle.astro";
+import MainGridLayout from "@layouts/MainGridLayout.astro";
 import { AUTH_COOKIE_NAME, verifySession } from "@utils/auth-session";
 import { getPrivateMetaFromKV } from "@utils/private-source";
+import PageTitle from "@/components/common/PageTitle.astro";
 
 // /private/ 管理入口（阶段 4 SSG 方案）。
 // - 未登录：显示登录门（不拉任何私有数据）

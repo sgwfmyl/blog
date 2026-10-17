@@ -62,6 +62,7 @@ const autolinkHeadingsConfig = {
 } as const;
 
 // 公开侧完整 remark 插件链（**不含 remarkMermaid**，由 astro.config.mjs 追加）
+// biome-ignore lint/suspicious/noExplicitAny: remark/rehype 插件链 Options 内部类型，isolatedDeclarations 下无法导出具体类型
 export const remarkPlugins: any[] = [
 	remarkMath,
 	remarkReadingTime,
@@ -73,6 +74,7 @@ export const remarkPlugins: any[] = [
 
 // 公开侧完整 rehype 插件链（**不含 rehypeMermaid**，由 astro.config.mjs 追加）
 // 显式 any[]：避免 rehype-components 的 Options 内部类型被导出（isolatedDeclarations 下 ts(4023)）
+// biome-ignore lint/suspicious/noExplicitAny: 同上，插件链 Options 内部类型不可导出
 export const rehypePlugins: any[] = [
 	[rehypeKatex, { katex }],
 	[rehypeCallouts, { theme: CALLOUTS_THEME }],
@@ -85,9 +87,11 @@ export const rehypePlugins: any[] = [
 ];
 
 // 私有侧精简 remark 插件链（不引入 readingTime/excerpt/directive/sectionize）
+// biome-ignore lint/suspicious/noExplicitAny: 同上，插件链 Options 内部类型不可导出
 export const privateRemarkPlugins: any[] = [remarkMath];
 
 // 私有侧精简 rehype 插件链（不引入 rehypeComponents，其余与公开一致）
+// biome-ignore lint/suspicious/noExplicitAny: 同上，插件链 Options 内部类型不可导出
 export const privateRehypePlugins: any[] = [
 	[rehypeKatex, { katex }],
 	[rehypeCallouts, { theme: CALLOUTS_THEME }],
