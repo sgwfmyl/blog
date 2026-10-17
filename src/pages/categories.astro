@@ -5,11 +5,26 @@ import TagGraph from "@components/widget/TagGraph.astro";
 import MainGridLayout from "@layouts/MainGridLayout.astro";
 import { Icon } from "astro-icon/components";
 import PageTitle from "@/components/common/PageTitle.astro";
+import { AUTH_COOKIE_NAME, verifySession } from "@/utils/auth-session";
 import { getCategoryList, getCategoryTree } from "@/utils/content-utils";
+import { getPrivatePostsFromKV } from "@/utils/private-source";
 import { getTagGraphData } from "@/utils/tag-graph-data";
 
-const categoryTree = await getCategoryTree();
-const categoryList = await getCategoryList();
+// 登录后合并私有 post 到分类树/列表（对齐归档页：prerender=false + 鉴权 + 运行时读 KV）
+export const prerender = false;
+
+const token = Astro.cookies.get(AUTH_COOKIE_NAME)?.value;
+const isAdmin = await verifySession(token);
+
+// 登录态页面不缓存、不泄露（Vary: Cookie 区分登录态）
+Astro.response.headers.set("Cache-Control", "private, no-store");
+Astro.response.headers.set("Vary", "Cookie");
+Astro.response.headers.set("X-Robots-Tag", "noindex, nofollow");
+
+const privatePosts = isAdmin ? await getPrivatePostsFromKV() : [];
+
+const categoryTree = await getCategoryTree(privatePosts);
+const categoryList = await getCategoryList(privatePosts);
 const categories = categoryList.map(({ name, count, url }) => ({
 	name,
 	count,

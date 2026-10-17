@@ -5,17 +5,16 @@ import * as path from "node:path";
 import I18nKey from "@i18n/i18nKey";
 import { i18n } from "@i18n/translation";
 import MainGridLayout from "@layouts/MainGridLayout.astro";
-import type { GetStaticPaths, ImageMetadata } from "astro";
+import type { ImageMetadata } from "astro";
 import { Icon } from "astro-icon/components";
 import ArticleVirtualList from "@/components/pages/ArticleVirtualList.svelte";
 import { siteConfig } from "@/config";
 import { coverImageConfig } from "@/config/coverImageConfig";
+import { AUTH_COOKIE_NAME, verifySession } from "@/utils/auth-session";
 import { getCategoryFromId } from "@/utils/category-tree";
-import {
-	comparePostsByOrderAndDate,
-	getCategoryList,
-} from "@/utils/content-utils";
+import { comparePostsByOrderAndDate } from "@/utils/content-utils";
 import { getApiUrlList, processCoverImageSync } from "@/utils/image-utils";
+import { getPrivatePostsFromKV } from "@/utils/private-source";
 import {
 	getCategoryPageUrl,
 	getCategoryUrl,
@@ -25,75 +24,84 @@ import {
 	url,
 } from "@/utils/url-utils";
 
-export const getStaticPaths = (async () => {
-	const categories = await getCategoryList();
-	const allPosts = await getCollection("posts", ({ data }) => {
-		return import.meta.env.PROD ? data.draft !== true : true;
-	});
+// 登录后合并私有 post 到分类详情页（对齐归档页：prerender=false + 鉴权 + 运行时读 KV）。
+// 原 getStaticPaths 静态生成改为 SSR 动态路由，使登录后能访问私有分类。
+export const prerender = false;
 
-	const paths: {
-		params: { category: string };
-		props: {
-			categoryName: string;
-			posts: CollectionEntry<"posts">[];
-			totalPosts: number;
-			tags: { name: string; count: number }[];
-		};
-	}[] = [];
+const token = Astro.cookies.get(AUTH_COOKIE_NAME)?.value;
+const isAdmin = await verifySession(token);
 
-	for (const category of categories) {
-		// 过滤该分类下的文章（子树包含：父分类含子分类文章）
-		const categoryPosts = allPosts.filter((post) => {
-			const postCategory = getCategoryFromId(post.id);
-			const uncategorized = i18n(I18nKey.uncategorized).toLowerCase();
+// 登录态页面不缓存、不泄露（Vary: Cookie 区分登录态）
+Astro.response.headers.set("Cache-Control", "private, no-store");
+Astro.response.headers.set("Vary", "Cookie");
+Astro.response.headers.set("X-Robots-Tag", "noindex, nofollow");
 
-			if (!category.name || category.name.toLowerCase() === uncategorized) {
-				return !postCategory || postCategory.toLowerCase() === uncategorized;
-			}
-			return (
-				postCategory === category.name ||
-				postCategory.startsWith(`${category.name}/`)
-			);
-		});
-
-		// 排序规则见 src/utils/content-utils.ts#comparePostsByOrderAndDate
-		categoryPosts.sort(comparePostsByOrderAndDate);
-
-		// 收集该分类下所有标签
-		const tagCountMap: Record<string, number> = {};
-		categoryPosts.forEach((post) => {
-			(post.data.tags || []).forEach((tag) => {
-				tagCountMap[tag] = (tagCountMap[tag] || 0) + 1;
-			});
-		});
-		const tags = Object.entries(tagCountMap)
-			.sort((a, b) => b[1] - a[1])
-			.map(([name, count]) => ({ name, count }));
-
-		paths.push({
-			params: { category: category.name },
-			props: {
-				categoryName: category.name,
-				posts: categoryPosts,
-				totalPosts: categoryPosts.length,
-				tags,
-			},
-		});
-	}
-
-	return paths;
-}) satisfies GetStaticPaths;
-
-const { categoryName } = Astro.props;
-const { posts, tags } = Astro.props;
+const categoryName = Astro.params.category ?? "";
 
 // 解码分类名称（支持多级 a/b）
-const decodedCategory = decodeURIComponent(categoryName);
+let decodedCategory = categoryName;
+try {
+	decodedCategory = decodeURIComponent(categoryName);
+} catch {
+	decodedCategory = categoryName;
+}
 const categoryParts = decodedCategory.split("/").filter(Boolean);
 const categoryTrail = categoryParts.map((part, idx) => {
 	const full = categoryParts.slice(0, idx + 1).join("/");
 	return { name: part, url: getCategoryUrl(full) };
 });
+
+const allPosts = await getCollection("posts", ({ data }) => {
+	return import.meta.env.PROD ? data.draft !== true : true;
+});
+
+const uncategorized = i18n(I18nKey.uncategorized).toLowerCase();
+
+// 过滤该分类下的公开文章（子树包含：父分类含子分类文章，与旧 getStaticPaths 一致）
+const posts = allPosts.filter((post) => {
+	const postCategory = getCategoryFromId(post.id);
+	if (!decodedCategory || decodedCategory.toLowerCase() === uncategorized) {
+		return !postCategory || postCategory.toLowerCase() === uncategorized;
+	}
+	return (
+		postCategory === decodedCategory ||
+		postCategory.startsWith(`${decodedCategory}/`)
+	);
+});
+
+// 排序规则见 src/utils/content-utils.ts#comparePostsByOrderAndDate
+posts.sort(comparePostsByOrderAndDate);
+
+// 私有 post（登录后合并）：category 来自私有 meta，子树聚合同公开
+const privatePosts = isAdmin ? await getPrivatePostsFromKV() : [];
+const privateCategoryPosts = privatePosts.filter((p) => {
+	const pc = p.category ?? "";
+	if (!decodedCategory || decodedCategory.toLowerCase() === uncategorized) {
+		return !pc;
+	}
+	return pc === decodedCategory || pc.startsWith(`${decodedCategory}/`);
+});
+
+// 404 判定：公开与私有均无文章（未登录访问纯私有分类时 privateCategoryPosts 为空 → 404）
+if (posts.length === 0 && privateCategoryPosts.length === 0) {
+	return Astro.redirect("/404");
+}
+
+// 收集该分类下所有标签（公开 + 私有）
+const tagCountMap: Record<string, number> = {};
+posts.forEach((post) => {
+	(post.data.tags || []).forEach((tag) => {
+		tagCountMap[tag] = (tagCountMap[tag] || 0) + 1;
+	});
+});
+privateCategoryPosts.forEach((p) => {
+	p.tags.forEach((tag) => {
+		tagCountMap[tag] = (tagCountMap[tag] || 0) + 1;
+	});
+});
+const tags = Object.entries(tagCountMap)
+	.sort((a, b) => b[1] - a[1])
+	.map(([name, count]) => ({ name, count }));
 
 // 图片解析（与文章列表页一致）
 const articleImageFiles = import.meta.glob<ImageMetadata>(
@@ -178,13 +186,13 @@ const fallbackImageUrl = coverImageConfig.randomCoverImage.fallback
 	? `${`/${coverImageConfig.randomCoverImage.fallback.replace(/^\/+/, "")}`}`
 	: "";
 
-const articleListPosts = await Promise.all(
+const publicArticleListPosts = await Promise.all(
 	posts.map(async (entry) => {
 		const { remarkPluginFrontmatter } = await render(entry);
 		const articleImage = await resolveArticleImage(entry);
 		const rawCategory = getCategoryFromId(entry.id);
 		const category = rawCategory || i18n(I18nKey.uncategorized);
-		const tags = (entry.data.tags || [])
+		const entryTags = (entry.data.tags || [])
 			.map((tag) => tag.trim())
 			.filter(Boolean)
 			.map((tag) => ({
@@ -202,7 +210,7 @@ const articleListPosts = await Promise.all(
 			publishedText: dateFormatter.format(entry.data.published),
 			category,
 			categoryUrl: getCategoryUrl(rawCategory || null),
-			tags,
+			tags: entryTags,
 			description:
 				entry.data.description ||
 				remarkPluginFrontmatter.excerpt ||
@@ -214,6 +222,37 @@ const articleListPosts = await Promise.all(
 		};
 	}),
 );
+
+// 私有 post 映射为同构列表项（无 body/render，描述与封面来自 KV frontmatter）
+const privateArticleListPosts = privateCategoryPosts
+	.sort((a, b) => b.date.getTime() - a.date.getTime())
+	.map((p) => {
+		const category = p.category || i18n(I18nKey.uncategorized);
+		return {
+			id: p.slug,
+			title: p.title,
+			url: p.link,
+			publishedIso: p.date.toISOString(),
+			publishedText: dateFormatter.format(p.date),
+			category,
+			categoryUrl: getCategoryUrl(p.category || null),
+			tags: (p.tags || [])
+				.map((tag) => tag.trim())
+				.filter(Boolean)
+				.map((tag) => ({ name: tag, url: getTagUrl(tag) })),
+			description: p.description || "暂无文章简介，点击卡片查看完整内容。",
+			imageUrl: p.image,
+			imageApiUrls: getApiUrlList(p.image, p.slug),
+			pinned: false,
+			hasRealCover: !!p.image,
+		};
+	});
+
+// 公开在前（已按统一规则排序）、私有在后（日期降序）
+const articleListPosts = [
+	...publicArticleListPosts,
+	...privateArticleListPosts,
+];
 
 const defaultLayout = siteConfig.postListLayout.defaultMode || "list";
 const allowLayoutSwitch = siteConfig.postListLayout.allowSwitch;

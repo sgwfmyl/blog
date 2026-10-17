@@ -7,12 +7,25 @@ import MovieGameCard from "@/components/pages/movies-games/MovieGameCard.astro";
 import I18nKey from "@/i18n/i18nKey";
 import { i18n } from "@/i18n/translation";
 import MainGridLayout from "@/layouts/MainGridLayout.astro";
+import { AUTH_COOKIE_NAME, verifySession } from "@/utils/auth-session";
 import { formatDateI18nWithTime } from "@/utils/date-utils";
+import { getPrivateBangumiFromKV } from "@/utils/private-source";
 import { removeFileExtension } from "@/utils/url-utils";
 
 // 2026-09-30 改版：左栏筛选（搜索 / 排序 / 类型 / 观看状态 / 标签 / 日历）+ 卡片网格。
 // 「类型」与「观看状态」两组选项就是原来页面上方那两条分类筛选，搬进左栏。
 // 筛选与排序全部在前端完成：条目本来就整页渲染，不发请求。
+
+// 登录后合并私有影视/游戏条目（对齐归档页：prerender=false + 鉴权 + 运行时读 KV）
+export const prerender = false;
+
+const token = Astro.cookies.get(AUTH_COOKIE_NAME)?.value;
+const isAdmin = await verifySession(token);
+
+// 登录态页面不缓存、不泄露（Vary: Cookie 区分登录态）
+Astro.response.headers.set("Cache-Control", "private, no-store");
+Astro.response.headers.set("Vary", "Cookie");
+Astro.response.headers.set("X-Robots-Tag", "noindex, nofollow");
 
 const buildTime = formatDateI18nWithTime(new Date());
 
@@ -117,6 +130,53 @@ const mgItems: MgItem[] = customBangumi
 	.sort(
 		(a, b) => new Date(b.date || 0).getTime() - new Date(a.date || 0).getTime(),
 	);
+
+// 登录后合并私有影视/游戏条目（type=bangumi 且 category=anime/game；映射为同一 MgItem 结构）
+if (isAdmin) {
+	const privateBangumi = await getPrivateBangumiFromKV();
+	mgItems.push(
+		...privateBangumi
+			.filter((b) => b.category === "anime" || b.category === "game")
+			.map((b) => {
+				const subjectType = b.category === "game" ? 4 : 2;
+				return {
+					subject_id: 0,
+					subject_type: subjectType,
+					rate: b.score,
+					type: b.status,
+					comment: b.comment || null,
+					tags: b.tags,
+					ep_status: 0,
+					vol_status: 0,
+					updated_at: b.date.toISOString(),
+					date: b.date.toISOString(),
+					private: true,
+					link: b.link,
+					_subcategory: b.subcategory,
+					subject: {
+						id: 0,
+						type: subjectType,
+						name: b.title,
+						name_cn: b.name_cn || b.title,
+						short_summary: "",
+						images: {
+							medium: b.image,
+							large: b.image,
+							common: b.image,
+							small: b.image,
+							grid: b.image,
+						},
+						volumes: 0,
+						eps: 0,
+						collection_total: 0,
+						score: b.score,
+						rank: 0,
+						tags: [],
+					},
+				} satisfies MgItem;
+			}),
+	);
+}
 
 function getItemSubcategory(item: MgItem): string {
 	if (item._subcategory) return item._subcategory;

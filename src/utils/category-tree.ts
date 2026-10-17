@@ -55,7 +55,7 @@ export function getCategoryTrail(
 }
 
 export function buildCategoryTree(
-	posts: { id: string; tags: string[] }[],
+	posts: { id: string; tags: string[]; category?: string }[],
 ): CategoryNode[] {
 	type Raw = {
 		directCount: number;
@@ -65,7 +65,10 @@ export function buildCategoryTree(
 	const map = new Map<string, Raw>();
 
 	for (const post of posts) {
-		const full = getCategoryFromId(post.id);
+		// 私有条目（登录态合并）直接给定 category；公开条目由文件夹路径推导
+		const full = post.category
+			? normalizeCategory(post.category)
+			: getCategoryFromId(post.id);
 		if (!full) continue;
 		const parts = full.split("/");
 		// 累加每个前缀的 count（含子孙）

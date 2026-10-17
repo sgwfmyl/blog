@@ -200,6 +200,7 @@ Layout.astro          ← HTML 骨架：<html>, <head>, <body>, 全局组件, �
 - **录入方式**：源数据 md/json 放私有仓库 `private-content/my/`，改完跑 `pnpm sync:my`；公开仓库 `src/content/{bills,schedules,apps,life/notebooks}` 已删除。
 - **侧栏/归档**：`SiteStats`/`LifeStats`/`RecentItems` 为构建期组件读不到 D1，不再统计笔记本/账单；`content-utils.ts#getArchiveList` 不再合并 notebooks。
 
+> **公开列表页登录后合并私有（2026-10-17）**：书籍 `/books/`、影视游戏 `/movies-games/`、分类 `/categories/`（列表 + `[...category]` 详情）四个**公开页面**沿用归档页的「登录后合并私有」范式——`prerender=false` + `verifySession`，登录后经 `private-source.ts` 新增的 `getPrivateBangumiFromKV()` / `getPrivatePostsFromKV()` 从 KV 的 `frontmatter` 读私有条目（封面/评分/状态/简介等展示字段，对齐公开 `bangumi`/`posts` schema）并入列表；未登录只渲染公开内容。私有条目点击跳转 `route ?? /private/<slug>/`，详情页复用 `PrivatePostView`/`PrivateBangumiView` 零改动。分类详情页原 `getStaticPaths` 静态生成改为 **SSR 动态路由**，未登录访问纯私有分类（或不存在分类）统一 404。`getCategoryList`/`getCategoryTree` 新增可选私有参数（`category` 字段直接给定、含多级前缀链），向后兼容——侧栏/导航等构建期组件仍不传参、只读公开。响应头对齐归档页 `no-store + noindex + Vary: Cookie`。
 
 > **友链页设计**（页面结构 / 卡片形态 / 悬浮站点预览 / 状态检测与截图支撑系统 / 朋友圈数据链路等）已整理为开发文档 → [友链页设计说明](/docs/友链/)（源文件 `src/content/docs/docs/友链.md`）；友链内容字段与录入规范见 [内容 / 友链](/docs/内容/友链/)。
 >

@@ -5,6 +5,7 @@ import {
 	buildCategoryTree,
 	type CategoryNode,
 	getCategoryFromId,
+	normalizeCategory,
 } from "@utils/category-tree";
 import { getPublicPosts } from "@utils/post-source";
 import type { PrivateMetaItem } from "@utils/private-contract";
@@ -282,7 +283,9 @@ export type Category = {
 	url: string;
 };
 
-export async function getCategoryList(): Promise<Category[]> {
+export async function getCategoryList(
+	privatePosts: { category: string | null }[] = [],
+): Promise<Category[]> {
 	const allBlogPosts = await getPublicPosts();
 	const count: { [key: string]: number } = {};
 	const uncategorized = i18n(I18nKey.uncategorized);
@@ -292,6 +295,16 @@ export async function getCategoryList(): Promise<Category[]> {
 			count[uncategorized] = (count[uncategorized] ?? 0) + 1;
 			continue;
 		}
+		const parts = full.split("/");
+		for (let i = 1; i <= parts.length; i++) {
+			const pref = parts.slice(0, i).join("/");
+			count[pref] = (count[pref] ?? 0) + 1;
+		}
+	}
+	// 私有 post（登录态合并）：category 由 meta 直接给定（含多级前缀链）
+	for (const post of privatePosts) {
+		const full = post.category ? normalizeCategory(post.category) : "";
+		if (!full) continue;
 		const parts = full.split("/");
 		for (let i = 1; i <= parts.length; i++) {
 			const pref = parts.slice(0, i).join("/");
@@ -316,15 +329,22 @@ export async function getCategoryList(): Promise<Category[]> {
 	return ret;
 }
 
-export async function getCategoryTree(): Promise<CategoryNode[]> {
+export async function getCategoryTree(
+	privatePosts: { category: string | null; tags: string[] }[] = [],
+): Promise<CategoryNode[]> {
 	const allBlogPosts = await getPublicPosts();
-	const postsForTree = (
+	const publicPostsForTree = (
 		allBlogPosts as unknown as { id: string; data: { tags: string[] } }[]
 	).map((p) => ({
 		id: p.id,
 		tags: p.data.tags ?? [],
 	}));
-	return buildCategoryTree(postsForTree);
+	const privatePostsForTree = privatePosts.map((p) => ({
+		id: p.category ?? "",
+		tags: p.tags ?? [],
+		category: p.category ?? undefined,
+	}));
+	return buildCategoryTree([...publicPostsForTree, ...privatePostsForTree]);
 }
 
 export type CategoryTag = {

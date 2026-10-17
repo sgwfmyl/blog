@@ -8,12 +8,25 @@ import { siteConfig } from "@/config";
 import I18nKey from "@/i18n/i18nKey";
 import { i18n } from "@/i18n/translation";
 import MainGridLayout from "@/layouts/MainGridLayout.astro";
+import { AUTH_COOKIE_NAME, verifySession } from "@/utils/auth-session";
 import { formatDateI18nWithTime } from "@/utils/date-utils";
+import { getPrivateBangumiFromKV } from "@/utils/private-source";
 import { removeFileExtension } from "@/utils/url-utils";
 
 if (!siteConfig.pages.books) {
 	return Astro.redirect("/404/");
 }
+
+// 登录后合并私有书籍（对齐归档页：prerender=false + 鉴权 + 运行时读 KV）
+export const prerender = false;
+
+const token = Astro.cookies.get(AUTH_COOKIE_NAME)?.value;
+const isAdmin = await verifySession(token);
+
+// 登录态页面不缓存、不泄露（Vary: Cookie 区分登录态）
+Astro.response.headers.set("Cache-Control", "private, no-store");
+Astro.response.headers.set("Vary", "Cookie");
+Astro.response.headers.set("X-Robots-Tag", "noindex, nofollow");
 
 const buildTime = formatDateI18nWithTime(new Date());
 
@@ -46,6 +59,23 @@ const bookItems = customBangumi
 			category,
 		};
 	});
+
+// 登录后合并私有书籍（type=bangumi 且 category=book；frontmatter 对齐公开 bangumi schema）
+if (isAdmin) {
+	const privateBangumi = await getPrivateBangumiFromKV();
+	bookItems.push(
+		...privateBangumi
+			.filter((b) => b.category === "book")
+			.map((b) => ({
+				title: b.title,
+				coverImage: b.image,
+				link: b.link,
+				status: b.status,
+				score: b.score,
+				category: "私密",
+			})),
+	);
+}
 
 const readingCount = bookItems.filter((b) => b.status === 3).length;
 const readCount = bookItems.filter((b) => b.status === 2).length;
