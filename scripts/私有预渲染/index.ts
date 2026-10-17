@@ -18,6 +18,7 @@
 import { execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { createMarkdownProcessor } from "@astrojs/markdown-remark";
+import matter from "gray-matter";
 import sanitizeHtml from "sanitize-html";
 
 import {
@@ -64,12 +65,6 @@ async function fetchGitHubFile(path: string): Promise<string> {
 	return new TextDecoder().decode(bytes);
 }
 
-/** 剥离 YAML frontmatter（渲染前），返回纯 markdown 正文。 */
-function stripFrontmatter(markdown: string): string {
-	const match = markdown.match(/^---\n([\s\S]*?)\n---\n?/);
-	return match ? markdown.slice(match[0].length) : markdown;
-}
-
 /** sanitize-html 白名单配置（见方案七.2）。 */
 const SANITIZE_OPTIONS: sanitizeHtml.IOptions = {
 	allowedTags: [
@@ -113,24 +108,27 @@ const SANITIZE_OPTIONS: sanitizeHtml.IOptions = {
 	},
 };
 
-/** 渲染单篇私有文章，返回 { html, headings }。 */
+/** 渲染单篇私有文章，返回 { html, headings, frontmatter }。 */
 async function renderPrivateMarkdown(markdown: string): Promise<{
 	html: string;
 	headings: { depth: number; text: string; slug: string }[];
+	frontmatter: Record<string, unknown>;
 }> {
 	// 构建期（Node）shiki 主题能正常加载，故这里可保留 shiki 高亮（与公开文章一致）
 	const processor = await createMarkdownProcessor({
 		remarkPlugins: privateRemarkPlugins,
 		rehypePlugins: privateRehypePlugins,
 	});
-	const body = stripFrontmatter(markdown);
+	// gray-matter 解析 frontmatter（供详情页按 type 分派渲染用），content 为纯 markdown 正文
+	const { data: frontmatter, content: body } = matter(markdown);
 	const { code, metadata } = await processor.render(body, {
-		frontmatter: {},
+		frontmatter,
 	});
 	const clean = sanitizeHtml(code, SANITIZE_OPTIONS);
 	return {
 		html: clean,
 		headings: metadata.headings,
+		frontmatter,
 	};
 }
 
@@ -177,10 +175,10 @@ async function main(): Promise<void> {
 		const mdPath = `private/pages/${item.slug}.md`;
 		try {
 			const markdown = await fetchGitHubFile(mdPath);
-			const { html, headings } = await renderPrivateMarkdown(markdown);
+			const { html, headings, frontmatter } = await renderPrivateMarkdown(markdown);
 			putKV(
 				`private:html:${item.slug}`,
-				JSON.stringify({ html, headings }),
+				JSON.stringify({ html, headings, frontmatter }),
 			);
 			console.log(`  ✓ ${item.slug}（headings ${headings.length}）`);
 		} catch (err) {

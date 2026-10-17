@@ -1,0 +1,90 @@
+---
+import { formatDateI18n } from "@utils/date-utils";
+import type {
+	PrivateHtmlPayload,
+	PrivateMetaItem,
+} from "@utils/private-contract";
+import { getTagUrl } from "@utils/url-utils";
+
+// 私密番剧/观影条目详情视图（对齐公开 /bangumi/[...slug].astro 的排版骨架）。
+// 展示：标题（可带 name_cn 副标题）+ 元信息行（发布于/分类/状态/评分/标签）+ 正文。
+interface Props {
+	item: PrivateMetaItem;
+	payload: PrivateHtmlPayload;
+}
+
+const { item, payload } = Astro.props;
+const fm = (payload.frontmatter ?? {}) as Record<string, unknown>;
+const category =
+	typeof fm.category === "string" && fm.category ? fm.category : "anime";
+const nameCn = typeof fm.name_cn === "string" ? fm.name_cn : "";
+const score = typeof fm.score === "number" ? fm.score : null;
+const status = typeof fm.status === "number" ? fm.status : null;
+const STATUS_TEXT: Record<number, string> = {
+	1: "想看",
+	2: "看过",
+	3: "在看",
+	4: "搁置",
+	5: "抛弃",
+};
+const tags = item.tags ?? [];
+---
+
+<div class="flex w-full rounded-(--radius-large) overflow-hidden relative mb-4">
+	<div class="card-base z-10 px-6 md:px-9 pt-6 pb-4 relative w-full">
+		<!-- title -->
+		<div class="relative onload-animation">
+			<h1
+				class="transition w-full block font-bold mb-3
+					text-3xl md:text-[2.25rem]/[2.75rem]
+					text-black/90 dark:text-white/90
+					md:before:w-1 before:h-5 before:rounded-md before:bg-(--primary)
+					before:absolute before:top-3 before:-left-4.5"
+			>
+				{item.title}
+			</h1>
+			{nameCn && (
+				<p class="text-sm text-neutral-500 dark:text-neutral-400 mb-3">{nameCn}</p>
+			)}
+		</div>
+
+		<!-- metadata -->
+		<div class="onload-animation mb-6">
+			<div class="flex flex-wrap gap-4 text-neutral-500 dark:text-neutral-400 text-sm">
+				<div class="flex items-center gap-1">
+					<span>发布于: {formatDateI18n(new Date(item.date))}</span>
+				</div>
+				<div class="flex items-center gap-1">
+					<span>分类: {category}</span>
+				</div>
+				{status !== null && (
+					<div class="flex items-center gap-1">
+						<span>状态: {STATUS_TEXT[status] ?? status}</span>
+					</div>
+				)}
+				{score !== null && (
+					<div class="flex items-center gap-1">
+						<span>评分: {score}</span>
+					</div>
+				)}
+				{tags.length > 0 && (
+					<div class="flex flex-wrap gap-2">
+						{tags.map((tag) => (
+							<a
+								href={getTagUrl(tag)}
+								class="px-2 py-0.5 bg-neutral-100 dark:bg-neutral-800 rounded text-xs"
+							>
+								#{tag.trim()}
+							</a>
+						))}
+					</div>
+				)}
+			</div>
+		</div>
+
+		<div
+			class="markdown-content prose dark:prose-invert max-w-none! custom-md mb-6 onload-animation"
+			set:html={payload.html}
+		/>
+	</div>
+</div>

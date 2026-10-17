@@ -20,7 +20,7 @@ Astro.response.headers.set("Cache-Control", "private, no-store");
 Astro.response.headers.set("Vary", "Cookie");
 Astro.response.headers.set("X-Robots-Tag", "noindex, nofollow");
 
-const noteAvatar = profileConfig.avatar || "/assets/ziyuan/tx.webp";
+const noteAvatar = profileConfig.avatar || "/assets/ziyuan/logo01.png";
 
 // 预加载笔记本文件夹内的封面图片
 const notebookCoverFiles = import.meta.glob<ImageMetadata>(

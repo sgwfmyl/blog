@@ -28,6 +28,12 @@ export type PrivateMetaItem = {
 export type PrivateHtmlPayload = {
 	html: string;
 	headings: { depth: number; text: string; slug: string }[];
+	/**
+	 * 正文 frontmatter（构建期用 gray-matter 解析后随正文一起落 KV）。
+	 * 供详情页按 type 分派渲染读取 type 专属字段（如 bangumi 的 image/score/status、
+	 * moment 的 images/location）。旧 KV 产物可能缺失，消费方须 `?? {}` 兜底。
+	 */
+	frontmatter?: Record<string, unknown>;
 };
 
 export function isValidPrivateMetaItem(
@@ -75,6 +81,7 @@ export function normalizeRoute(rawPath: string): string | null {
 
 	// 拒绝控制字符
 	// eslint-disable-next-line no-control-regex
+	// biome-ignore lint/suspicious/noControlCharactersInRegex: 需显式匹配 C0/DEL 控制字符做路径校验
 	if (/[\u0000-\u001f\u007f]/.test(path)) return null;
 	// 拒绝路径穿越与空段
 	if (path.includes("..") || path.includes("//")) return null;
@@ -93,6 +100,7 @@ export function isValidPrivateSlug(slug: string): boolean {
 	if (slug.startsWith("/") || slug.endsWith("/")) return false;
 	if (slug.includes("..") || slug.includes("//")) return false;
 	// eslint-disable-next-line no-control-regex
+	// biome-ignore lint/suspicious/noControlCharactersInRegex: 需显式匹配 C0/DEL 控制字符做 slug 校验
 	if (/[\u0000-\u001f\u007f]/.test(slug)) return false;
 	return true;
 }
